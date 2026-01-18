@@ -13,7 +13,10 @@
             font-family: default;
         }
     </style>
-    <select id="change" onchange="document.querySelector('#kokodayo').style.fontFamily=document.querySelector('#change').value"></select>
+    <div class="row">
+        <select id="change" onchange="document.querySelector('#kokodayo').style.fontFamily=document.querySelector('#change').value"></select>
+        <button id="download">←をdownload</button>
+    </div>
     <textarea id="kokodayo"></textarea> 
 
     <script>
@@ -87,6 +90,17 @@
             document.querySelector('#kokodayo').style.fontFamily = font;
             document.querySelector('#change').value = font;
         }
+        
+        let downloaD = document.getElementById('download');
+        downloaD.addEventListener('click', () => {
+            let font = Fonts[now];
+            // ${font.src}.${font.type}のファイルを保存させる
+            let a = document.createElement('a');
+            a.href = `assets/${font.src}.${font.type}`;
+            a.download = `${font.src}.${font.type}`;
+            a.click();
+        });
+
         document.addEventListener('keydown', e => {
             let key = e.key.toLowerCase();
             if(e.key == ' ') key = 'space';
@@ -104,6 +118,8 @@
                 fontCh(now);
             }
         });
+    
+
     </script>
 </body>
 </html>
