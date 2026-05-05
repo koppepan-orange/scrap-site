@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="js">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="mitame.css">
+    <title>lonely-dance</title>
+</head>
+<body>
+    <div id="mobileDesc"></div>
+    <div id="log">
+        <div class="opener"><</div>
+        <div class="log"></div>
+    </div>
+    <div id="text"></div>
+
+    <div id="main" class="ban">
+        <div id="title" class="area">
+            <div class="column">
+                <div class="col title">Lonely Dance<span class="弱">(仮)</span></div>
+                <div class="col start">staRt</div>
+                <div class="col achieve">achieve</div>
+                <div class="col set">set</div>
+            </div>
+        </div>
+
+        <div id="select" class="area">
+            <div class="list"></div>
+        </div>
+
+        <div id="play" class="area">
+            <div class="upper">
+                <div class="name"></div>
+                <div class="time"></div>
+                <div class="score"></div>
+            </div>
+            <div class="main">
+                <div class="dots"></div>
+                <div class="nums"></div>
+            </div>
+            <div class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        (async() => {
+            let ts = new Date().getTime(); 
+
+            let ZettaiTukawarenaiKannsuu = async (f) => {
+                return new Promise(res => {
+                    let script = document.createElement('script');
+                    script.src = `${f}.js?v=${ts}`;
+                    script.defer = true;
+                    script.onload = res;
+                    document.head.appendChild(script);
+                });        
+            }
+            await ZettaiTukawarenaiKannsuu(`data`);
+            await ZettaiTukawarenaiKannsuu(`nakami`);
+        })();
+    </script>
+</body>
+</html>

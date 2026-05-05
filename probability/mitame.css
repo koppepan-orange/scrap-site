@@ -1,0 +1,7 @@
+@font-face {
+    font-family: Hangyaku;
+    src: url(assets/fonts/Hangyaku.ttf);
+}
+#canvas{
+    border: 2px solid #ffd83d;
+}

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>3x3 Node Toggle — ミニゲームUI</title>
+    <style>
+        :root{
+            --size: 3; /* グリッドサイズ */
+            --spacing: 90; /* ノード間の間隔 (px) */
+            --margin: 20; /* SVG周りの余白 */
+            --dot-radius: 12; /* 円の半径 */
+            --stick-thickness: 8; /* 棒の太さ */
+        }
+        html,body{height:100%;}
+        body{
+            margin:0;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+            background:linear-gradient(180deg,#0f172a 0%, #071029 100%);
+            color:#ddd;
+        }
+        .panel{
+            text-align:center;
+        }
+        .board-wrap{
+            background:rgba(255,255,255,0.03);
+            padding:18px;
+            border-radius:12px;
+            box-shadow:0 8px 30px rgba(2,6,23,0.6);
+            display:inline-block;
+        }
+        svg{display:block; user-select:none;}
+        .stick{
+            stroke:#7b8b9a;
+            stroke-width:var(--stick-thickness);
+            stroke-linecap:round;
+            transition:stroke 160ms, stroke-width 120ms;
+        }
+        .stick.active{
+            stroke:#ffd166;
+            stroke-width:var(--stick-thickness);
+        }
+        .dot{
+            cursor:pointer;
+            fill:#0b1220;
+            stroke:#9aa6b2;
+            stroke-width:6;
+            transition:fill 140ms, transform 140ms, stroke 140ms;
+            transform-origin:center center;
+        }
+        .dot.on{
+            fill:#ffd166;
+            stroke:#ff7ab6;
+        }
+        .hint{font-size:13px;color:#9fb0c6;margin-top:8px}
+        .controls{margin-top:12px}
+        .controls label{font-size:13px;color:#9fb0c6}
+        input[type=range]{width:220px}
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="board-wrap">
+            <!-- SVG はスクリプトで生成されます -->
+            <svg id="board"></svg>
+            <div class="hint">ノードをクリックすると on/off が切り替わる。両端が on になっている棒は色が変わる。</div>
+            <div class="controls">
+                <label>間隔: <input id="spacing" type="range" min="50" max="140" value="90"></label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ns = 'http://www.w3.org/2000/svg';
+        let board = document.getElementById('board');
+
+        /* 設定 */
+        let size = 3; // 3x3
+        let spacing = 90; // px
+        let margin = 20; // px
+        let dotR = 12; // 半径
+        let stickW = 8;
+
+        let state = []; // boolean array for nodes
+        let nodeEls = [];
+        let stickEls = [];
+
+        function build(){
+            // 初期化
+            board.innerHTML = '';
+            nodeEls.length = 0;
+            stickEls.length = 0;
+            state.length = size*size;
+            for(let i=0;i<state.length;i++) state[i] = false;
+
+            let width = margin*2 + spacing*(size-1);
+            let height = margin*2 + spacing*(size-1);
+            board.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            board.setAttribute('width', width);
+            board.setAttribute('height', height);
+
+            // 座標一覧を作る
+            let coords = [];
+            for(let r=0; r<size; r++){
+                for(let c=0; c<size; c++){
+                    coords.push({x: margin + c*spacing, y: margin + r*spacing});
+                }
+            }
+
+            // 棒 (右・下方向のみ作る) 
+            for(let r=0; r<size; r++){
+                for(let c=0; c<size; c++){
+                    let idx = r*size + c;
+                    // 右方向
+                    if(c < size-1){
+                        let a = idx;
+                        let b = idx + 1;
+                        let line = document.createElementNS(ns,'line');
+                        line.setAttribute('x1', coords[a].x);
+                        line.setAttribute('y1', coords[a].y);
+                        line.setAttribute('x2', coords[b].x);
+                        line.setAttribute('y2', coords[b].y);
+                        line.setAttribute('class','stick');
+                        line.dataset.a = a;
+                        line.dataset.b = b;
+                        board.appendChild(line);
+                        stickEls.push(line);
+                    }
+                    // 下方向
+                    if(r < size-1){
+                        let a = idx;
+                        let b = idx + size;
+                        let line = document.createElementNS(ns,'line');
+                        line.setAttribute('x1', coords[a].x);
+                        line.setAttribute('y1', coords[a].y);
+                        line.setAttribute('x2', coords[b].x);
+                        line.setAttribute('y2', coords[b].y);
+                        line.setAttribute('class','stick');
+                        line.dataset.a = a;
+                        line.dataset.b = b;
+                        board.appendChild(line);
+                        stickEls.push(line);
+                    }
+                }
+            }
+
+            // 円 (後に追加して上に表示されるようにする)
+            for(let i=0;i<coords.length;i++){
+                let c = coords[i];
+                let circle = document.createElementNS(ns,'circle');
+                circle.setAttribute('cx', c.x);
+                circle.setAttribute('cy', c.y);
+                circle.setAttribute('r', dotR);
+                circle.setAttribute('class', 'dot');
+                circle.dataset.idx = i;
+                circle.addEventListener('click', function(ev){
+                    let idx = +this.dataset.idx;
+                    state[idx] = !state[idx];
+                    if(state[idx]) this.classList.add('on'); else this.classList.remove('on');
+                    updateSticks();
+                });
+
+                board.appendChild(circle);
+                nodeEls.push(circle);
+            }
+
+            updateSticks();
+        }
+
+        function updateSticks(){
+            for(let i=0;i<stickEls.length;i++){
+                let el = stickEls[i];
+                let a = +el.dataset.a;
+                let b = +el.dataset.b;
+                if(state[a] && state[b]) el.classList.add('active');
+                else el.classList.remove('active');
+            }
+        }
+
+        // コントロール
+        let range = document.getElementById('spacing');
+        range.addEventListener('input', function(){
+            spacing = +this.value;
+            build();
+        });
+
+        // 最初に作る
+        build();
+    </script>
+</body>
+</html>
