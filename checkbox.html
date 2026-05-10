@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkbox-Test</title>
+</head>
+<body>
+
+    <input type="range" class="slider sound">
+
+    <style>
+        .checkbox{
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            width: 100px;
+            aspect-ratio: 3/1;
+            padding: 0 5px;
+            background: var(--back, #b2b2b2);
+             color: var(--back-col, #2b2b2b);
+             transition: background 0.25s, color 0.25s;
+            position: relative;
+            border-radius: 20px;
+        }
+        .checkbox.tog{
+            background: var(--backed, #2b2b2b);
+             color: var(--backed-col, #b2b2b2);
+        }
+        .checkbox .text{
+            font-family: comicsans;
+        }
+
+        input[type="range"].slider{
+            /* スライダー */
+            appearance: none;
+            width: 100px;
+            height: 10px;
+            background: #b2b2b2;
+            border-radius: 5px;
+        }
+
+        input[type="range"].slider::-webkit-slider-thumb{
+            /* つまみ */
+            appearance: none;
+            height: 25px;
+            aspect-ratio: 1/1;
+            background: var(--tsuma, #2b2b2b);
+            /* border-radius: 50%; */
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        input[type="range"].slider::-webkit-slider-thumb:hover{
+            /* つまみ（ホバー） */
+            transform: scale(1.2);
+        }
+    </style>
+    <script>
+        function fl(moto, arr = [0, 1]){ //arrは絶対2
+            if(moto == arr[0]) return arr[1];
+            else return arr[0];
+            
+        }
+
+
+        let undD = document.body;
+        let undC = {
+            checkD: undD.querySelector('.checks'),
+            checking: {}
+        };
+        let undF = {};
+
+        undC.checks = [
+            // [名前, 初期値]
+            {
+                name:'emozi',
+                kitei:0,
+                pro:2,
+                func: () => {
+                    let Emozis = [`^~^`,`uwu`,`owo`,`;~;`,`$w$`,`┐o_o┌`,];
+                    let emozi = arraySelect(Emozis);
+                    logadd(`??? => ${emozi}`);
+                }
+            },
+            {
+                name:'follow',
+                kitei:0,
+                pro:10,
+                func: () => {
+                    makeNotice();
+                }
+            },
+            {
+                name:'rabbit',
+                kitei:0,
+                pro:1,
+                func: () => {
+                    setRabbit();
+                }
+            }
+        ]
+        undF.load = () => {
+            for(let ch of undC.checks){
+                let div = document.createElement('div');
+                div.className = 'checkbox';
+                div.dataset.cl = ch.kitei ?? 0;
+                
+                let text = document.createElement('div');
+                text.className = 'text';
+                text.textContent = ch.name;
+                div.appendChild(text);
+
+                function clcl(){
+                    if(div.dataset.cl == 1) div.dataset.cl = 0;
+                    else div.dataset.cl = 1;
+                    undC.checking[ch.name] = div.dataset.cl;
+
+                    if(div.dataset.cl == 1) div.classList.add('tog');
+                    else div.classList.remove('tog');
+                }
+                div.addEventListener('click', clcl);
+
+                undC.checkD.appendChild(div);
+
+                undC.checking[ch.name] = ch.kitei ? 0 : 1;
+                clcl();
+            }
+
+            for(let slider of undC.slids){
+                let div = document.createElement('div');
+                div.className = `slider ${slider.name}`;
+                
+                let text = document.createElement('div');
+                text.className = 'label';
+                text.textContent = `${slider.jpnm}:`;
+                div.appendChild(text);
+                
+                let range = document.createElement('input')
+                range.type = "range"
+                range.min = 0;
+                range.max = 100;
+                range.value = 50;
+                range.step = 1;
+                range.addEventListener('input', (e) => {
+                    switch(slider.name){
+                        case 'sound':
+                            soundVolume(e.target.value);
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                div.appendChild(range);
+
+                undC.slider.appendChild(div)
+            }
+
+            for(let foot of undC.foots){
+                let div = document.createElement('div');
+                div.className = `youso ${foot.name}`;
+                div.addEventListener('click', foot.func);
+
+                let img = document.createElement('img');
+                img.src = `assets/images/systems/${foot.img}.png`;
+                div.appendChild(img);
+
+                div.addEventListener('mouseover', () => img.src = `assets/images/systems/${foot.img}_red.png`);
+                div.addEventListener('mouseout', () => img.src = `assets/images/systems/${foot.img}.png`);
+
+                undC.fooD.appendChild(div);
+            }
+        }
+
+        // 上のものを原型として、これをjsのclassにします。そうすることで後々楽になることでしょう
+
+    </script>
+</body>
+</html>
