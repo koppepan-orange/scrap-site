@@ -689,7 +689,7 @@ async function slashoflight() {
     if(playername == 'zomusan'){
     x = Math.floor(Math.random() * 3);
     if(x == 0){
-        x = Math.ceil(playerattack * playerpower + weaponpower * 5 * zomupower);
+        x = Math.ceil(playerattack * playerpower * 5 + weaponpower * zomupower);
         if(x < 0){x = 0}; if(x > enemyhealth){x = enemyhealth};
         enemyhealth -= x; tekiou();
         document.getElementById('log').textContent = enemyname + 'に' + x + 'のダメージ!';
@@ -708,10 +708,10 @@ async function slashoflight() {
     x = Math.floor(Math.random() * 3); // 1/3です
     if (playername == 'clown'){x = Math.floor(Math.random() * 5);} // 1/5です。
     if (x == 0) {
-        x = Math.ceil(playerattack * playerpower + weaponpower * 3 * zomupower);
+        x = Math.ceil(playerattack * playerpower * 3 + weaponpower * zomupower);
         if(playerskillbuff == 2){x *= 2; playerskillbuff = 0; bufftekiou();}
         if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; x *= z; playerskillbuff = 0; bufftekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
-        if(playername == 'clown'){x *= 3;} //こちら最高倍率36倍の台です(4x9)
+        if(playername == 'clown') x *= 3; //こちら最高倍率36倍の台です(4x9)
         if(x < 0){x = 0}; if(x > enemyhealth){x = enemyhealth};
         enemyhealth -= x; tekiou();
         document.getElementById('log').textContent = enemyname + 'に' + x + 'のダメージ!';
@@ -1001,7 +1001,8 @@ async function skillact() {
         bomertekiou()
         bomb += 1;
         skillcooldown = 'bomernull';
-        } else {document.getElementById('log').textContent = 'まだテンションが低い...!!'; skillcooldown = 'bomernull';document.getElementById('Skillbutton').innerHTML = ''}
+        } 
+        else document.getElementById('log').textContent = 'まだテンションが低い...!!';
     } else if (playername == 'zomusan'){
         phase = 0;
         disappear();
@@ -1078,7 +1079,8 @@ async function skillact() {
                 window.setTimeout(enemyorplayer, 1000)
             }
     }
-    }else {document.getElementById('log').textContent = 'skill is not ready...';}
+    }else {
+      document.getElementById('log').textContent = 'skill is not ready...';}
     }
 }
 function greenslimecopytekiou(){
