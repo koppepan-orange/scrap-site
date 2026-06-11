@@ -27,7 +27,7 @@ const Sounds = {
 }
 
 const Spaces = [
-    { name:'omo', rank:2, back:'#f0f8ff', sho:1 },
+    { name:'home', rank:2, back:'#f0f8ff', sho:1 },
 ];
 
 

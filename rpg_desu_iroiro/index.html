@@ -31,32 +31,42 @@
 
     <div id="main">
         <style id="ButtonStyle"></style>
-        <div class="space" id="main">
-            <div id="BattleScene">
-                <div class="turn">
-                    <div>Turn:</div>
-                    <div class="num">0</div>
-                </div>
-                <span>turn:</span><span id="TurnCount">0</span>
-                <br><b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">1</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u>
-                <br><span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span>
-                <span id="PlayerFriendFront"></span>
-                <br><br><b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u><span id="AdditionalPlayerPoint"></span>
-                <br><span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span>
-                <span id="PlayerFriendBack"></span>
-                <br><br><br>
-                <button class="button" id="select1" onclick="select1()">attack</button>  
-                <button class="button" id="select2" onclick="select2()">magic</button>
-                <button class="button" id="select3" onclick="select3()">tools</button>
-                <button class="button" id="back" onclick="back()">pass</button>
-                <br><span id="Skillbutton"> </span>
-                <br><br><span align="center" id="log">pless "reset" to game start</span>
-                <br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span>
-                <br><span id="Status"> </span>
-                <br><br><br><br><span id="BackButtonDesu"></span> 
+        <div class="space" id="omo">
+            <div class="row turn">
+                <div>Turn:</div>
+                <div class="num">0</div>
             </div>
-            <span id="Thisdisappearsafterthegamestartnameinput"><br><input class="button" id="NameInputText" type="text" maxlength="10" placeholder="write name here"></span>
-            <br><span id="Thisdisappearsafterthegamestartbegin"><button align="center" class="button" onclick="begin()">start!</button></span>
+            <div class="human enemie">
+                <b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">1</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u><br>
+                <span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span>
+            </div>
+            <div id="PlayerFriendFront"></div>
+            
+            
+            <div class="human player">
+                <b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u><span id="AdditionalPlayerPoint"></span><br>
+                <span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span>
+            </div>
+            <div id="PlayerFriendBack"></div>
+            
+
+            <div class="bts">
+                <div class="row">
+                    <button class="button" id="select1" onclick="select1()">attack</button>  
+                    <button class="button" id="select2" onclick="select2()">magic</button>
+                    <button class="button" id="select3" onclick="select3()">tools</button>
+                    <button class="button" id="back" onclick="back()">pass</button>
+                </div>
+                <div id="Skillbutton"> </div>
+            </div>
+            
+            <span align="center" id="log">pless "reset" to game start</span>
+            <br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span>
+            <br><span id="Status"> </span>
+            <br><br><br><br><span id="BackButtonDesu"></span> 
+        </div>
+        <span id="Thisdisappearsafterthegamestartnameinput"><br><input class="button" id="NameInputText" type="text" maxlength="10" placeholder="write name here"></span>
+        <br><span id="Thisdisappearsafterthegamestartbegin"><button align="center" class="button" onclick="begin()">start!</button></span>
     </div>
     
     <!-- <script src="data.js" defer></script> -->

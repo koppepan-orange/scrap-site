@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>集計できるやつとルーレット</title>
+  <style>
+    @font-face {font-family:comicsans; src:url("Scuro_e_Nero_Soldato/assets/fonts/comicsans.ttf");}
+    html{
+      scrollbar-width: none;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #f0f8ff;
+    }
+    .row{
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+    #zentai{
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+    #text {
+      width: 100%;
+      height: 40px;
+      padding: 5px;
+      border: 2px solid #cfe9ff;
+      background: #def0ff;
+      white-space: nowrap;
+      font-size: 18px;
+      line-height: 26px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    #send{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100px;
+        height: 100%;
+        border-bottom: 2px solid #cfe9ff;
+    }
+    #content {
+      display: flex;
+      flex-direction: row;
+      width: 100%;
+      height: calc(100vh - 40px);
+    }
+    #list {
+      display: flex;
+      flex-direction: row;
+      align-content: flex-start;
+      flex-wrap: wrap;
+      gap: 5px;
+      width: 50%;
+      padding: 5px;
+      border-right: 2px solid #cfe9ff;
+      overflow-y: auto;
+      box-sizing: border-box;
+    }
+    .select{
+      display: flex;
+      flex-direction: row;
+      justify-content: left;
+      align-items: center;
+      gap: 5px;
+      padding: 5px;
+      border: 1px solid #b5dcff;
+      position: relative;
+      background: #fff;
+    }
+    .select .name{
+      display: block;
+      height: 100%;
+      flex-wrap: nowrap;
+    }
+    .select .max, .select .min{
+      display: block;
+      height: 100%;
+      padding: 0px 5px;
+      border-left: 1px solid #b5dcff;
+      border-right: 1px solid #b5dcff;
+      cursor: pointer;
+      background: #f9f9f9;
+    }
+    .select .now {
+      width: 20px;
+      text-align: center;
+    }
+    .color-mark {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+    }
+    .select .img{
+      display: block;
+      width: 50px;
+      height: 50px;
+      position: absolute;
+      z-index: 100;
+      pointer-events: none;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .explode {
+      animation: explode 3s forwards;
+    }
+    @keyframes explode {
+      0% { transform: scale(1); }
+      50% { transform: scale(20); }
+      100% { transform: scale(20); }
+    }
+    .vanish{
+      animation: vanish 3s forwards;
+    }
+    @keyframes vanish {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    #roulette-box {
+      width: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      background: #f8fbff;
+    }
+    #roulette-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 15px solid transparent;
+      border-right: 15px solid transparent;
+      border-top: 30px solid #ff6b6b;
+      z-index: 10;
+    }
+    .roulette {
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 4px solid #cfe9ff;
+      background: #def0ff;
+      transition: transform 4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    #spin-btn {
+      padding: 10px 40px;
+      font-size: 20px;
+      background: #def0ff;
+      border: 2px solid #cfe9ff;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      height: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div id="zentai">
+    <div class="row">
+        <div id="text" contenteditable="true"></div>
+        <div id="send">くらえっ！</div>
+    </div>
+    <div id="content">
+      <div id="list"></div>
+      <div id="roulette-box">
+        <div id="roulette-wrapper">
+          <div class="pointer"></div>
+          <div id="roulette" class="roulette"></div>
+        </div>
+        <div id="spin-btn">まわす</div>
+        <div id="result"> </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let items = [];
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    let senD = document.getElementById('send');
+    let texD = document.getElementById('text');
+    texD.addEventListener('keyup', async function(event){
+        if(event.key == 'Enter') return event.preventDefault();
+    })
+    
+    senD.addEventListener('click', async function(){
+      let textDiv = document.getElementById('text');
+      let text = textDiv.innerText.trim();
+      textDiv.innerText = '';
+      if(text == '') return;
+      
+      let color = `hsl(${Math.floor(Math.random() * 360)}, 80%, 70%)`;
+      let item = { name: text, count: 1, color: color };
+      items.push(item);
+
+      let selectDiv = document.createElement('div');
+      selectDiv.className = 'select';
+
+      let colorMark = document.createElement('div');
+      colorMark.className = 'color-mark';
+      colorMark.style.background = color;
+      selectDiv.appendChild(colorMark);
+
+      let nameDiv = document.createElement('div');
+      nameDiv.className = 'name';
+      nameDiv.textContent = text;
+      selectDiv.appendChild(nameDiv);
+
+      let minDiv = document.createElement('div');
+      minDiv.className = 'min';
+      minDiv.textContent = 'ー';
+      selectDiv.appendChild(minDiv);
+
+      let nowDiv = document.createElement('div');
+      nowDiv.className = 'now';
+      nowDiv.textContent = item.count;
+      selectDiv.appendChild(nowDiv);
+
+      let maxDiv = document.createElement('div');
+      maxDiv.className = 'max';
+      maxDiv.textContent = '＋';
+      selectDiv.appendChild(maxDiv);
+
+      minDiv.addEventListener('click', function(){
+        if(isSpinning) return;
+        item.count -= 1;
+        nowDiv.textContent = item.count;
+        if (item.count <= 0) {
+          let imgDiv = document.createElement('img');
+          imgDiv.className = 'img';
+          imgDiv.src = 'boom.png'; 
+          selectDiv.appendChild(imgDiv);
+          imgDiv.classList.add('explode');
+          selectDiv.classList.add('vanish');
+
+          let idx = items.indexOf(item);
+          if(idx > -1) items.splice(idx, 1);
+          updateRoulette();
+
+          setTimeout(() => {
+            selectDiv.remove();
+          }, 3000);
+        } else {
+          updateRoulette();
+        }
+      });
+
+      maxDiv.addEventListener('click', function(){
+        if(isSpinning) return;
+        item.count += 1;
+        nowDiv.textContent = item.count;
+        updateRoulette();
+      });
+
+      document.getElementById('list').appendChild(selectDiv);
+      updateRoulette();
+    });
+
+    function updateRoulette() {
+      let rouletteDiv = document.getElementById('roulette');
+      let total = items.reduce((sum, it) => sum + it.count, 0);
+      if (total === 0) {
+        rouletteDiv.style.background = '#def0ff';
+        return;
+      }
+
+      let gradientParts = [];
+      let currentDeg = 0;
+      items.forEach(it => {
+        let deg = (it.count / total) * 360;
+        gradientParts.push(`${it.color} ${currentDeg}deg ${currentDeg + deg}deg`);
+        currentDeg += deg;
+      });
+
+      rouletteDiv.style.background = `conic-gradient(${gradientParts.join(', ')})`;
+    }
+
+    document.getElementById('spin-btn').addEventListener('click', function(){
+      let total = items.reduce((sum, it) => sum + it.count, 0);
+      if(total === 0 || isSpinning) return;
+
+      isSpinning = true;
+      document.getElementById('result').textContent = ' ';
+
+      let randomDeg = Math.floor(Math.random() * 360);
+      currentRotation += 1800 + randomDeg;
+
+      let rouletteDiv = document.getElementById('roulette');
+      rouletteDiv.style.transform = `rotate(${currentRotation}deg)`;
+
+      setTimeout(() => {
+        isSpinning = false;
+        let pointerDeg = (360 - (currentRotation % 360)) % 360;
+        let current = 0;
+        for(let i = 0; i < items.length; i++){
+          let it = items[i];
+          let deg = (it.count / total) * 360;
+          if(pointerDeg >= current && pointerDeg < current + deg){
+            document.getElementById('result').textContent = `結果: ${it.name}`;
+            break;
+          }
+          current += deg;
+        }
+      }, 4000);
+    });
+  </script>
+</body>
+</html>

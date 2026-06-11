@@ -1653,6 +1653,7 @@ mainF.move = (to) => {
     if(mainC.spa == to) return console.log('どういうわけか もう そこにいる');
 	if(!to) return console.error(`せんぱ〜い？${to}ってどこですか〜？笑`);
 	
+    console.log(`スペース移動: ${mainC.spa} → ${to}`);
 	for(let a of Spaces) document.getElementById(a.name).classList.remove('show');
     document.getElementById(to).classList.add('show');
     mainC.spa = to;
@@ -1760,8 +1761,7 @@ let skillcooldown = 0;
 function tekiou(){
     document.getElementById('EnemyHealth').textContent = enemyhealth;
     document.getElementById('PlayerHealth').textContent = playerhealth;
-}
-function bufftekiou(){
+
     if(enemydebuff == 0){document.getElementById('EnemyDebuff').textContent = '';}
     if(enemydebuff == 1){document.getElementById('EnemyDebuff').textContent = 'poison';}
     if(enemydebuff == 2){document.getElementById('EnemyDebuff').textContent = 'deadly poison';}
@@ -1952,13 +1952,22 @@ function start(){
     document.getElementById('PlayerLevel').textContent = playerlevel;
     document.getElementById('PlayerMaxHealth').textContent = playermaxhealth;
     document.getElementById('EnemyMaxHealth').textContent = enemymaxhealth;
-    tekiou(); bufftekiou();
+    tekiou();
     TurnCountPhase()
     playerturn();
 }
 let lowedplayerattack = 0; let lowedplayerdefense = 0; let lowedplayermaxmp = 0; let lowedplayermaxhealth = 0; let lowedplayerlevel = 0;
 function GoToBattle(){
-    document.getElementById('BattleScene').innerHTML = '<span>turn:</span><span id="TurnCount">0</span><br><b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">1</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u><br><span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span><span id="PlayerFriendFront"></span><br><br><b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u><span id="AdditionalPlayerPoint"></span><br><span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span><span id="PlayerFriendBack"></span><br><br><br><button class="button" id="select1" onclick="select1()">attack</button>  <button class="button" id="select2" onclick="select2()">magic</button>  <button class="button" id="select3" onclick="select3()">tools</button>  <button class="button" id="back" onclick="back()">pass</button>  <br><span id="Skillbutton"> </span><br><br><span align="center" id="log">pless "reset" to game start</span><br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span><br><span id="Status"> </span><br><br><br><br><span id="BackButtonDesu"><button align="center" class="button" onclick="GoToCity()">Back</button></span>';    dom.turn.textContent = turncount;document.getElementById('EnemyLevel').textContent = enemylevel;document.getElementById('PlayerLevel').textContent = playerlevel;document.getElementById('PlayerMaxHealth').textContent = playermaxhealth;document.getElementById('EnemyMaxHealth').textContent = enemymaxhealth;tekiou(); bufftekiou(); disappear(); restart();}
+    document.getElementById('omo').innerHTML = '<span>turn:</span><span id="TurnCount">0</span><br><b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">1</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u><br><span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span><span id="PlayerFriendFront"></span><br><br><b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u><span id="AdditionalPlayerPoint"></span><br><span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span><span id="PlayerFriendBack"></span><br><br><br><button class="button" id="select1" onclick="select1()">attack</button>  <button class="button" id="select2" onclick="select2()">magic</button>  <button class="button" id="select3" onclick="select3()">tools</button>  <button class="button" id="back" onclick="back()">pass</button>  <br><span id="Skillbutton"> </span><br><br><span align="center" id="log">pless "reset" to game start</span><br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span><br><span id="Status"> </span><br><br><br><br><span id="BackButtonDesu"><button align="center" class="button" onclick="GoToCity()">Back</button></span>';
+    dom.turn.textContent = turncount;
+    document.getElementById('EnemyLevel').textContent = enemylevel;
+    document.getElementById('PlayerLevel').textContent = playerlevel;
+    document.getElementById('PlayerMaxHealth').textContent = playermaxhealth;
+    document.getElementById('EnemyMaxHealth').textContent = enemymaxhealth;
+    tekiou();
+    TurnCountPhase()
+    playerturn();
+}
 async function TurnCountPhase(){
 turncount += 1;
 dom.turn.textContent = turncount;
@@ -1969,23 +1978,23 @@ if(playernametrick == 1){
         if((turncount % 3) == 0 && playername == 'greenslime'){
             if(enemyskilldebuff !== 1){
             enemyskilldebuff = 1;
-            bufftekiou();
+            tekiou();
             document.getElementById('log').textContent = enemyname + 'にスライムが覆い被さった!';
             NStimeout = 1;
             };
         }else if((turncount % 4) == 0 && playername == 'mechanic'){
             playerskillbuff = 2;
-            bufftekiou();
+            tekiou();
             document.getElementById('log').textContent = 'wrenchを投げる準備ができた!';
             NStimeout = 1;
         }else if((turncount % 3) == 0 && playername == 'clown'){
             playerskillbuff = 3;
-            bufftekiou();
+            tekiou();
             document.getElementById('log').textContent = 'さあ、ギャンブルの時間だ!!';
             NStimeout = 1;
         }else if((turncount % 4) == 0 && playername == 'zombie'){
             enemydebuff = 1;
-            bufftekiou();
+            tekiou();
             document.getElementById('log').textContent = enemyname + 'は毒になった!';
             NStimeout = 1;
         }else if((turncount % 3) == 0 && playername == 'touzoku'){
@@ -2045,10 +2054,21 @@ async function playerturn(){
     w = 0;
     if(playerskilldebuff == 1){
         x = Math.floor(Math.random() * 3);
-        if(x !== 0){playerskilldebuff = 0; bufftekiou(); document.getElementById('log').textContent = 'なんとかスライムを取り払った!!'}
-        else {document.getElementById('log').textContent = 'スライムが邪魔して動けない!!'; w = 1;}; 
+        if(x !== 0){
+            playerskilldebuff = 0;
+            tekiou();
+            document.getElementById('log').textContent = 'なんとかスライムを取り払った!!'
+        }
+        else{
+            document.getElementById('log').textContent = 'スライムが邪魔して動けない!!';
+            w = 1;
+        };
     }
-    if(zomubrain == 1){document.getElementById('log').textContent = '脳が溶けた!!'; playerskilldebuff = 2; bufftekiou(); zomubrain = 0;};
+    if(zomubrain == 1){
+        document.getElementById('log').textContent = '脳が溶けた!!';
+        playerskilldebuff = 2;
+        tekiou();
+        zomubrain = 0;};
     if(playername == 'tontonsan'){
         x = Math.floor(playermaxhealth * 0.1);
         if(playerhealth <= x && tontonevo == 1){
@@ -2274,8 +2294,19 @@ async function slash(){
     x -= (playerattack * playerpower + weaponpower * zomupower + shaopower);
     x = Math.ceil(x);
     damage = y - x;
-    if(playerskillbuff == 2){damage = damage * 2; playerskillbuff = 0; bufftekiou();};
-    if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; damage = damage * z; playerskillbuff = 0; bufftekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
+    if(playerskillbuff == 2){
+        damage = damage * 2;
+        playerskillbuff = 0;
+        tekiou();
+    };
+    if(playerskillbuff == 3){
+        z = clowngambling[Math.floor(Math.random() * clowngambling.length)];
+        damage = damage * z;
+        playerskillbuff = 0;
+        tekiou();
+        document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!';
+        await delay(1000);
+    };
     if(playername == 'touzoku' && touzokuansatusya == 1){z = Math.floor(Math.random() * 2); if(z == 0){damage = enemyhealth;if(bossbattlenow == 1){damage = (Math.floor(enemymaxhealth * 0.1))} document.getElementById('log').textContent = 'ansatusyaの這い寄る一撃!!'; await delay(1000); document.getElementById('PlayerName').textContent = 'touzoku'; touzokuansatusya = 0;}else{damage = 0; document.getElementById('log').textContent = 'ansatusyaは攻撃する前に気づかれた!!'; await delay(1000); document.getElementById('PlayerName').textContent = 'touzoku'; touzokuansatusya = 0;}}
     if(damage < 0){damage = 0};
     if(damage > y){damage = y};
@@ -2330,8 +2361,8 @@ async function doubleslash(){
             x -= (playerattack * playerpower + weaponpower * zomupower + shaopower);
             x = Math.ceil(x);
             damage = y - x;
-            if(playerskillbuff == 2){damage = damage * 2; playerskillbuff = 0; bufftekiou();}
-            if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; damage = damage * z; playerskillbuff = 0; bufftekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
+            if(playerskillbuff == 2){damage = damage * 2; playerskillbuff = 0; tekiou();}
+            if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; damage = damage * z; playerskillbuff = 0; tekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
             if(damage < 0){damage = 0};
             if(damage > y){damage = y};
             enemyhealth -= damage;
@@ -2357,8 +2388,8 @@ async function doubleslash(){
             x -= (playerattack * playerpower + weaponpower * zomupower + shaopower);
             x = Math.ceil(x);
             damage = y - x;
-            if(playerskillbuff == 2){damage = damage * 2; playerskillbuff = 0; bufftekiou();}
-            if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; damage = damage * z; playerskillbuff = 0; bufftekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
+            if(playerskillbuff == 2){damage = damage * 2; playerskillbuff = 0; tekiou();}
+            if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; damage = damage * z; playerskillbuff = 0; tekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
             if(damage < 0){damage = 0};
             if(damage > y){damage = y};
             enemyhealth -= damage;
@@ -2410,8 +2441,8 @@ async function slashoflight(){
     if(playername == 'clown'){x = Math.floor(Math.random() * 5);} // 1/5です。
     if(x == 0){
         x = Math.ceil(playerattack * playerpower * 3 + weaponpower * zomupower);
-        if(playerskillbuff == 2){x *= 2; playerskillbuff = 0; bufftekiou();}
-        if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; x *= z; playerskillbuff = 0; bufftekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
+        if(playerskillbuff == 2){x *= 2; playerskillbuff = 0; tekiou();}
+        if(playerskillbuff == 3){z = clowngambling[Math.floor(Math.random() * clowngambling.length)]; x *= z; playerskillbuff = 0; tekiou(); document.getElementById('log').textContent = 'ダメージは' + z + '倍になった!!'; await delay(1000);};
         if(playername == 'clown') x *= 3; //こちら最高倍率36倍の台です(4x9)
         if(x < 0){x = 0}; if(x > enemyhealth){x = enemyhealth};
         enemyhealth -= x; tekiou();
@@ -2822,12 +2853,12 @@ function clownbomb(){
     }else if(x == 3){
         document.getElementById('log').textContent = '爆弾は毒ガス入りだった!!';
         enemydebuff = 1; // 毒ガス入りだった場合
-        bufftekiou();
+        tekiou();
         window.setTimeout(clownbombexplosion, 1000)
     }else if(x == 2){
         document.getElementById('log').textContent = '爆弾はスライム入りだった!!';
         enemyskilldebuff = 1; // スライム入りだった場合
-        bufftekiou();
+        tekiou();
         window.setTimeout(clownbombexplosion, 1000)
     }else if(x == 1){
         document.getElementById('log').textContent = '爆発した..だがただの特殊な薬品だった!!';
@@ -2965,7 +2996,7 @@ async function Enemyattack(){
             document.getElementById('log').textContent = enemyname + 'に' + damage + 'のダメージ!';
         }}
     };
-    if(enemyskilldebuff == 1){await delay(1000);enemyskilldebuff = 0;bufftekiou();document.getElementById('log').textContent = enemyname + 'からスライムが剥がれた!';};
+    if(enemyskilldebuff == 1){await delay(1000);enemyskilldebuff = 0;tekiou();document.getElementById('log').textContent = enemyname + 'からスライムが剥がれた!';};
     if(turn == 2){
     if(enemydebuff == 1){
         x = enemyhealth;
@@ -3000,7 +3031,7 @@ async function killedenemy(){
     playerexp += enemylevel;
     y = playerexp - x;
     document.getElementById('log').textContent = enemyname + 'を倒した!';
-    if(playername == 'bomer'){z = 0; z += 2; if(playerskillbuff == 5){z += 1; playerskillbuff = 0; bufftekiou();}; if(bomerbombused == 1){z += 3; bomerbombused = 0;}; await delay(1000); bomertension += z; document.getElementById('log').textContent =  'bomerはテンションが' + z + '上がった!'; bomertekiou();};
+    if(playername == 'bomer'){z = 0; z += 2; if(playerskillbuff == 5){z += 1; playerskillbuff = 0; tekiou();}; if(bomerbombused == 1){z += 3; bomerbombused = 0;}; await delay(1000); bomertension += z; document.getElementById('log').textContent =  'bomerはテンションが' + z + '上がった!'; bomertekiou();};
     if(playername == 'zomusan'){zomupower = 1;};
     if(playername == 'tontonsan'){tontonevo = 1;};
     await delay(1000);
@@ -3099,7 +3130,7 @@ function StatusDisappear(){
 }
 // こっからcityとかbossとかのやつです
 function GoToCity(){
-    document.getElementById('BattleScene').innerHTML = '<button class="button" id="GoToBattle" onclick="GoToBattle()">Go To Battle</button><br><br><br><button class="button" id="GoToBossBattle" onclick="GoToBossBattle()">Go To Boss Battle</button><br><br><br><button class="button" id="GoToCityBattle" onclick="GoToShop()">Go To Shop</button><br><br><br>';
+    document.getElementById('omo').innerHTML = '<button class="button" id="GoToBattle" onclick="GoToBattle()">Go To Battle</button><br><br><br><button class="button" id="GoToBossBattle" onclick="GoToBossBattle()">Go To Boss Battle</button><br><br><br><button class="button" id="GoToCityBattle" onclick="GoToShop()">Go To Shop</button><br><br><br>';
 } // document.getElementById("LevelPlate").src = 'level_plate_' + x + '.png';
 let nowshop = 0;
 let haveweapons = [];
@@ -3114,21 +3145,21 @@ let weaponpower = 0;
 let armorshell = 0;
 function GoToShop(){
     nowshop = 0;
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><button class="button" id="ShopBuyWeapons" onclick="ShopBuyWeapons()">Buy Weapons</button><br><br><button class="button" id="ShopBuyArmors" onclick="ShopBuyArmors()">Buy Armors</button><br><br><button class="button" id="ShopBuyTools" onclick="ShopBuyTools()">Buy Tools</button><br><br><button class="button" id="ShopEquip" onclick="GoToEquip()">Equip Center</button></span><br><br><br><br><button class="button" id="BackToCity" onclick="GoToCity()">Back To City</button>';
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><button class="button" id="ShopBuyWeapons" onclick="ShopBuyWeapons()">Buy Weapons</button><br><br><button class="button" id="ShopBuyArmors" onclick="ShopBuyArmors()">Buy Armors</button><br><br><button class="button" id="ShopBuyTools" onclick="ShopBuyTools()">Buy Tools</button><br><br><button class="button" id="ShopEquip" onclick="GoToEquip()">Equip Center</button></span><br><br><br><br><button class="button" id="BackToCity" onclick="GoToCity()">Back To City</button>';
 }
 function ShopBuyWeapons(){
     nowshop = 1;
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>ここにはこんなものがあるけど、どうする？<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_weapons.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>ここにはこんなものがあるけど、どうする？<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_weapons.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
     SHOPmoneytekiou();
 }
 function ShopBuyArmors(){
     nowshop = 2;
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>うちの店ではこんなものが売ってるよ<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_armors.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>うちの店ではこんなものが売ってるよ<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_armors.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
     SHOPmoneytekiou();
 }
 function ShopBuyTools(){
     nowshop = 3;
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>いらっしゃいませぇぇぇぇぇ？？ご注文をどうぞ！！！！<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_tools.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><br><br><br><br><button class="button" id="BackToShop" onclick="GoToShop()">Back To Shop</button></span>';
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><span id="SHOPMONEY"></span><p>いらっしゃいませぇぇぇぇぇ？？ご注文をどうぞ！！！！<br><iframe height="230" width="200" src="https://koppepan-orange-game.github.io/game_daisuki/clicker_of_mugen_shop_tools.txt"></iframe><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopBuyButton()">Buy</button><br><span id="SHOPlog"></span></p><br><br><br><br><button class="button" id="BackToShop" onclick="GoToShop()">Back To Shop</button></span>';
     SHOPmoneytekiou();
 }
 function ShopBuyButton(){
@@ -3327,11 +3358,11 @@ let appearweapons = '';
 let appeararmors = '';
 let appeartools = '';
 function GoToEquip(){
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><p><button class="button"onclick="GoToEquipWeapon()">Equip Weapon</button><br><br><button class="button"onclick="GoToEquipArmor()">Equip Armor</button><br><br><button class="button"onclick="GoToEquipTool()">Equip Tool</button></p><br><br><br><br><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>'
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><p><button class="button"onclick="GoToEquipWeapon()">Equip Weapon</button><br><br><button class="button"onclick="GoToEquipArmor()">Equip Armor</button><br><br><button class="button"onclick="GoToEquipTool()">Equip Tool</button></p><br><br><br><br><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>'
 }
 function GoToEquipWeapon(){
     nowshop = 4;
-    document.getElementById('BattleScene').innerHTML = '<span id="InShopScene"><p><span id="AppearShops"></span><br><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopEquipButton()">Equip</button></p><br><br><span id="SHOPlog"></span><br><br><br><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
+    document.getElementById('omo').innerHTML = '<span id="InShopScene"><p><span id="AppearShops"></span><br><br><input type="text" id="ShopInputText" minlength="2" maxlength="2" size="16" placeholder="write number here"><button class="button" onclick="ShopEquipButton()">Equip</button></p><br><br><span id="SHOPlog"></span><br><br><br><button class="button" id="BakcToShop" onclick="GoToShop()">Back To Shop</button></span>';
     appearweapons = '';
     x = 0;
     if(haveweapons.includes("木の棒")){x += 1;}
@@ -3378,7 +3409,7 @@ function GoToEquipWeapon(){
   }
   function GoToEquipTool(){
     nowshop = 6;
-    document.getElementById('BattleScene').innerHTML = '<span>えーっと...開発期間が短かったです！テスト期間と重なってたし<br>なのでもうちょい待ってね〜<br>magicの動きを応用すればすぐにできるから<br>あ、メモwebのネタ帳に"もはやただのあれ"を追加したから、暇だったらみてね<br>配信者さんはguraさんしかみないのです</span><br><br><button onclick="GoToCity()">Back</button><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><a href="https://scratch.mit.edu/projects/1000452587/">wait....what?!</a>'; //この文たちは消しといてね
+    document.getElementById('omo').innerHTML = '<span>えーっと...開発期間が短かったです！テスト期間と重なってたし<br>なのでもうちょい待ってね〜<br>magicの動きを応用すればすぐにできるから<br>あ、メモwebのネタ帳に"もはやただのあれ"を追加したから、暇だったらみてね<br>配信者さんはguraさんしかみないのです</span><br><br><button onclick="GoToCity()">Back</button><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><a href="https://scratch.mit.edu/projects/1000452587/">wait....what?!</a>'; //この文たちは消しといてね
   }
 function ShopEquipButton(){
   shopinputtext = document.getElementById('ShopInputText').value;
@@ -3536,7 +3567,7 @@ function ShopEquipButton(){
     document.getElementById('ShopInputText').value = '';
 }
 function GoToBossBattle(){
-    document.getElementById('BattleScene').innerHTML = '<button class="button" onclick="TenBossBattleStart()">10LV Boss</button><br><br><br><br><button class="button" id="GoToCity" onclick="BackToCityFromBossBattle()">Go To City</button>';
+    document.getElementById('omo').innerHTML = '<button class="button" onclick="TenBossBattleStart()">10LV Boss</button><br><br><br><br><button class="button" id="GoToCity" onclick="BackToCityFromBossBattle()">Go To City</button>';
 }
 let bossbattlenow = 0; // killenemyとかの動きをなんとかするようですね。scratchでもやってたわこれ
 let bossbattlenumber = 0;
@@ -3545,15 +3576,39 @@ let bossenemyprefixe1 = 0;
 let bossenemyprefixes2 = ['強い','頭のおかしい'];
 let bossenemyprefixe2 = 0;
 function TenBossBattleStart(){
-    document.getElementById('BattleScene').innerHTML = '<span>turn:</span><span id="TurnCount">0</span><br><b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">20</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u>   <u id="EnemySkillBuff"></u><br><span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span><span id="EnemyFriendFront"></span><span id="PlayerFriendFront"></span><br><br><b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u>   <u id="PlayerSkillDebuff"></u><span id="AdditionalPlayerPoint"></span><br><span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span><span id="PlayerFriendBack"></span><br><br><br><button class="button" id="select1" onclick="select1()">attack</button>  <button class="button" id="select2" onclick="select2()">magic</button>  <button class="button" id="select3" onclick="select3()">tools</button>  <button class="button" id="back" onclick="back()">pass</button>  <br><span id="Skillbutton"> </span><br><br><span align="center" id="log">lets kill boss!</span><br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span><br><span id="Status"> </span><br><br><br><br><span id="BackButtonDesu"><button align="center" class="button" onclick="GoToCity()">Back</button></span>';
-    turncount = 0;dom.turn.textContent = turncount;playermp = playermaxmp;playerbuff = 0;playerpower = 1; playershell = 1;x = 0;if(playerskillbuff == 1){x = 1}playerskillbuff = 0;if(x == 1){playerskillbuff = 1};enemydebuff = 0;enemyskilldebuff = 0;bufftekiou();mechanicturretbreak();
-    bossbattlenow = 1;bossbattlenumber = 1;enemymaxhealth = 80 + (playerattack * 5);enemyhealth = enemymaxhealth;enemylevel = 10;enemyhealth = enemymaxhealth;
-    bossenemyprefixe1 = 0;bossenemyprefixe2 = 0;enemyname = 'blueslime';y = Math.floor(Math.random() * 3);if(y !== 0){bossenemyprefixe1 = bossenemyprefixes1[Math.floor(Math.random() * bossenemyprefixes1.length)]}y = Math.floor(Math.random() * 3);if(y !== 0){bossenemyprefixe2 = bossenemyprefixes2[Math.floor(Math.random() * bossenemyprefixes2.length)]}if(bossenemyprefixe1 !== 0 && bossenemyprefixe2 !== 0){enemyname = bossenemyprefixe1 + bossenemyprefixe2 + ' ' + enemyname}else if(bossenemyprefixe1 !== 0 && bossenemyprefixe2 == 0){enemyname = bossenemyprefixe1 + ' ' + enemyname}else if(bossenemyprefixe1 == 0 && bossenemyprefixe2 !== 0){enemyname = enemyname}else {enemyname = enemyname};document.getElementById("EnemyName").textContent = enemyname;document.getElementById('log').textContent = enemyname + 'を見つけた!';document.getElementById('EnemyLevel').textContent = enemylevel;document.getElementById('EnemyMaxHealth').textContent = enemymaxhealth;tekiou();// ほぼ普通の戦闘と同じなので短縮です
+    // document.getElementById('omo').innerHTML = '<span>turn:</span><span id="TurnCount">0</span><br><b id="EnemyName">enemy</b>   <i>Lv.</i><i id="EnemyLevel">20</i>   <u id="EnemyDebuff"></u>   <u id="EnemySkillDebuff"></u>   <u id="EnemySkillBuff"></u><br><span id="EnemyHealth">0</span>/<span id="EnemyMaxHealth">0</span><span id="EnemyFriendFront"></span><span id="PlayerFriendFront"></span><br><br><b id="PlayerName">player</b>   <i>Lv.</i><i id="PlayerLevel">1</i>   <u id="PlayerBuff"></u>   <u id="PlayerSkillBuff"></u>   <u id="PlayerSkillDebuff"></u><span id="AdditionalPlayerPoint"></span><br><span id="PlayerHealth">0</span>/<span id="PlayerMaxHealth">0</span><span id="PlayerFriendBack"></span><br><br><br><button class="button" id="select1" onclick="select1()">attack</button>  <button class="button" id="select2" onclick="select2()">magic</button>  <button class="button" id="select3" onclick="select3()">tools</button>  <button class="button" id="back" onclick="back()">pass</button>  <br><span id="Skillbutton"> </span><br><br><span align="center" id="log">lets kill boss!</span><br><span id="StatusAppearDisappear"><button class="button" id="StatusButton" onclick="StatusAppear()">status</button></span><br><span id="Status"> </span><br><br><br><br><span id="BackButtonDesu"><button align="center" class="button" onclick="GoToCity()">Back</button></span>';
+    GoToBattle();
+    turncount = 0;
+    dom.turn.textContent = turncount;
+    playermp = playermaxmp;
+    playerbuff = 0;
+    playerpower = 1;
+    playershell = 1;
+    x = 0;if(playerskillbuff == 1) x = 1;
+    playerskillbuff = 0;
+    if(x == 1) playerskillbuff = 1;
+    enemydebuff = 0;
+    enemyskilldebuff = 0;
+    tekiou();
+    mechanicturretbreak();
+    bossbattlenow = 1;
+    bossbattlenumber = 1;
+    enemymaxhealth = 80 + (playerattack * 5);
+    enemyhealth = enemymaxhealth;
+    enemylevel = 10;
+    enemyhealth = enemymaxhealth;
+    bossenemyprefixe1 = 0;
+    bossenemyprefixe2 = 0;enemyname = 'blueslime';
+    y = Math.floor(Math.random() * 3);
+    if(y !== 0) bossenemyprefixe1 = arraySelect(bossenemyprefixes1);
+    y = Math.floor(Math.random() * 3);
+    if(y !== 0) bossenemyprefixe2 = arraySelect(bossenemyprefixes2);
     document.getElementById('PlayerMaxHealth').textContent = playermaxhealth;
-    window.setTimeout(playerturn, 750);TurnCountPhase();
+    window.setTimeout(playerturn, 750);
+    TurnCountPhase();
 }
 async function bossenemyturn(){
-    if(playerskilldebuff == 1){playerskilldebuff = 0;bufftekiou();document.getElementById('log').textContent = playername + 'からスライムが剥がれた!';await delay(1000);};
+    if(playerskilldebuff == 1){playerskilldebuff = 0;tekiou();document.getElementById('log').textContent = playername + 'からスライムが剥がれた!';await delay(1000);};
     if(playername == 'mechanic' && mechanicturret > 0){document.getElementById('log').textContent = 'turretの攻撃!';await delay(1000);x = enemyhealth;y = enemyhealth;x -= (mechanicturretattack * mechanicturret);x = Math.floor(x);damage = y - x;if(damage < 0){damage = 0};if(damage > y){damage = y};enemyhealth -= damage;document.getElementById('log').textContent = enemyname + 'に' + damage + 'のダメージ!!';if(enemyhealth < 0){enemyhealth = 0};tekiou();await delay(1000);}if(enemyhealth == 0){killedenemy();}
     else {turn = 2;document.getElementById('log').textContent = '敵のターンです!';window.setTimeout(Bossenemyattack, 1000);}
 }
@@ -3574,7 +3629,7 @@ async function Bossenemyattack(){
             else if(zombiefriendname !== 0){y = zombiefriendhealth; zombiefriendhealth -= damage; if(zombiefriendhealth < 0){zombiefriendhealth = 0} zombiefriendtekiou(); zombiefriendhealth = Math.floor(zombiefriendhealth); z = y - zombiefriendhealth; if(zombiefriendhealth == 0){zombiefriendbreak(); await delay(1000)};}
             else {playerhealth -= damage; playerhealth = Math.floor(playerhealth); z = y - playerhealth;};
             if(w == 0){document.getElementById('log').textContent = enemyname + 'はスタンした!!';}
-            else if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; bufftekiou(); await delay(1000);}
+            else if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; tekiou(); await delay(1000);}
             else if(z == 0){document.getElementById('log').textContent = 'miss! ' + playername + 'にダメージを与えられない!';}
             else {
                 if(playername == 'bomer' && bomertension > 0){bomertension -= 1; bomertekiou()}; // bomerのtensionを下げる動き
@@ -3584,15 +3639,15 @@ async function Bossenemyattack(){
             if(playerhealth < 0){playerhealth = 0};
             if(playerhealth == 0){defeat();turn = 0;}
             tekiou();
-            if(enemyskilldebuff == 1){await delay(1000);enemyskilldebuff = 0;bufftekiou();document.getElementById('log').textContent = enemyname + 'からスライムが剥がれた!';};
+            if(enemyskilldebuff == 1){await delay(1000);enemyskilldebuff = 0;tekiou();document.getElementById('log').textContent = enemyname + 'からスライムが剥がれた!';};
     } //bossの通常攻撃ですこちら
         else if(z == 1){if(bossbattlenumber==1){
-            if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; bufftekiou(); await delay(1000);}
+            if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; tekiou(); await delay(1000);}
             if(w == 0){document.getElementById('log').textContent = enemyname + 'はスタンした!!';}
             else
             document.getElementById('log').textContent = 'blueslimeは' + playername + 'にスライムをくっつけてきた！';
-            playerskilldebuff = 1; bufftekiou();
-            if(playername == 'greenslime'){await delay(1000);playerskilldebuff = 0; bufftekiou();document.getElementById('log').textContent = 'greenslimeはスライムを吸収した!';};
+            playerskilldebuff = 1; tekiou();
+            if(playername == 'greenslime'){await delay(1000);playerskilldebuff = 0; tekiou();document.getElementById('log').textContent = 'greenslimeはスライムを吸収した!';};
             await delay(1000);
             document.getElementById('log').textContent = playername + 'に' + 2 + 'のダメージ！';
             x = (Math.floor(playerhealth*0.05));if(x==0){x=1};
@@ -3604,7 +3659,7 @@ async function Bossenemyattack(){
         } // こちらはスタン+固定2
     }else if(z == 2){
         if(bossbattlenumber == 1){
-            if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; bufftekiou(); await delay(1000);}
+            if(w == 10){document.getElementById('log').textContent = 'blueslimeはくっついたスライムを吸収した!'; enemyskilldebuff = 0; tekiou(); await delay(1000);}
             if(w == 0){document.getElementById('log').textContent = enemyname + 'はスタンした!!';}
             else
             playerdefense -= 1; lowedplayerdefense += 1;
@@ -3647,7 +3702,7 @@ async function killedbossenemy(){
     playerexp += (enemylevel * 0.5 + 5 * 2);
     y = playerexp - x;
     document.getElementById('log').textContent = enemyname + 'を倒した!やったね!!';
-    if(playername == 'bomer'){z = 0; z += 2; if(playerskillbuff == 5){z += 1; playerskillbuff = 0; bufftekiou();}; if(bomerbombused == 1){z += 3; bomerbombused = 0;}; await delay(1000); bomertension += z; document.getElementById('log').textContent =  'bomerはテンションが' + z + '上がった!'; bomertekiou();};
+    if(playername == 'bomer'){z = 0; z += 2; if(playerskillbuff == 5){z += 1; playerskillbuff = 0; tekiou();}; if(bomerbombused == 1){z += 3; bomerbombused = 0;}; await delay(1000); bomertension += z; document.getElementById('log').textContent =  'bomerはテンションが' + z + '上がった!'; bomertekiou();};
     if(playername == 'zomusan'){zomupower = 1;};
     await delay(1000);
     z = Math.floor(Math.random() * 11) + 5;
@@ -3665,7 +3720,7 @@ function BackToCityFromBossBattle(){
     playermaxmp += lowedplayermaxmp;
     playermaxhealth += lowedplayermaxhealth;
     playerlevel += lowedplayerlevel;
-    document.getElementById('BattleScene').innerHTML = '<button class="button" id="GoToBattle" onclick="GoToBattle()">Go To Battle</button><br><br><br><button class="button" id="GoToBossBattle" onclick="GoToBossBattle()">Go To Boss Battle</button><br><br><br><button class="button" id="GoToCityBattle" onclick="GoToShop()">Go To Shop</button><br><br><br>';
+    document.getElementById('omo').innerHTML = '<button class="button" id="GoToBattle" onclick="GoToBattle()">Go To Battle</button><br><br><br><button class="button" id="GoToBossBattle" onclick="GoToBossBattle()">Go To Boss Battle</button><br><br><br><button class="button" id="GoToCityBattle" onclick="GoToShop()">Go To Shop</button><br><br><br>';
 } // 色々下げられてたら戻すよっていう動き。戻さない敵とかもいていいかも..っておもったけどそれはさすがにあれか？
 
 
@@ -3676,7 +3731,7 @@ function start(){
 
     mainF.load();
 
-    mainF.move('home');
+    mainF.move('omo');
 }
 //#endregion
 
