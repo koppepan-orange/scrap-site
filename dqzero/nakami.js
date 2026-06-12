@@ -1715,12 +1715,26 @@ document.addEventListener('keyup',e => {
 let homD = document.getElementById('home');
 let homC = {
     startD: homD.querySelector('.unit1 .venture'),
-    quitD: homD.querySelector('.unit2 .quit')
+    quitD: homD.querySelector('.unit2 .quit'),
+
+    started: 0,
 };
 let homF = {};
 
-homF.start = () => {
-    logtext('バカめ！！作者はもう逃げて遊んでるぜ！！！！)
+homF.start = async() => {
+    if(homC.started) return 1;
+    homC.started = 1;
+    // return logtext('バカめ！！作者はもう逃げて遊んでるぜ！！！！');
+    // let charas = Charas.map(a => [a.jpnm, a.img]);
+    let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
+    let charaSen = new TakushiSen(charas, 'tate');
+    let charaI = await charaSen.select(homD);
+     charaI = +charaI;
+    let charaN = charas[charaI];
+    let chara = Charas[charaI]
+    console.log(`選ばれたのは、[${chara.name}]でした`);
+
+    mainF.move('batt')
 }
 homC.startD.addEventListener('click', homF.start);
 
