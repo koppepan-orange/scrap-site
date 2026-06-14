@@ -695,8 +695,10 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 #home .uni{
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 15px;
     width: 80%;
     height: fit-content;
     padding: 20px;

@@ -1971,7 +1971,7 @@ let rimiC = {
 let rimiF = {};
 
 rimiF.tekiou = () => {
-    rimiD.textContent = rimi;
+    rimiD.textContent = `Ɍ${rimi}`;
 }
 rimiF.inc = (num = 0) => {
     if(typeof num == 'string') return 0;
@@ -2009,6 +2009,7 @@ let homD = document.getElementById('home');
 let homC = {
     startD: homD.querySelector('.unit1 .venture'),
     quitD: homD.querySelector('.unit2 .quit'),
+    atukD: homD.querySelector('.unit2 .atukie'),
     gamD: homD.querySelector('.unit3 .gamble'),
 
     started: 0,
@@ -2054,6 +2055,11 @@ homF.quit = async() => {
     if(ans == 1) logtext("えへへ..よかった")
 }
 homC.quitD.addEventListener('click', homF.quit);
+
+homF.atukie = () => {
+    window.open("assets/txts/atukie.html", "_blank");
+}
+homC.atukD.addEventListener("click", homF.atukie)
 
 homC.gamD.addEventListener('click', () => mainF.move('gamble'))
 // #endregion home
