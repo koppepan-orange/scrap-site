@@ -2,6 +2,11 @@ let Style = {
     iPhone:{ //16
         "width": "393px",
     },
+    "batSt":{
+        solid:"#2b2b2b",
+        back:"#b2b2b2",
+        aima:"#6f6f6f"
+    },
     tekiou: function() {
         for (let section in this) {
             if (section == 'apply') continue;
@@ -14,20 +19,25 @@ let Style = {
 }
 
 const Fonts = [
-    // {src:'comicsans', type:'ttf'},
+    {src:'comicsans', type:'ttf'},
+    {src:'hangyaku', type:'ttf'},
+    {src:'kurobara', type:'ttf'},
+    
 ];
 
 const Images = {
-    systems:['error'],
+    systems:["error",'select','circle','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon'],
 }
 
 const Sounds = {
-    // se:['error'],
+    se:['error', 'place'],
     // bgm:[],
 }
 
 const Spaces = [
     { name:'home', rank:2, back:'#f0f8ff', sho:1 },
+    { name:'batt', rank:2, back:'#faf0ff', sho:1 },
+    { name:'gamble', rank:2, back:'#b4ddb8', sho:1 },
 ];
 
 
@@ -52,6 +62,7 @@ let Status = [
         desc:"守り力です",
         bas:0,
     },
+
     {
         name:"matk",
         jpnm:"魔攻力",
@@ -67,10 +78,17 @@ let Status = [
     {
         name:"maxmp",
         jpnm:"最大魔力",
-        desc:"キャラクターの最大魔力を示します",
+        desc:"所持可能な最大魔素量。",
         bas:50,
     },
     
+    {
+        name:"maxep",
+        jpnm:"ep最大",
+        desc:"epっていう...まあスキルゲージだね、スキルのためのポイント",
+        bas:100
+    },
+
     {
         name:"crla",
         jpnm:"会心率",
@@ -96,6 +114,7 @@ let Status = [
         desc:"行動速度のあれ。計算がむずい",
         bas:50
     },
+
     {
         name:"dodge",
         jpnm:"回避率",
@@ -1374,7 +1393,6 @@ let Tools = [
         price:60,
         desc:'敵単体に攻撃力の20%分の間接ダメージを与えたのち、敵全体に火傷(3t,2lv)を付与する。',
         flav:'なんだかんだ初期からずっと好きな人/nレッドウィンターの問題児にしては上出来すぎる',
-        num:0,
         func:async function(who,are){
             await logText('これはちょっと、スパイシーなやつだよ');
             if(await damage(who, are, 20, 'cn', [])) return 1;
@@ -1390,7 +1408,6 @@ let Tools = [
         price:80,
         desc:'指定した敵に、その現在の体力の75%分のダメージを与える。',
         flav:'ゴミ箱に隠れてる人。\nかわいいね',
-        num:0,
         func:async function(who,are){
             // await logText('え、援護します...');
             if(await damage(who, are, "75%", 'cn', ['%!hp'])) return 1;
@@ -1403,7 +1420,6 @@ let Tools = [
         price:100,
         desc:'指定した人単体に、その最大体力の100%の固定貫通間接ダメージを与える。',
         flav:'エクスプローージョン！！！\n敵を確殺します。嬉しいね',
-        num:1,
         func:async function(who,are){
             await logText('爆発オチなんてサイテー！！');
             if(await damage(who, are, "100%", 'cn', ['%!maxhp','追撃無し',"固定","貫通"])) return 1;
@@ -1417,7 +1433,6 @@ let Tools = [
         price:60,
         desc:'この次の人のターンを強制的にスキップさせます。',
         flav:'特にファールとかをしていなくても、これを見せるだけで合法的に人を減らすことができます。うれしいね',
-        num:3,
         func:async function(who,are){
             await buffadd(who, are,'skip',1,1);
             await logText('ピピッ、レッドカードが出ました');
@@ -1429,7 +1444,6 @@ let Tools = [
         jpnm:'ブルーカード',
         price:60,
         desc:'トランプのJでも代用可。\nなぜか知らないけど青色のイメージが強い',
-        num:0,
         func:async function(who, are){
             await logText('これはリバースのモニュメントか？');
             aH = who.hp/who.maxhp * are.maxhp;//割合交換(そのうちゲージにする時用)
@@ -1445,7 +1459,6 @@ let Tools = [
         jpnm:'グリーンカード',
         price:60,
         desc:'バフを2個ランダムでつける。つよい',
-        num:0,
         func:async function(who,are){
             let buffs = arrayShuffle(['power','shellup','luck']);
             for(let i=0; i<2; i++) await buffadd(who, are, buffs[i], 3, random(1, 3));
@@ -1458,7 +1471,6 @@ let Tools = [
         jpnm:'ブラックカード',
         price:60,
         desc:'デバフを2個つける。割とつよい',
-        num:0,
 
         func:async function(who,are){
             buffs = arrayShuffle(['powerdown','shelldown','poison','burn','freeze']);
@@ -1467,6 +1479,18 @@ let Tools = [
             return 0;
         }
     },
+
+    {
+        name: "crab halve",
+        jpnm: "ざりがにハーブ",
+        // flav: "浅めの海から産出される、なぜか硬い甲羅に覆われ生育している海藻"
+        flav: "海に隣接した森で産出される、少し赤みがかった、緑色の葉っぱ。なぜか葉の表皮の一部が硬化している。",
+        desc: "指定した敵単体の防御力を3ターンの間半減させる。",
+        price: 40,
+        func: async function(who, are){
+            buffadd(who, are, "crabhalve", 3, 1);
+        }
+    }
 ]
 
 let Skills = [
