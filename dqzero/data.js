@@ -44,6 +44,9 @@ const Spaces = [
 
 
 let Status = [
+    // [whi] atkerはatker専用、逆はそれ専用、ないやつは汎用
+    // [tri] ph:物理、mg:魔法、cn:間接、ないやつは汎用
+
     {
         name:"maxhp",
         jpnm:"最大体力",
@@ -54,12 +57,16 @@ let Status = [
         name:"atk",
         jpnm:"攻撃力",
         desc:"攻撃！",
+        whi:"atker",
+        tri:"ph",
         bas:20,
     },
     {
         name:"def",
         jpnm:"防御力",
         desc:"守り力です",
+        whi:"defer",
+        tri:["ph", "cn"],
         bas:0,
     },
 
@@ -67,12 +74,16 @@ let Status = [
         name:"matk",
         jpnm:"魔攻力",
         desc:"魔力とも言う",
+        whi:"atker",
+        tri:"mg",
         bas:10,
     },
     {
         name:"mdef",
         jpnm:"魔防力",
-        desc:"魔力（防）とも言う",
+        desc:"魔力（防）とも言う ださっ",
+        whi:"defer",
+        tri:"mg",
         bas:0,
     },
     {
@@ -93,19 +104,22 @@ let Status = [
         name:"crla",
         jpnm:"会心率",
         desc:"",
+        whi:"atker",
         bas:3
-    },
-    {
-        name:"crrs",
-        jpnm:"会心抵抗",
-        desc:"",
-        bas:0
     },
     {
         name:"crdm",
         jpnm:"会心倍率",
         desc:"",
+        whi:"atker",
         bas:150
+    },
+    {
+        name:"crrs",
+        jpnm:"会心抵抗",
+        desc:"",
+        whi:"defer",
+        bas:0
     },
 
     {
@@ -119,12 +133,14 @@ let Status = [
         name:"dodge",
         jpnm:"回避率",
         desc:"攻撃を回避する確率。\n基本0",
+        whi:"defer",
         bas:0
     },
     {
         name:"targe",
         jpnm:"命中率",
         desc:"攻撃が命中する確率。\n基本100",
+        whi:"atker",
         bas:100
     }
 ]
@@ -999,300 +1015,349 @@ let Magics = [
     }, 
 ]
 
-let Equips = {
-    'weapon':[
-        {
-            name:'none',
-            jpnm:'なし',
-            atk:0,
-            price:0,
-            desc:'ないです。素手とか念とか自由に解釈しておk',
-            no:1,
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'woodstick',
-            jpnm:'木の棒',
-            atk:2,
-            price:10,
-            desc:'初期装備あるあるの武器。値段に見合わず割と強い',
-            //購入可能かどうか
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'woodsword',
-            jpnm:'木刀',
-            atk:4,
-            price:20,
-            desc:'木の棒よりも強い。言うなれば気の剣。',
-            
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'bamboo_sword',
-            jpnm:'竹刀',
-            atk:6,
-            price:30,
-            desc:'さあ、剣道しようぜ！！',
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'stone',
-            jpnm:'石ころ',
-            atk:8,
-            price:50,
-            desc:'石です。よわよわ',
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'bigrock',
-            jpnm:'大きな石',
-            atk:10,
-            price:80,
-            desc:'岩です。つよつよ',
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'brick',
-            jpnm:'レンガ',
-            atk:12,
-            price:100,
-            desc:'岩にセメントつけたら強くなるのって意味わからなくね？',
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'thinpaper',
-            jpnm:'薄めの紙',
-            atk:20,
-            price:5,
-            desc:'薄い紙です。\nすって相手に切り付けて｢いたっ..｣ってさせる用です',
-            ap:0,
-            ce:1,
-            bFunc:{ //攻撃前の効果
-                crla: 70,
-            }
-        },
-        {
-            name:'card',
-            jpnm:'カード',
-            atk:'Math.floor(Math.random()*13)+1',
-            price:7,
-            desc:'ちょっとした運要素。\n攻撃方法は切り付けなので弱い',
-            ap:0,
-            ce:0,
-        },
-        {
-            name:'scissors',
-            jpnm:'はさみ',
-            atk:25,
-            price:200,
-            desc:'石には負けるけど紙には勝てます\n#金属製　#特に謎解きとかは無い',
-            ap:0,
-            ce:1,
-            bFunc:{
-                crdm: 4.0,
-            }
-        },
-        {
-            name:'knife',
-            jpnm:'ほんもののナイフ',
-            atk:40,
-            price:300,
-            desc:'つよつよ武器。\n花や骨に向かって振り回しましょう',
-            ap:0,
-            ce:1,
-            bFunc:{
-                crla: 10,
-            }
-        },
+let Equips = [
+    {
+        no:1,
+        name:'none',
+        jpnm:'なし',
+        type:"weapon",
+        tri:"ph",
+        atk:0,
+        price:0,
+        desc:'ないです。素手とか念とか自由に解釈しておk',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'woodstick',
+        jpnm:'木の棒',
+        type:"weapon",
+        tri:"ph",
+        atk:2,
+        price:10,
+        desc:'初期装備あるあるの武器。値段に見合わず割と強い',
+        //購入可能かどうか
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'woodsword',
+        jpnm:'木刀',
+        type:"weapon",
+        tri:"ph",
+        atk:4,
+        price:20,
+        desc:'木の棒よりも強い。言うなれば気の剣。',
+        
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'bamboo_sword',
+        jpnm:'竹刀',
+        type:"weapon",
+        tri:"ph",
+        atk:6,
+        price:30,
+        desc:'さあ、剣道しようぜ！！',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'stone',
+        jpnm:'石ころ',
+        type:"weapon",
+        tri:"ph",
+        atk:8,
+        price:50,
+        desc:'石です。よわよわ',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'bigrock',
+        jpnm:'大きな石',
+        type:"weapon",
+        tri:"ph",
+        atk:21,
+        price:80,
+        desc:'岩です。つよつよ',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'brick',
+        jpnm:'レンガ',
+        type:"weapon",
+        tri:"ph",
+        atk:12,
+        price:100,
+        desc:'岩にセメントつけたら強くなるのって意味わからなくね？',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'thinpaper',
+        jpnm:'薄めの紙',
+        type:"weapon",
+        tri:"ph",
+        atk:20,
+        price:5,
+        desc:'薄い紙です。\nすって相手に切り付けて｢いたっ..｣ってさせる用です',
+        ap:0,
+        ce:1,
+        bFunc:{ //攻撃前の効果
+            crla: 70,
+        }
+    },
+    {
+        name:'card',
+        jpnm:'カード',
+        type:"weapon",
+        tri:"ph",
+        atk:'random(1, 13)',
+        price:7,
+        desc:'ちょっとした運要素。\n攻撃方法は切り付けなので弱い',
+        ap:0,
+        ce:0,
+    },
+    {
+        name:'scissors',
+        jpnm:'はさみ',
+        type:"weapon",
+        tri:"ph",
+        atk:25,
+        price:200,
+        desc:'石には負けるけど紙には勝てます\n#金属製　#特に謎解きとかは無い',
+        ap:0,
+        ce:1,
+        bFunc:{
+            crdm: 4.0,
+        }
+    },
+    {
+        name:'knife',
+        jpnm:'ほんもののナイフ',
+        type:"weapon",
+        tri:"ph",
+        atk:40,
+        price:300,
+        desc:'つよつよ武器。\n花や骨に向かって振り回しましょう',
+        ap:0,
+        ce:1,
+        bFunc:{
+            crla: 10,
+        }
+    },
 
-        {
-            name:'blooddagger',
-            jpnm:'ジェン・ソルテ',
-            atk:0,
-            price:150,
-            desc:'紅き鮮血に染まりし剣..\n攻撃時相手の体力を吸い回復する\n変換効率は80%..水力発電とだいたい同じ',
-            ap:1,
-            aFunc:async function(who,are){
-                if(await damage(who, are, ))
-                logText('血を吸った！');
-                tekiou();
-                logText(`体力が${x}回復した!`);
-                return 0;
-            },
-            ce:0,
+    {
+        name:'blooddagger',
+        jpnm:'ジェン・ソルテ',
+        type:"weapon",
+        tri:"ph",
+        atk:0,
+        price:150,
+        desc:'紅き鮮血に染まりし剣..\n攻撃時相手の体力を吸い回復する\n変換効率は80%..水力発電とだいたい同じ',
+        ap:1,
+        aFunc:async function(who,are){
+            if(await damage(who, are, ))
+            logText('血を吸った！');
+            tekiou();
+            logText(`体力が${x}回復した!`);
+            return 0;
         },
-        {
-            name:'timeontarget',
-            jpnm:'time on target',
-            atk:10,
-            price:150,
-            desc:'ナギサ様の手好き',
-            ap:1,
-            aFunc:async function(who,are,rate,kind,prop,dmg){
-                logText(arraySelect(['トリニティの砲撃術は優秀ですから。','お口に合うと良いのですが..']));
-                let result = await damage(who,are,0.4,kind,['unpursuit']);
-                if(result) return 1;
-                await buffadd(who, are, 'shelldown', 3, 1);
-                return 0;
-            },
-            ce:0,
+        ce:0,
+    },
+    {
+        name:'timeontarget',
+        jpnm:'time on target',
+        type:"weapon",
+        tri:"cn",
+        atk:10,
+        price:150,
+        desc:'ナギサ様の手好き',
+        ap:1,
+        aFunc:async function(who,are,rate,kind,prop,dmg){
+            logText(arraySelect(['トリニティの砲撃術は優秀ですから。','お口に合うと良いのですが..']));
+            let result = await damage(who,are,0.4,kind,['unpursuit']);
+            if(result) return 1;
+            await buffadd(who, are, 'shelldown', 3, 1);
+            return 0;
         },
-        {
-            name:'biggamble',
-            jpnm:'大博打',
-            atk:0,
-            price:150,
-            desc:'大勝負..ってやつ？まじで賭け。がんばえ',
-            ap:0,
-            ce:1,
-            bFunc:{
-                atk: Math.floor(Math.random()*100)+1,
-            }
-        },
-        {
-            no:1,
-            name:'contrarian',
-            jpnm:'天邪鬼',
-            atk:80,
-            price:150,
-            desc:'名前変更予定。',
-            ap:0,
-            ce:1,
-            bFunc:{
-                crla: 60
-            }
-        },
-    ],
-    'shield':[
-        {
-            no:1,
-            name:'none',
-            jpnm:'なし',
-            def:0,
-            price:0,
-            desc:'ないです。\n筋肉とでも解釈してくれればおk',
-            sp:0
-        },
-        {
-            name:'mask',
-            jpnm:'マスク',
-            def:0,
-            price:1,
-            // desc:'大事ですね。\n防御力は関係ありませんが病気にはならない',
-            desc:'防御力はないです..が、\n精神的な防御力は激高です',
-            sp:0
-        },
-        {
-            name:'thinbook',
-            jpnm:'薄い本',
-            def:1,
-            price:5,
-            desc:'**なのは駄目！！\n死刑！！！！',//コハルなのでセーフ
-            sp:0
-        },
-        {
-            name:'woodenplank',
-            jpnm:'木の板',
-            def:5,
-            price:20,
-            desc:'これを使って最初はつるはしを作りましょう',
-            sp:0
-        },
-        {
-            name:'ironplate',
-            jpnm:'テッパン',
-            def:10,
-            price:30,
-            desc:'突進してくるあいつ。\ nこいつに手間取ると他のが来てすぐしぬので注意',
-            sp:0
-        },
-        {
-            name:'potlid',
-            jpnm:'鍋の蓋',
-            def:15,
-            price:50,
-            desc:'初期装備あるあるⅡですね。\n多分コスパ最強',
-            sp:0
-        },
-        {
-            name:'thickbook',
-            jpnm:'厚めの本',
-            def:20,
-            price:80,
-            desc:'辞書とかなのかな。いや六法全書かも',
-            sp:0
-        },
-        {
-            name:'door',
-            jpnm:'ドア',
-            def:25,
-            price:100,
-            desc:'え？木の板と一緒だって？\n君は知らないのかい...?\n木の板を6つ並べるとドアが3つできるってことを',
-            sp:0
-        },
-        {
-            name:'electricfan',
-            jpnm:'扇風機',
-            def:30,
-            price:200,
-            desc:'涼めるのに便利。\nまた武器にもなり、ついでに敵から身を守れる万能装備',
-            sp:0
-        },
-        {
-            name:'perorodoll',
-            jpnm:'ペロロ様人形',
-            def:50,
-            price:400,
-            desc:'ペロロ様の出番です！！\nhifumi daisuki',
-            
-            sp:0
+        ce:0,
+    },
+    {
+        no: 1,
+        name:'biggamble',
+        jpnm:'大博打',
+        type:"weapon",
+        tri:"ph",
+        atk:"random(1, 100)",
+        price:150,
+        desc:'前面に可動式の100面ダイスが埋め込まれた巨大ハンマー。',
+        ap:0,
+        ce:0,
+    },
+    {
+        no: 1,
+        name:'contrarian',
+        jpnm:'天邪鬼',
+        type:"weapon",
+        tri:"ph",
+        atk:80,
+        price:150,
+        desc:'名称変更予定。',
+        ap:0,
+        ce:1,
+        bFunc:{
+            crla: 60
         }
-    ],
-    'ear':[
-        {
-            no:1,
-            name:'none',
-            jpnm:'なし',
-            atk:0,
-            def:0,
-            price:0,
-            desc:'なし',
-            sp:0
-        }
-    ],
-    'ring':[
-        {
-            no:1,
-            name:'none',
-            jpnm:'なし',
-            atk:0,
-            def:0,
-            price:0,
-            desc:'なし',
-            sp:0
-        }
-    ],
-    'neck':[
-        {
-            no:1,
-            name:'none',
-            jpnm:'なし',
-            atk:0,
-            def:0,
-            price:0,
-            desc:'なし',
-            sp:0
-        }
-    ]
-}
+    },
+
+
+    {
+        no: 1,
+        name:'none',
+        jpnm:'なし',
+        type:"shield",
+        tri:"ph",
+        def:0,
+        price:0,
+        desc:'ないです。\n筋肉とでも解釈してくれればおk',
+        sp:0
+    },
+    {
+        name:'mask',
+        jpnm:'マスク',
+        type:"shield",
+        tri:"mg",
+        def:0,
+        price:1,
+        // desc:'大事ですね。\n防御力は関係ありませんが病気にはならない',
+        desc:'防御力はないです..が、\n精神的な防御力は激高です',
+        sp:0
+    },
+    {
+        name:'thinbook',
+        jpnm:'薄い本',
+        type:"shield",
+        tri:"ph",
+        def:1,
+        price:5,
+        desc:'**なのは駄目！！\n死刑！！！！',//コハルなのでセーフ
+        sp:0
+    },
+    {
+        name:'woodenplank',
+        jpnm:'木の板',
+        type:"shield",
+        tri:"ph",
+        def:5,
+        price:20,
+        desc:'これを使って最初はつるはしを作りましょう',
+        sp:0
+    },
+    {
+        name:'ironplate',
+        jpnm:'テッパン',
+        type:"shield",
+        tri:"ph",
+        def:10,
+        price:30,
+        desc:'突進してくるあいつ。\ nこいつに手間取ると他のが来てすぐしぬので注意',
+        sp:0
+    },
+    {
+        name:'potlid',
+        jpnm:'鍋の蓋',
+        type:"shield",
+        tri:"ph",
+        def:15,
+        price:50,
+        desc:'初期装備あるあるⅡですね。\n多分コスパ最強',
+        sp:0
+    },
+    {
+        name:'thickbook',
+        jpnm:'厚めの本',
+        type:"shield",
+        tri:"ph",
+        def:20,
+        price:80,
+        desc:'辞書とかなのかな。いや六法全書かも',
+        sp:0
+    },
+    {
+        name:'door',
+        jpnm:'ドア',
+        type:"shield",
+        tri:"ph",
+        def:25,
+        price:100,
+        desc:'え？木の板と一緒だって？\n君は知らないのかい...?\n木の板を6つ並べるとドアが3つできるってことを',
+        sp:0
+    },
+    {
+        name:'electricfan',
+        jpnm:'扇風機',
+        type:"shield",
+        tri:["ph", "cn"],
+        def:30,
+        price:200,
+        desc:'涼めるのに便利。\nまた武器にもなり、ついでに敵から身を守れる万能装備',
+        sp:0
+    },
+    {
+        name:'perorodoll',
+        jpnm:'ペロロ様人形',
+        type:"shield",
+        tri:["ph", "cn"],
+        def:50,
+        price:400,
+        desc:'ペロロ様の出番です！！\nhifumi daisuki',
+        
+        sp:0
+    },
+
+    {
+        no: 1,
+        name:'none',
+        jpnm:'なし',
+        desc:'なし',
+        type:"ear",
+        tri:"ph",
+        atk:0,
+        def:0,
+        price:0,
+        sp:0
+    },
+    
+    {
+        no: 1,
+        name:'none',
+        jpnm:'なし',
+        desc:'なし',
+        type:"neck",
+        tri:"ph",
+        atk:0,
+        def:0,
+        price:0,
+        sp:0
+    },
+
+    {
+        no: 1,
+        name:'none',
+        jpnm:'なし',
+        desc:'なし',
+        type:"tank", //魔素タンク。昔考えたあれだね
+        tri:"ph",
+        atk:0,
+        def:0,
+        price:0,
+        sp:0
+    }
+]
 
 let Tools = [
     {
@@ -1495,12 +1560,12 @@ let Tools = [
 
 let Skills = [
     {
+        no:1,
         type:'ex',
         name:'null',
         jpnm:'null',
         desc:'何もないです。\nまあこれが店頭に並ぶこともないでしょうけどね。\nはい論破',
         price:0,
-        no:1,
     },
     {
         //変更予定
@@ -1678,12 +1743,12 @@ let Skills = [
     
     // ns
     {
+        no:1,
         type:'ns',
         name:'null',
         jpnm:'null',
         desc:'(まじでnullです。効果無し。外れ。乙)',
         price:0,
-        no:1,
         cool:0
     },
     {
@@ -1761,12 +1826,12 @@ let Skills = [
 
     // ps
     {
+        no:1,
         type:'ps',
         name:'null',
         jpnm:'null',
         desc:'(まじでnullです。効果無し。外れ。乙)',
         price:0,
-        no:1,
     },
     {
         type:'ps',

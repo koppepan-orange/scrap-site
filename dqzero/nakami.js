@@ -2175,7 +2175,8 @@ function whatdo(who, are, shu, name){
     }
     
     let res = {
-        cam,me,
+        cam,
+        me,
         ts,
         shu,
         name
@@ -2183,6 +2184,12 @@ function whatdo(who, are, shu, name){
     return res;
 }
 //#endregion どちらかと言うと youは何しに日本へ
+
+// #region サーチ系
+function findEquips(type, name){
+    let arr = Equips.filter()
+}
+// #endregion
 
 function makeUnit(cam, code, name){
     let data = {};
@@ -2341,7 +2348,7 @@ function encount(){
         playersD.appendChild(div);
     };
 
-    tekiou()
+    tekiou();
 }
 batC.turnD.addEventListener('click', encount)
 // #endregion
@@ -2350,8 +2357,62 @@ batC.turnD.addEventListener('click', encount)
 function attack(who, ares, tri, voi, prop = []){
     if(!Array.isArray(ares)) ares = [ares];
 
-    for(let are of ares){
 
+    let triA, triD;
+    switch(tri){
+        case "ph":
+            //物理
+            triA = "atk";
+            triD = "def";
+            break;
+        case "mg":
+            //魔法
+            triA = "matk";
+            triD = "mdef";
+            break;
+        case "cn":
+            //間接
+            triA = "catk";
+            triD = "def";
+            break;
+    }
+
+    for(let are of ares){
+        let atker = copy(who); //atk+add * power + wepatk
+        let defer = copy(are); //def * shell + cut + shldef
+        
+        let wepatk = 0, shldef = 0;
+        let weapon = atker.weapon;
+         let weaponD = findEquips("weapon", weapon);
+        let shield = defer.shield;
+         let shieldD = findEquips("shield", shield);
+        if(tri == weaponD.tri ||
+           weaponD.tri.contains(tri) ||
+           weaponD.tri == "all") wepatk = weaponD.atk;
+        if(tri == shieldD.tri ||
+           shieldD.tri.contains(tri) ||
+           shieldD.tri == "all") shldef = shieldD.def;
+
+        let nisha = ["atker", "defer"];
+        let accessment = ["ear", "neck", "tank"];
+        for(let whi of nisha){
+            for(let access0 of accessment){
+                let access = whi[access0];
+                 let accessD = findEquips(access0, access);
+                
+                if(tri == accessD.tri ||
+                   accessD.tri.contains(tri) ||
+                   accessD.tri == "all") wepatk += accessD.atk;
+                if(tri == accessD.tri ||
+                   accessD.tri.contains(tri) ||
+                   accessD.tri == "all") shldef += accessD.def;
+            } 
+        }
+
+        let atk = ((atker[triA]) * atker.power +atker.add + wepatk);
+        let def = ((defer[triD]) * defer.shell +defer.cut + shldef);
+
+        
     }
 }
 // #endregion
@@ -2370,7 +2431,7 @@ function turnNew(code = 0){
 
 // #endregion batt
 
-//#region ギャンブル/syudou
+//#region gamble
 let gamD = document.getElementById('gamble');
 let gamC = {
     open: 0,
@@ -2946,3 +3007,4 @@ async function init() {
     start();
 }
 //#endregion
+
