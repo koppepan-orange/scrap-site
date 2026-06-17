@@ -2008,9 +2008,9 @@ rimiD.addEventListener('click', rimiF.push);
 let homD = document.getElementById('home');
 let homC = {
     startD: homD.querySelector('.unit1 .venture'),
-    quitD: homD.querySelector('.unit2 .quit'),
-    atukD: homD.querySelector('.unit2 .atukie'),
-    gamD: homD.querySelector('.unit3 .gamble'),
+    gamD: homD.querySelector('.unit2 .gamble'),
+    quitD: homD.querySelector('.unit3 .quit'),
+    atukD: homD.querySelector('.unit3 .atukie'),
 
     started: 0,
 };
