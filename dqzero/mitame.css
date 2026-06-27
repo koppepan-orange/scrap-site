@@ -935,6 +935,37 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 
 
+#batt .bts{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    height: fit-content;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+#batt .bts .bt{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 70px;
+    border-radius: 0 15px;
+    cursor: pointer;
+}
+#batt .bts .bt:hover{scale: 1.05;}
+#batt .bts .bt:active{scale: 0.95;}
+#batt .bts .bt.bt0{background: #ff8080}
+#batt .bts .bt.bt0:active{background: #b75c5c}
+#batt .bts .bt.bt1{background: #abffab}
+#batt .bts .bt.bt1:active{background: #7cba7c}
+#batt .bts .bt.bt2{background: #eded77}
+#batt .bts .bt.bt2:active{background: #d9d96e}
+#batt .bts .bt.bt3{background: #8080ff}
+#batt .bts .bt.bt3:active{background: #5a5ab3}
+
 /* #endregion */
 
 /* #region リヴァーサル/syudou */

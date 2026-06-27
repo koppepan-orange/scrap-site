@@ -2073,10 +2073,12 @@ let batC = {
         enemie: batD.querySelector(".humans.enemies"),
         player: batD.querySelector(".humans.players"),
     },
-    bt1: batD.querySelector(".bts .bt.bt1"),
-    bt2: batD.querySelector(".bts .bt.bt2"),
-    bt3: batD.querySelector(".bts .bt.bt3"),
-    bt4: batD.querySelector(".bts .bt.bt4"),
+    bts:[
+        batD.querySelector(".bts .bt.bt0"),
+        batD.querySelector(".bts .bt.bt1"),
+        batD.querySelector(".bts .bt.bt2"),
+        batD.querySelector(".bts .bt.bt3"),
+    ],
 
     stage: "草原",
     turn: 0, //1巡すると++1
@@ -2190,6 +2192,28 @@ function findEquips(type, name){
     let arr = Equips.filter()
 }
 // #endregion
+
+function selects(arr){
+    // selects([[], [], [], []])
+    // ["ここにテキストを入力", () => {/kill @e}]
+
+    let bts = batC.bts;
+    for(let k=0; k<4; k++){
+        let youso = arr[k];
+        bts[k].innerText = youso[0];
+
+        bts[k].func = youso[1];
+        jump:{
+            if(bts[k].seted) break jump;
+            bts[k].addEventListener("click", (e) => {
+                if(typeof e.currentTarget.func == "function"){
+                    e.currentTarget.func();
+                };
+            });
+            bts[k].seted = 1;
+        }
+    }
+}
 
 function makeUnit(cam, code, name){
     let data = {};
@@ -2336,7 +2360,7 @@ function encount(){
      playersD.innerHTML = "";
 
     humans = humans.filter(a => a.cam == "player");
-    let max = 4;
+    let max = 1;
     let num = random(1, max);
     for(let i=0; i<num; i++){
         makeUnit("enemie");
@@ -2349,6 +2373,8 @@ function encount(){
     };
 
     tekiou();
+
+    turnNew()
 }
 batC.turnD.addEventListener('click', encount)
 // #endregion
@@ -2418,15 +2444,239 @@ function attack(who, ares, tri, voi, prop = []){
 // #endregion
 
 // #region turnとかbarとかactedとか
-function turnEnd(who, ares){
-    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
-}
+
+/*
+// これはblank
 function turnNext(who){
-    // やりたいこと: もしbar最後の行動だったならturnNewを実行
+    // 1. dotダメージの処理
+    // ここで who のステータスを見て、毒とかの計算をするんだよ
+    console.log(who + " のdotダメージ処理");
+
+    // 2. playerかenemieかでswitchで行動を促す
+    switch(who) {
+        case 'player':
+            // プレイヤーのボタン（batC.bts）を活性化させたり、入力を待つ処理
+            console.log("プレイヤーの行動選択を促すよ。よわよわ行動はナシね！");
+            break;
+            
+        case 'enemie':{
+            // 敵のAI（自動行動）の処理を呼び出す
+            console.log("enemie の自動行動を選択中...");
+            break;
+        }
+    }
 }
+
+function turnEnd(who, ares){
+    let reAct = 0; // ここに確率計算とかを入れる
+    
+    if(reAct){
+        console.log(`再行動・${who.name}`);
+        turnNext(who);
+        return; 
+    }
+
+    // 2. dotダメージの処理（ターンの最後にもあるの？重複に気をつけてね）
+    console.log(who + " のターン終了時のdot処理");
+
+    turnBye(who);
+}
+
+function turnBye(who){
+    // 1. もしbar最後の行動だったなら turnNew を実行
+    // batC.acted が 進行度で、batC.actbar.length - 1 と等しいか比べる
+    if (batC.acted >= batC.actbar.length - 1) {
+        console.log("このターンのbarは全員おしまい！次のターンへ");
+        turnNew(0); // 新しいbarを作る
+    } else {
+        // まだ残ってるなら進行度を1進めて、次のキャラの行動へ
+        batC.acted++;
+        let nextWho = batC.actbar[batC.acted]; // 次に行動するキャラ（'player' とか 'enemie'）
+        turnNext(nextWho);
+    }
+}
+
 function turnNew(code = 0){
-    // やりたいこと: barを再建, 0番の行動開始
+    // 1. turn数をカウントアップ（1巡したからね）
+    batC.turn++;
+    batC.turnD.innerText = batC.turn; // 画面の表示も更新しちゃう
+
+    // 2. barを再建（actbarに行動順の配列をセットする）
+    // 例: 素早さ順とかで ['player', 'enemie', 'enemie'] みたいに並べる
+    batC.actbar = ['player', 'enemie']; // ここは仮ね、お兄さんがルールを決めて
+    
+    // 3. 進行度を初期化
+    batC.acted = 0;
+
+    console.log("ターン " + batC.turn + " 開始！");
+
+    // 4. 0番の行動開始
+    let firstWho = batC.actbar[0];
+    turnNext(firstWho);
 }
+*/
+
+
+// これは全部渡した拡張
+function processDots(who) {
+    let dots = {};
+    for (let buff of who.buffs) {
+        let data = Buffs.find(a => a.name == buff.name);
+        if (data && hask(data, 'dot')) {
+            let dot = data.dot;
+            let val = buff.value[dot];
+            if (typeof val == 'string' && val.endsWith('%')) {
+                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
+            }
+            if (!dots[dot]) dots[dot] = 0;
+            dots[dot] += val;
+        }
+    }
+    Object.keys(dots).forEach(key => {
+        let val = dots[key];
+        console.log(`(${batC.turn})${who.cam}${who.me}に${key}のダメージ！(val: ${val})`);
+        who.hp -= val;
+        if (who.hp <= 0) dead(0, who);
+    });
+}
+
+async function turnNext(who) {
+    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
+    
+    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
+    for (let buff of who.buffs) {
+        let data = Buffs.find(a => a.name == buff.name);
+        
+        if (buff.name == 'onslime') {
+            if (isCrit(buff.value)) {
+                buffremove(who, 'onslime');
+                logText_log('なんとかスライムを取り払った!!');
+            } else {
+                logText_log('スライムが邪魔して動けない!!');
+                turnBye(who); // 動けないから次の人へパス
+                return;
+            }
+        }
+        if (buffhas(who, 'skip')) {
+            await logText(`>> はい${who.name}、お前スキップ〜〜`);
+            turnBye(who);
+            return;
+        }
+        if (hask(buff.value, 'palsy')) {
+            if (isCrit(buff.value.palsy)) {
+                data.name != 'stan'
+                    ? logText_log(`${who.cam}${who.me}は麻痺している..`)
+                    : logText_log(`${who.cam}${who.me}はスタンしている....`);
+                turnBye(who);
+                return;
+            }
+        }
+        if (hask(buff.value, 'freeze')) {
+            if (!isCrit(buff.value.freeze)) {
+                logText_log(`${who.name}は凍っている...`);
+                turnBye(who);
+                return;
+            }
+            await logText(`氷が溶けた！`);
+            buffremove(who, 'freeze');
+        }
+    }
+
+    // 前半のdotダメージ処理
+    processDots(who);
+    if (who.hp <= 0) return; // 死んでたら終わり
+
+    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
+
+    // playerかenemieかでswitch（もちろんenemie表記だよ）
+    switch (who.cam) {
+        case 'player':
+            playerturn(who);
+            break;
+        case 'enemie':
+            enemyturn(who);
+            break;
+    }
+}
+
+async function turnEnd(who, ares) {
+    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
+    
+    // バフの残りターンを減らす処理は、行動終了時のここに逃がしておくのが一番綺麗だよ
+    for (let i = who.buffs.length - 1; i >= 0; i--) {
+        who.buffs[i].time -= 1;
+        if (who.buffs[i].time <= 0) who.buffs.splice(i, 1);
+    }
+    tekiou();
+
+    // luck系の"再行動"の判定
+    let extraTurn = false;
+    for (let buff of who.buffs) {
+        let data = Buffs.find(a => a.name == buff.name);
+        if (data && hask(data, 'luck')) {
+            if (isCrit(data.luck)) {
+                logText_log('当たりが出たらもう一本！');
+                extraTurn = true;
+                break;
+            }
+        }
+    }
+
+    if (extraTurn) {
+        // 再行動だから、もう一度行動選択を呼び出してターンを抜ける
+        if (who.cam == 'player') playerturn(who);
+        else enemyturn(who);
+        return;
+    }
+
+    // 後半のdotダメージの処理（ユーザーの要望通りここにも配置）
+    processDots(who);
+    if (who.hp <= 0) return;
+
+    // 自分の行動が完全に終わったからbyeする
+    turnBye(who);
+}
+
+function turnBye(who) {
+    // やりたいこと: もしbar最後の行動だったならturnNewを実行
+    batC.acted += 1;
+
+    // 今回はbatC.actbarが配列だから、lengthと比較すれば一発だね
+    if (batC.acted >= batC.actbar.length) {
+        turnNew();
+    } else {
+        // まだ残ってるなら、次のインデックスの奴のターンを開始
+        let nextWho = batC.actbar[batC.acted];
+        turnNext(nextWho);
+    }
+}
+
+function turnNew(code = 0) {
+    // やりたいこと: barを再建, 0番の行動開始
+    batC.turn += 1;
+
+    // 前作のソート処理をそのまま持ってきたよ
+    // batC.actbarには、前作みたいにcamとmeを分けるんじゃなくて、オブジェクトごと突っ込む配列にするのがイマドキ！
+    let combined = humans.filter(a => a.joutie && a.hp > 0)
+        .sort((a, b) => {
+            if (b.spd == a.spd) {
+                if (a.cam == b.cam) {
+                    return a.me - b.me;
+                }
+                return a.cam == 'player' ? -1 : 1;
+            }
+            return b.spd - a.spd;
+        });
+
+    batC.actbar = combined;
+    batC.acted = 0;
+
+    // 新しいターンの、最初の奴の行動を開始！
+    if (batC.actbar.length > 0) {
+        turnNext(batC.actbar[0]);
+    }
+}
+
 // #endregion
 
 // #endregion batt
