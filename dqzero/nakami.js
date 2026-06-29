@@ -465,7 +465,7 @@ function irohaHo(color){
 function irohaMix(c1, c2, ratio = 0.5){
     let toRGB = c => {
         c = c.replace('#', '');
-        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        if(c.length === 3) c = c.split('').map(x => x + x).join('');
         let n = parseInt(c, 16);
         return [n >> 16, (n >> 8) & 255, n & 255];
     };
@@ -488,9 +488,9 @@ function irohaRan(){
     let ato = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
     return ato;
 };
-function irohaDark(color) {
+function irohaDark(color){
     color = color.replace('#', '');
-    if (color.length === 3) color = color.split('').map(x => x + x).join('');
+    if(color.length === 3) color = color.split('').map(x => x + x).join('');
     
     let r = parseInt(color.slice(0, 2), 16);
     let g = parseInt(color.slice(2, 4), 16);
@@ -705,7 +705,7 @@ async function logtext(raw, code = ""){
             }else{
                 let das = `[${code}] `;
                 das += logC.textD.innerHTML;
-                logText_log(das);
+                addtext(das);
                 let waitTime = logC.autoDelay * 1000;
                 
                 let cleanupListeners = () => {};
@@ -801,7 +801,7 @@ logF.woah = (code = NaN) => {
     if(isTog && isHid) logF.tog(0);
 };
 
-function logText_log(text){
+function addtext(text){
     logC.mainD.innerHTML += text + '<br>';
     logC.mainD.scrollTop = logC.mainD.scrollHeight;
 };
@@ -1185,7 +1185,7 @@ class Slider {
 // #endregion
 //#region takushiSen
 class TakushiSen {
-    constructor(choices, mode = "tate", data = 0) {
+    constructor(choices, mode = "tate", data = 0){
         this.choices = choices; // [{name, img}, {name, img}, ...]
         this.mode = mode;
 
@@ -1198,7 +1198,7 @@ class TakushiSen {
         this.make();
     }
 
-    make() {
+    make(){
         let div = document.createElement('div');
         div.className = `mode ${this.mode}`;
         
@@ -1232,14 +1232,14 @@ class TakushiSen {
     }
 
     // ここがメイン！await で待ち受けるやつ
-    async select(parent) {
+    async select(parent){
         return new Promise(resolve => {
             let div = this.make();
             parent.appendChild(div);
 
             div.addEventListener('click', (e) => {
                 let target = e.target.closest('.item');
-                if (target) {
+                if(target){
                     div.remove();
                     // resolve(target.dataset.name);
                     resolve(target.dataset.india);
@@ -1696,12 +1696,12 @@ let souC = {
     bgm: 0.5,
     nowBgm: null
 }
-function soundPlay(name) {
+function soundPlay(name){
     let proto = null;
     let category = null;
 
-    for (let belong in sounds) {
-        if (sounds[belong][name]) {
+    for (let belong in sounds){
+        if(sounds[belong][name]){
             proto = sounds[belong][name];
             category = belong;
             break;
@@ -1709,19 +1709,19 @@ function soundPlay(name) {
     }
 
     // 見つからない場合はerrorを呼び出す
-    if (!proto) {
-        if (name !== 'error') return soundPlay('error');
+    if(!proto){
+        if(name !== 'error') return soundPlay('error');
         return;
     }
 
-    if (proto.dataset.type === 'bgm') {
+    if(proto.dataset.type === 'bgm'){
         // 現在のBGMを止める処理
-        if (souC.nowBgm) {
+        if(souC.nowBgm){
             // souC.nowBgm からカテゴリを特定して停止する
-            for (let belong in sounds) {
-                if (sounds[belong][souC.nowBgm]) {
+            for (let belong in sounds){
+                if(sounds[belong][souC.nowBgm]){
                     let oldBgm = sounds[belong][souC.nowBgm];
-                    if (!oldBgm.paused) {
+                    if(!oldBgm.paused){
                         oldBgm.pause();
                         oldBgm.currentTime = 0;
                     }
@@ -2443,6 +2443,20 @@ function attack(who, ares, tri, voi, prop = []){
 }
 // #endregion
 
+// #region buffとか
+function buffAdd(who, are, name, num, lv){
+    console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
+}
+
+function buffDec(who, name, num){
+    console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
+}
+
+function buffRem(who, name){
+    console.log(`[buffRem] ${who.name}のbuff[${name}]を解消します`);
+}
+// #endregion
+
 // #region turnとかbarとかactedとか
 
 /*
@@ -2453,7 +2467,7 @@ function turnNext(who){
     console.log(who + " のdotダメージ処理");
 
     // 2. playerかenemieかでswitchで行動を促す
-    switch(who) {
+    switch(who){
         case 'player':
             // プレイヤーのボタン（batC.bts）を活性化させたり、入力を待つ処理
             console.log("プレイヤーの行動選択を促すよ。よわよわ行動はナシね！");
@@ -2485,7 +2499,7 @@ function turnEnd(who, ares){
 function turnBye(who){
     // 1. もしbar最後の行動だったなら turnNew を実行
     // batC.acted が 進行度で、batC.actbar.length - 1 と等しいか比べる
-    if (batC.acted >= batC.actbar.length - 1) {
+    if(batC.acted >= batC.actbar.length - 1){
         console.log("このターンのbarは全員おしまい！次のターンへ");
         turnNew(0); // 新しいbarを作る
     } else {
@@ -2518,17 +2532,17 @@ function turnNew(code = 0){
 
 
 // これは全部渡した拡張
-function processDots(who) {
+function processDots(who){
     let dots = {};
-    for (let buff of who.buffs) {
+    for (let buff of who.buffs){
         let data = Buffs.find(a => a.name == buff.name);
-        if (data && hask(data, 'dot')) {
+        if(data && hask(data, 'dot')){
             let dot = data.dot;
             let val = buff.value[dot];
-            if (typeof val == 'string' && val.endsWith('%')) {
+            if(typeof val == 'string' && val.endsWith('%')){
                 val = Math.round(who.maxhp * val.slice(0, -1) / 100);
             }
-            if (!dots[dot]) dots[dot] = 0;
+            if(!dots[dot]) dots[dot] = 0;
             dots[dot] += val;
         }
     }
@@ -2536,44 +2550,45 @@ function processDots(who) {
         let val = dots[key];
         console.log(`(${batC.turn})${who.cam}${who.me}に${key}のダメージ！(val: ${val})`);
         who.hp -= val;
-        if (who.hp <= 0) dead(0, who);
+        if(who.hp <= 0) dead(0, who);
     });
 }
 
-async function turnNext(who) {
+async function turnNext(who){
     // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
     
     // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
-    for (let buff of who.buffs) {
+    for (let buff of who.buffs){
         let data = Buffs.find(a => a.name == buff.name);
         
-        if (buff.name == 'onslime') {
-            if (isCrit(buff.value)) {
+        if(buff.name == 'onslime'){
+            if(isCrit(buff.value)){
                 buffremove(who, 'onslime');
-                logText_log('なんとかスライムを取り払った!!');
+                addtext('なんとかスライムを取り払った!!');
             } else {
-                logText_log('スライムが邪魔して動けない!!');
-                turnBye(who); // 動けないから次の人へパス
+                addtext('スライムが邪魔して動けない!!');
+                turnBye(who);
+                 // 動けないから次の人へパス
                 return;
             }
         }
-        if (buffhas(who, 'skip')) {
+        if(buffhas(who, 'skip')){
             await logText(`>> はい${who.name}、お前スキップ〜〜`);
             turnBye(who);
             return;
         }
-        if (hask(buff.value, 'palsy')) {
-            if (isCrit(buff.value.palsy)) {
+        if(hask(buff.value, 'palsy')){
+            if(isCrit(buff.value.palsy)){
                 data.name != 'stan'
-                    ? logText_log(`${who.cam}${who.me}は麻痺している..`)
-                    : logText_log(`${who.cam}${who.me}はスタンしている....`);
+                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
+                    : addtext(`${who.cam}${who.me}はスタンしている....`);
                 turnBye(who);
                 return;
             }
         }
-        if (hask(buff.value, 'freeze')) {
-            if (!isCrit(buff.value.freeze)) {
-                logText_log(`${who.name}は凍っている...`);
+        if(hask(buff.value, 'freeze')){
+            if(!isCrit(buff.value.freeze)){
+                addtext(`${who.name}は凍っている...`);
                 turnBye(who);
                 return;
             }
@@ -2584,12 +2599,12 @@ async function turnNext(who) {
 
     // 前半のdotダメージ処理
     processDots(who);
-    if (who.hp <= 0) return; // 死んでたら終わり
+    if(who.hp <= 0) return; // 死んでたら終わり
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
 
     // playerかenemieかでswitch（もちろんenemie表記だよ）
-    switch (who.cam) {
+    switch (who.cam){
         case 'player':
             playerturn(who);
             break;
@@ -2599,50 +2614,50 @@ async function turnNext(who) {
     }
 }
 
-async function turnEnd(who, ares) {
+async function turnEnd(who, ares){
     // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
     
     // バフの残りターンを減らす処理は、行動終了時のここに逃がしておくのが一番綺麗だよ
-    for (let i = who.buffs.length - 1; i >= 0; i--) {
+    for (let i = who.buffs.length - 1; i >= 0; i--){
         who.buffs[i].time -= 1;
-        if (who.buffs[i].time <= 0) who.buffs.splice(i, 1);
+        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
     }
     tekiou();
 
     // luck系の"再行動"の判定
     let extraTurn = false;
-    for (let buff of who.buffs) {
+    for (let buff of who.buffs){
         let data = Buffs.find(a => a.name == buff.name);
-        if (data && hask(data, 'luck')) {
-            if (isCrit(data.luck)) {
-                logText_log('当たりが出たらもう一本！');
+        if(data && hask(data, 'luck')){
+            if(isCrit(data.luck)){
+                addtext('当たりが出たらもう一本！');
                 extraTurn = true;
                 break;
             }
         }
     }
 
-    if (extraTurn) {
+    if(extraTurn){
         // 再行動だから、もう一度行動選択を呼び出してターンを抜ける
-        if (who.cam == 'player') playerturn(who);
+        if(who.cam == 'player') playerturn(who);
         else enemyturn(who);
         return;
     }
 
     // 後半のdotダメージの処理（ユーザーの要望通りここにも配置）
     processDots(who);
-    if (who.hp <= 0) return;
+    if(who.hp <= 0) return;
 
     // 自分の行動が完全に終わったからbyeする
     turnBye(who);
 }
 
-function turnBye(who) {
+function turnBye(who){
     // やりたいこと: もしbar最後の行動だったならturnNewを実行
     batC.acted += 1;
 
     // 今回はbatC.actbarが配列だから、lengthと比較すれば一発だね
-    if (batC.acted >= batC.actbar.length) {
+    if(batC.acted >= batC.actbar.length){
         turnNew();
     } else {
         // まだ残ってるなら、次のインデックスの奴のターンを開始
@@ -2651,7 +2666,7 @@ function turnBye(who) {
     }
 }
 
-function turnNew(code = 0) {
+function turnNew(code = 0){
     // やりたいこと: barを再建, 0番の行動開始
     batC.turn += 1;
 
@@ -2659,8 +2674,8 @@ function turnNew(code = 0) {
     // batC.actbarには、前作みたいにcamとmeを分けるんじゃなくて、オブジェクトごと突っ込む配列にするのがイマドキ！
     let combined = humans.filter(a => a.joutie && a.hp > 0)
         .sort((a, b) => {
-            if (b.spd == a.spd) {
-                if (a.cam == b.cam) {
+            if(b.spd == a.spd){
+                if(a.cam == b.cam){
                     return a.me - b.me;
                 }
                 return a.cam == 'player' ? -1 : 1;
@@ -2672,7 +2687,7 @@ function turnNew(code = 0) {
     batC.acted = 0;
 
     // 新しいターンの、最初の奴の行動を開始！
-    if (batC.actbar.length > 0) {
+    if(batC.actbar.length > 0){
         turnNext(batC.actbar[0]);
     }
 }
@@ -3252,7 +3267,7 @@ if(document.readyState == "loading"){
 }
 else LoadOfWait();
 
-async function init() {
+async function init(){
     await LoadOfWait();
     start();
 }
