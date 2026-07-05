@@ -273,33 +273,16 @@ let Charas = [
 ]
 
 
+
+
 let Buffs = [
-    { //if value < 0, それはデバフ扱い
-        name:'power', //keyと同じものを
-        jpnm:'攻撃倍率',
-        type:'buff', // buff/debuff/handle/unique
-        kind:'turn',
-        mode:'free', // turn/stack/actは付与時に決定。kindはfixe（Lv依存で値決定）かfree（付与時の引数で値決定）を定める用に。 poison/deadpoisonはfixe、burnもfixe。cheerupはfixe。atkup等能力値上昇系はfree。
-                                 // if(data.kind??'fixed')ってすべきかも。あんまないと思うけど
-        agemono:'power',
-         //turn/actならばvalueが等しいならtimeを増加新を削除、等しくないならば新しいものを追加。stackならばtimeがvalueだからかどうかあがいても加算。同名が増えるこたぁない。
-        desc:'攻撃倍率が上がる。やったね！',
-    },
-    {
-        name:'shell',
-        jpnm:'防御倍率',
-        type:'buff',
-        kind:'turn',
-        mode:'free',
-        agemono:'shell',
-        desc:'防御倍率が上がる。あんまり実感しづらい。',
-    },
     {
         name:'luck',
         jpnm:'幸運',
         type:'buff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'ターン終了時、確率でもう一回行動できる。\nLv7ならば確定。\n願うと起きやすいです',
         lvs:[
             {luck:'+20'},
@@ -316,16 +299,18 @@ let Buffs = [
         name:'disappear',
         jpnm:'消滅',
         type:'buff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'姿を消し、攻撃を受けなくなる。\nしかし範囲攻撃はちゃんと当たる。\nLv1ならば範囲攻撃で解除される。',
     },
     {
         name:'cheerup',
-        jpnm:'応援！',//多分「攻撃！」モチーフ
+        jpnm:'応援！',
         type:'buff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'応援されている状態。攻撃力と速度が上がり会心率が下がる。\nちょっと緊張しちゃうよね、わかる',
         lvs:[
             {
@@ -345,11 +330,11 @@ let Buffs = [
         name:'poison',
         jpnm:'毒',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'poison',
         desc:'ターン終了時HP割合で防御貫通ダメージ。\n毒の苦しみもお好きなんですね',
-        //ターン終了時体力のx%のダメージ
         lvs:[
             {poison:'5%'},
             {poison:'7%'},
@@ -363,8 +348,9 @@ let Buffs = [
         name:'poison_deadly',
         jpnm:'猛毒',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'poison',
         desc:'ターン終了時HP割合で防御貫通ダメージ。\nついでにランダムで他のバフ(良)の持続時間を1減少\n徐々〜に蝕まれて終わります。解消を推奨す',
         lvs:[
@@ -372,7 +358,7 @@ let Buffs = [
             {poison:'10%'},
             {poison:'15%'},
             {poison:'20%'},
-            {poison:'25%'}, //4ターンで死にますね、これ。終わってる
+            {poison:'25%'},
         ],
         max:5
     },
@@ -380,11 +366,11 @@ let Buffs = [
         name:'blood',
         jpnm:'出血',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'blood',
         desc:'ターン終了時固定ダメージ、非攻撃毎に1.5倍に増加。\nそのままにしとくと普通に死にます',
-        //ターン終了時nダメージ、ダメージ喰らい後2倍に増加
         lvs:[
             {blood:2},
             {blood:5},
@@ -396,21 +382,21 @@ let Buffs = [
         max:6
     },
     {
-        name:'blood_born', //大怒られしそうな名前だなこれ
+        name:'blood_born',
         jpnm:'血の誕生',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'blood',
         desc:'ターン終了時固定ダメージ、ターン終了毎に2.0倍に増加。\nガチで死にかねん故早めに解除しよう',
-        //ターン終了時nダメージ、ターン終了後2倍に増加
         lvs:[
             {blood:5},
             {blood:7},
             {blood:10},
             {blood:20},
             {blood:35},
-            {blood:50}, //だめだろ。50→100→200→400→800→1600は。殺戮用
+            {blood:50},
         ],
         max:6
     },
@@ -418,11 +404,11 @@ let Buffs = [
         name:'burn',
         jpnm:'火傷',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'burn',
         desc:'ターン終了時固定ダメージ\nマイクラだとすごいギリで耐えるか死ぬかのやつよね',
-        //ターン終了時nダメージ
         lvs:[
             {burn:5},
             {burn:10},
@@ -434,14 +420,13 @@ let Buffs = [
     },
     {
         name:'burn_out',
-        jpnm:'燃え尽き症候群', //...結構ぴったりよな、俺の雑々ネーミングセンス
+        jpnm:'燃え尽き症候群',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'burn',
         desc:'ターン終了時固定ダメージ。\nあと...このデバフのダメージで死んだ場合、お金が半分燃えて消えます\n珍しいしょ〜〜戦闘外干渉系',
-         //ほんっとお前...もしこのゲームがローグライクカードゲームだったらカードを一枚ランダムに燃やしてたからな？？？ガチ感謝しろよ？？？
-        //ターン終了時nダメージ
         lvs:[
             {burn:10},
             {burn:20},
@@ -456,11 +441,11 @@ let Buffs = [
         name:'elec',
         jpnm:'帯電',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'elec',
-        desc:'ターン終了時固定ダメージ\nターン終了時、確率で他の味方に伝染する', //"風邪"とかの方が良かったか...?
-        //ターン終了時n1ダメージ、n2%の確率で他の味方に伝染
+        desc:'ターン終了時固定ダメージ\nターン終了時、確率で他の味方に伝染する',
         lvs:[
             {elec:5, spread:10},
             {elec:10, spread:20},
@@ -475,11 +460,11 @@ let Buffs = [
         name:'elec_elec',
         jpnm:'帯電・帯電',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'elec',
         desc:'ターン終了時固定ダメージ\nターン終了時、確率で他の味方に伝染する\nあと確率で麻痺のデバフを自身に付与します\n帯電・帯電ってなんだよ',
-        //ターン終了時n1ダメージ、n2%の確率で他の味方に伝染
         lvs:[
             {elec:10, spread:20, palsy:10},
             {elec:20, spread:35, palsy:25},
@@ -494,11 +479,11 @@ let Buffs = [
         name:'injury',
         jpnm:'傷口',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'injury',
         desc:'攻撃毎に固定ダメージ。\n連続攻撃/行動ビルドに大打撃\n私はこのデバフが最も嫌いです。まぢ無理',
-        //攻撃毎にnダメージ
         lvs:[
             {injury:10},
             {injury:25},
@@ -509,13 +494,13 @@ let Buffs = [
     },
     {
         name:'injury_gore',
-        jpnm:'裂痕', //れっこん..ほぼ造語。中国語にはあるらしい
+        jpnm:'裂痕',
         type:'debuff',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         dot:'injury',
         desc:'行動時固定ダメージ。\nあと被回復量が半減します。\nさっさと解除せんと結構やばいです',
-        //攻撃毎にnダメージ
         lvs:[
             {injury:25},
             {injury:40},
@@ -524,15 +509,14 @@ let Buffs = [
         ],
         max:4
     },
-
     {
         name:'freeze',
-        jpnm:'氷結', //レモンサワーじゃないです
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        jpnm:'氷結',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'凍っている状態。\nターン開始時、n%の確率で解除されます\n炎属性の攻撃を受けても解除できます',
-        // n/100の確率で解除
         lvs:[
             {freeze:75},
             {freeze:67},
@@ -545,12 +529,12 @@ let Buffs = [
     },
     {
         name:'freeze_blue',
-        jpnm:'凍結', //blueの真意に気づけるかな〜〜？？
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        jpnm:'凍結',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'凍結されている状態。\nターン開始時、n%の確率で解除されます\n炎攻撃を受けても解除不可です',
-        // n/100の確率で解除
         lvs:[
             {freeze:67},
             {freeze:50},
@@ -564,11 +548,11 @@ let Buffs = [
     {
         name:'freeze_eternal',
         jpnm:'エターナルフリーズ',
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
-        desc:'エターナルフリーズ！！', //どうあがいても解除不可です。この先、デバフ解除が有効だ
-        // n/100の確率で解除
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
+        desc:'エターナルフリーズ！！',
         lvs:[
             {freeze:0}
         ],
@@ -577,11 +561,11 @@ let Buffs = [
     {
         name:'palsy',
         jpnm:'麻痺',
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'麻痺ですね。これ好き',
-        // n/100の確率で行動不可
         lvs:[
             {palsy:20},
             {palsy:25},
@@ -595,11 +579,11 @@ let Buffs = [
     {
         name:'stan',
         jpnm:'スタン',
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'スタンです。\n内部処理的には麻痺の延長',
-        // n/100の確率で行動不可
         lvs:[
             {palsy:100}
         ],
@@ -608,21 +592,22 @@ let Buffs = [
     {
         name:'skip',
         jpnm:'スキップ',
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'はいお前スキップ〜〜笑笑\nぴえん超えてだっさぁですね\nえ？違う？',
     },
     {
         name:'sleepiness',
         jpnm:'睡魔',
-        type:'handle',
-        kind:'turn',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'睡魔..微熱魔じゃないです\nターン終了時にsleepyをnstack増加さかせます',
-        // sleepy:sleepyをnstack増加
         lvs:[
-            {sleepy:10}, //ほとんど1で。
+            {sleepy:10},
             {sleepy:20},
             {sleepy:25},
         ],
@@ -631,11 +616,12 @@ let Buffs = [
     {
         name:'sleepy',
         jpnm:'眠気',
-        type:'handle',
-        kind:'stack',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'none',
+        hera:1,
+        kiju:'stack',
         desc:'眠くなってる状態..です....\n100stack到達でsleepingに変化します....\n変化後のsleepingのLvはsleepinessに寄りけりです\nあと、行動時にsleepyをnstack減少できます....',
-        lvs:[ //-と捉へよ
+        lvs:[
             {sleepy:6},
             {sleepy:9},
             {sleepy:12},
@@ -645,9 +631,10 @@ let Buffs = [
     {
         name:'sleeping',
         jpnm:'睡眠',
-        type:'handle',
-        kind:'stack',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'none',
+        hera:1,
+        kiju:'stack',
         desc:'攻撃されると..ちょっと....起きます......\nzzz...',
         lvs:[
             {sleepy:50},
@@ -659,39 +646,20 @@ let Buffs = [
         ],
         max:6
     },
-    //この3つ、どれかは固定値にした方がいいかも。これだとLv4, 5が1眠後一緒になる。
-    /*
-        sleepy → sleeping 案
-
-        ・sleepiness（睡魔）[stack]-[デバフ解除]
-        ターン終了時に、sleepyをnstack増加
-
-        ・sleepy（眠気）[stack]-[戦闘終了時解消]
-        行動時にn1%の確率でn2stack減少（眠気の覚め）
-        100stack到達でこのbuffを消去、sleepingを追加。Lvはsleepiness依存
-
-        ・sleeping（睡眠）[stack]-[戦闘終了時解消]
-        行動不能100%
-        ダメージ受けたらn1%の確率で「sleepy(n2stack)に戻る」
-        → これなら"直接解除"じゃないし、眠気が残るから再び寝落ちしやすい
-
-        ↑これ、なんかのボス専用にした方がいいか？..否、それだとふつーのゲームと同じ。普遍を着飾っていこうず
-    */
     {
         name:'anger',
-        type:'handle',
-        kind:'stack',
-        mode:'fixe',
+        type:'debuff',
+        becauseof:'none',
+        hera:1,
+        kiju:'stack',
         desc:'すごいイラつかせてくる敵..?\nいやまあ普通にパクリですけれども\nで避けられてさらに煽られるみたいな',
-        // 攻撃力が上がり最大体力、防御力が下がる
     },
-
-    //unique
     {
         name:'onslime',
         type:'unique',
-        kind:'stack',
-        mode:'fixe',
+        becauseof:'none',
+        hera:1,
+        kiju:'stack',
         desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
         kaijo:"行動開始",
         kaijov:"All",
@@ -708,11 +676,11 @@ let Buffs = [
     {
         name:'stickyslime',
         type:'unique',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'スライムがくっついているおかげで行動するとダメージを受けます',
         flav:'連続行動ビルドに大打撃 part2',
-        //行動時ダメージ(固定)
         lvs:[
             {mg:10},
             {mg:20}
@@ -722,15 +690,17 @@ let Buffs = [
     {
         name:'letsthrow',
         type:'unique',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
     },
     {
         name:'gambling',
         type:'unique',
-        kind:'turn',
-        mode:'fixe',
+        becauseof:'turn_start',
+        hera:1,
+        kiju:'lv',
         desc:'次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？',
     }
 ]
@@ -2117,7 +2087,8 @@ let Objects = [
 
             document.querySelector('#overfieldArea').style.display = 'none';
             document.querySelector('#eventArea').style.display = 'block';
-            document.querySelector('#eventArea').innerHTML = '<button id="CampRest" onclick="Camprest()"></button>\n<button id="CampTrade" onclick="Camptrade()"></button>'
+            document.querySelector('#eventArea').innerHTML = `<button id="CampRest" onclick="Camprest()"></button>
+            <button id="CampTrade" onclick="Camptrade()"></button>`
             log.textContent = '休憩できそうな場所を見つけた！';
             Camprestper = (Math.floor(Math.random() * 4)+3)/10;
             document.querySelector('#CampRest').textContent = '朝まで休む(' + Camprestper*100 + '%回復)';//30のときはスキルカード強化みたいなやつあってもいいかも

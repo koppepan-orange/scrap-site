@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ロシアのあれをする</title>
+    <style>
+        #royal{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #royal .ui{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        #royal .ui .icon{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            aspect-ratio: 1/1;
+        }
+        #royal .ui .icon img{
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+        }
+        #royal .ui .rest{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            font-size: 14px;
+        }
+        #royal .ui .rest .num{
+            display: inline-block;
+            line-height: 20px;
+            font-size: 20px;
+        }
+
+        #royal .bts{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="royal">
+        <div class="ui">
+            <div class="icon>
+                <img src="../assets/images/systems/royal.png"/>
+            </div>
+            <div class="rest">
+                <div class="num">0</div>
+                <div class="max">/0</div>
+            </div>
+        </div>
+
+        <div class="bts">
+            <button class="bt hit">hit</button>
+            <button class="bt res">res</button>
+        </div>
+    </div>
+
+    <script>
+        
+        // #region 一部引っ張り
+        function random(min, max){
+            if(max < min) [min, max] = [max, min];
+            let num = Math.floor(Math.random() * (max - min + 1)) + min;
+            return Math.floor(num);
+        };
+        function arraySelect(array){
+            let select = Math.floor(Math.random()*array.length);
+            return array[select];
+        };
+        function arrayToggle(array, name){
+            let array2 = copy(array);
+            let index = array2.indexOf(name);
+            if(index == -1) array2.push(name);
+            else array2.splice(index, 1);
+            
+            return array2;
+        }
+        function arrayShuffle(array){
+            let ato = copy(array);
+            for(let i=(ato.length-1); i>0; i--){
+                let i2 = Math.floor(Math.random() * (i + 1));
+                [ato[i], ato[i2]] = [ato[i2], ato[i]];
+            };
+            return ato;
+        };
+        function arraySize(array){
+            let res = new Set(array).size;
+            return res;
+        };
+        function arrayCount(array){
+            let counts = {};
+            for(let value of array){
+                counts[value] = (counts[value] || 0) + 1;
+            };
+            return counts;
+        };
+        function arrayMult(array){
+            return array.reduce((a, v) => a * v, 1);
+        };
+        function arrayGacha(array, prob){
+            if(array.length != prob.length) throw new Error("長さがあってないっす！先輩、ちゃんとチェックした方がいいっすよ〜？");
+            let total = prob.reduce((sum, p) => sum + p, 0);
+            let random = Math.random() * total;
+            for (let i = 0; i < array.length; i++){
+                if(random < prob[i]) return array[i];
+                random -= prob[i];
+            };
+        };
+        function copy(moto){
+            if(Array.isArray(moto)){
+                let arr = [];
+                for(let i = 0; i < moto.length; i++){
+                    arr.push(copy(moto[i]));
+                }
+                return arr;
+            }else if(moto != null && typeof moto == 'object'){
+                let obj = {};
+                for(let key in moto){
+                    if(moto.hasOwnProperty(key)){
+                        obj[key] = copy(moto[key]);
+                    }
+                };
+                return obj;
+            }else{
+                return moto;
+            };
+        };
+        // #endregion
+        
+        let DIV = document.getElementById("royal");
+        let restD = {
+            num: DIV.querySelector(".rest .num"),
+            max: DIV.querySelector(".rest .max"),
+        }
+        let btsD = {
+            hit: DIV.querySelector(".bts .bt.hit"),
+            res: DIV.querySelector(".bts .bt.res"),
+        }
+
+        let num = 6;
+        let rest = [];
+        let hited = 0;
+        function update(){
+            restD.num.innerText = hited;
+            restD.max.innerText = `/${num}`;
+        }
+
+        function resF(){
+            document.body.style.background = "#ffffff";
+            hited = 0;
+
+            num = random(4, 10);
+            rest = [];
+            for(let i=0; i<num; i++) rest.push(0);
+             rest[0] = 1;
+            arrayShuffle(rest);
+
+            update();
+        }
+        btsD.res.addEventListener("click", resF);
+
+        function hitF(){
+            if(rest.length < 1) return;
+
+            let len = rest.length;
+            console.log(`残弾:${len}/${num} (${Math.floor((len/num)*100)}%)`);
+
+            let r = random(0, len-1);
+            let atai = rest[r];
+            if(atai == 1) return shot();
+
+            hited += 1;
+            rest.splice(r, 1);
+            
+            update();
+        }
+        btsD.hit.addEventListener("click", hitF);
+
+        function shot(){
+            document.body.style.background = "#ffcfcf";
+        }
+
+    </script>
+</body>
+</html>

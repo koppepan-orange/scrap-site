@@ -966,6 +966,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 #batt .bts .bt.bt3{background: #8080ff}
 #batt .bts .bt.bt3:active{background: #5a5ab3}
 
+
 /* #endregion */
 
 /* #region リヴァーサル/syudou */
@@ -988,11 +989,11 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     pointer-events: auto;
     z-index: 3;
 }
-#gamble .heya.show .return{
+#gamble .heya.show:not(.loby) .return{
     display: flex;
     justify-content: center;
     align-items: center;
-    opacity: 1.0;
+    opacity: 0.2;
     width: 50px;
     aspect-ratio: 1/1;
     border-radius: 20px;
@@ -1000,11 +1001,13 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     position: absolute;
     top: 10px;
     left: 10px;
+    /* transition: opacity 0.3s ease-in-out; */
 }
 #gamble .heya.show .return:hover{
-    opacity: 0.3;
+    opacity: 1.0;
 }
 #gamble .heya.show .return::after{
+    /* 三角形 */
     content: "";
     width: 60%;
     aspect-ratio: 9/10;
@@ -1013,45 +1016,56 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     pointer-events: none;
 }
 
+/* #region loby */
 #gamble .loby{
-    background: #36962c;
-    position: relative;
-}
-#gamble .loby .row{
     display: flex;
-    flex-direction: row;
-    gap: 10px;
-    width: 90%;
-    padding: 5px 10px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #36962c;
+    padding-top: 20px;
+    color: #f8f8f8;
 }
-#gamble .loby .row .bt{
+#gamble .loby .bashos{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    width: fit-content;
+    padding: 25px 10px 0;
+    box-sizing: border-box;
+}
+#gamble .loby .bashos .bt{
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
     gap: 10px;
-    flex: 1;
+    width: 100px;
     aspect-ratio: 1/1;
     padding: 10px;
     background: #ffffff;
     border: 2px solid #ff5542;
     border-radius: 10px;
+    color: #2b2b2b;
     opacity: 0.9;
+    box-sizing: border-box;
     cursor: pointer;
 }
-#gamble .loby .row .bt:hover{
+#gamble .loby .bashos .bt:hover{
     opacity: 1;
 }
-#gamble .loby .row .bt img{
-    width: 80%;
-    aspect-ratio: 1/1;
+#gamble .loby .bashos .bt .text{
+    font-size: 16px;
+    line-height: 16px;
+}
+#gamble .loby .bashos .bt img{
+    height: 100%;
+    aspect-ratio: 1 / 1;
     object-fit: cover;
 }
+/* #endregion */
 
+/* #region blacky */
 #gamble .heya.blacky{
     display: flex;
     flex-direction: column;
@@ -1298,6 +1312,33 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 #gamble .blacky .commons .comman:active{
     scale: 0.95;
 }
+
+#gamble .heya.royal{
+    content: "royal";
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+/* #endregion */
+
+/* #region rourou */
+#gamble .heya.rourou{
+    content: "殺すぞ〜〜〜";
+}
+/* #endregion */
+
+/* #region forage */
+#gamble .heya.forage{
+    content: "forage";
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+/* #endregion */
 
 /* #endregion */
 

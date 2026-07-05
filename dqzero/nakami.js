@@ -2444,16 +2444,62 @@ function attack(who, ares, tri, voi, prop = []){
 // #endregion
 
 // #region buffとか
+function buffGet(who, name){
+    let buff = who.buffs.find(a => a.name == name);
+    if(!buff) return 0;
+
+    return buff;
+}
+function buffData(name){
+    let data = Buffs.find(a => a.name == name);
+    if(!data) return 0;
+
+    return data;
+}
+
+function buffHeraso(who, name, becauseof){
+    let buff = buffGet(who, name);
+    if(!buff) return 0;
+
+    let data = buffData(name);
+    if(!data) return 0;
+
+    if(data.stack == becauseof){
+        let hera = data.hera; //numberなことが多いが、"=0"なこともある
+        if(buffDec(who, name, hera)) return 1;
+    }
+    
+    return 0;
+}
+
 function buffAdd(who, are, name, num, lv){
     console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
+    let data = buffData(name);
+    if(!data) return console.error(`buff[${name}]は存在しないらしい`);
+
+
+
+    let buff = {
+        name,
+        value: {},
+        lv
+    }
+
+
 }
 
 function buffDec(who, name, num){
+    if(num == "=0") return buffRem(who, name);
     console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
+
+    
+    return 1;
 }
 
 function buffRem(who, name){
     console.log(`[buffRem] ${who.name}のbuff[${name}]を解消します`);
+
+    return 1;
 }
 // #endregion
 
@@ -2560,7 +2606,7 @@ async function turnNext(who){
     // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
     for (let buff of who.buffs){
         let data = Buffs.find(a => a.name == buff.name);
-        
+
         if(buff.name == 'onslime'){
             if(isCrit(buff.value)){
                 buffremove(who, 'onslime');
@@ -2599,11 +2645,10 @@ async function turnNext(who){
 
     // 前半のdotダメージ処理
     processDots(who);
-    if(who.hp <= 0) return; // 死んでたら終わり
+    if(who.hp <= 0) return dead(0, who);
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
 
-    // playerかenemieかでswitch（もちろんenemie表記だよ）
     switch (who.cam){
         case 'player':
             playerturn(who);
@@ -2710,8 +2755,9 @@ let gamC = {
 }
 gamC.bashos = [
     {
+        no: 1,
         name: "loby",
-        color: "#f0f8ff"
+        color: "#f0f8ff",
     },
     {
         name: "blacky",
@@ -2720,6 +2766,10 @@ gamC.bashos = [
     {
         name: "rourou",
         color: "#f0f8ff"
+    },
+    {
+        name: "forage",
+        color: "#f0f8ff"
     }
 ]
 let gamF = {};
@@ -2727,7 +2777,8 @@ let gamF = {};
 gamF.load = () => {
     gamC.now = 'loby';
 
-    for(let bas of gamC.bashos){
+    let arr = gamC.bashos.filter(a => !a.no);
+    for(let bas of arr){
         let div = document.createElement('div');
         div.className = `bt ${bas.name}`;
         
@@ -2745,7 +2796,7 @@ gamF.load = () => {
             gamF.move(bas.name)
         })
 
-        gamC.lobyD.querySelector('.row').appendChild(div);
+        gamC.lobyD.querySelector('.bashos').appendChild(div);
     }
 
     for(let tak of gamC.blaC.takushe){
@@ -3242,6 +3293,71 @@ gamC.blaC.returnD.addEventListener('click', () => {
 });
 
 //#endregion
+
+// #region rourou
+gamC.rouD = gamD.querySelector('.rourou');
+gamC.rouC = {
+    ing: 0,
+    waiting: 0,
+
+    returnD: gamC.rouD.querySelector('.return')
+}
+gamC.rouF = {};
+
+gamC.rouC.returnD.addEventListener('click', () => {
+    if(gamC.rouC.ing || gamC.rouC.waiting) return 1;
+    gamF.move("loby");
+});
+
+// #endregion
+
+// #region forage
+
+/*
+
+先に概要。
+「森でキノコを採ろう!!」
+*[水上都市]「（名称未定）」の裏の薄暗い店の一角にあるマシン。安っぽいロゴ*
+キノコが10個あるので、そこからキノコを採ろうというゲーム。1つ取るたびに倍率が上がる
+しかし、触れるだけで毒を出すキノコもある。それに触れたらゲームオーバー、倍率が0になる
+（"ハズレキノコ"はそれとしてあるわけではない。最大獲得個数というものが定められていて、それが確率。ゆえに触れるたびに判定ではない）
+
+*/
+
+gamC.forD = gamD.querySelector('.forage');
+gamC.forC = {
+    ing: 0,
+    waiting: 0,
+
+    cantake: 0,
+
+    returnD: gamC.forD.querySelector('.return')
+}
+gamC.forF = {};
+
+gamC.forC.returnD.addEventListener('click', () => {
+    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+    gamF.move("loby");
+});
+
+
+gamC.forF.enter = () => {
+    
+}
+
+gamC.forF.start = () => {
+    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+}
+
+gamC.forF.setMush = (num = 10) => {
+    while(gamC.forC.cantake < 10 && Math.random() < 0.75) {
+        gamC.forC.cantake += 1;
+    }
+    
+    console.log(`[setMush] 今回のアカキノコは${gamC.forC.cantake}個です`);
+}
+
+// #endregion
 
 //#endregion　リヴァーサル/syudou
 
