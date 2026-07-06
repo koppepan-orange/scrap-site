@@ -249,7 +249,7 @@ function arrayGacha(array, prob){
     if(array.length != prob.length) throw new Error("長さがあってないっす！先輩、ちゃんとチェックした方がいいっすよ〜？");
     let total = prob.reduce((sum, p) => sum + p, 0);
     let random = Math.random() * total;
-    for (let i = 0; i < array.length; i++){
+    for(let i = 0; i < array.length; i++){
         if(random < prob[i]) return array[i];
         random -= prob[i];
     };
@@ -1700,7 +1700,7 @@ function soundPlay(name){
     let proto = null;
     let category = null;
 
-    for (let belong in sounds){
+    for(let belong in sounds){
         if(sounds[belong][name]){
             proto = sounds[belong][name];
             category = belong;
@@ -1718,7 +1718,7 @@ function soundPlay(name){
         // 現在のBGMを止める処理
         if(souC.nowBgm){
             // souC.nowBgm からカテゴリを特定して停止する
-            for (let belong in sounds){
+            for(let belong in sounds){
                 if(sounds[belong][souC.nowBgm]){
                     let oldBgm = sounds[belong][souC.nowBgm];
                     if(!oldBgm.paused){
@@ -1962,6 +1962,7 @@ document.addEventListener('keyup',e => {
 //#endregion main
 
 
+
 // #region rimi
 let rimi = 0;
 let rimiD = document.querySelector("#rimi .num");
@@ -2003,6 +2004,7 @@ rimiF.push = () => {
 }
 rimiD.addEventListener('click', rimiF.push);
 // #endregion
+
 
 // #region home
 let homD = document.getElementById('home');
@@ -2063,6 +2065,7 @@ homC.atukD.addEventListener("click", homF.atukie)
 
 homC.gamD.addEventListener('click', () => mainF.move('gamble'))
 // #endregion home
+
 
 // #region batt
 let batD = document.getElementById('batt');
@@ -2580,7 +2583,7 @@ function turnNew(code = 0){
 // これは全部渡した拡張
 function processDots(who){
     let dots = {};
-    for (let buff of who.buffs){
+    for(let buff of who.buffs){
         let data = Buffs.find(a => a.name == buff.name);
         if(data && hask(data, 'dot')){
             let dot = data.dot;
@@ -2594,18 +2597,20 @@ function processDots(who){
     }
     Object.keys(dots).forEach(key => {
         let val = dots[key];
-        console.log(`(${batC.turn})${who.cam}${who.me}に${key}のダメージ！(val: ${val})`);
+        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
         who.hp -= val;
-        if(who.hp <= 0) dead(0, who);
+        if(who.hp <= 0) return dead(0, who);
     });
+
+    return 0;
 }
 
 async function turnNext(who){
     // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
     
     // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
-    for (let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
 
         if(buff.name == 'onslime'){
             if(isCrit(buff.value)){
@@ -2662,17 +2667,15 @@ async function turnNext(who){
 async function turnEnd(who, ares){
     // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
     
-    // バフの残りターンを減らす処理は、行動終了時のここに逃がしておくのが一番綺麗だよ
-    for (let i = who.buffs.length - 1; i >= 0; i--){
+    for(let i = who.buffs.length - 1; i >= 0; i--){
         who.buffs[i].time -= 1;
         if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
     }
     tekiou();
 
-    // luck系の"再行動"の判定
     let extraTurn = false;
-    for (let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
         if(data && hask(data, 'luck')){
             if(isCrit(data.luck)){
                 addtext('当たりが出たらもう一本！');
@@ -2683,17 +2686,14 @@ async function turnEnd(who, ares){
     }
 
     if(extraTurn){
-        // 再行動だから、もう一度行動選択を呼び出してターンを抜ける
         if(who.cam == 'player') playerturn(who);
         else enemyturn(who);
         return;
     }
 
-    // 後半のdotダメージの処理（ユーザーの要望通りここにも配置）
     processDots(who);
     if(who.hp <= 0) return;
 
-    // 自分の行動が完全に終わったからbyeする
     turnBye(who);
 }
 
@@ -2740,6 +2740,7 @@ function turnNew(code = 0){
 // #endregion
 
 // #endregion batt
+
 
 //#region gamble
 let gamD = document.getElementById('gamble');
@@ -3360,6 +3361,7 @@ gamC.forF.setMush = (num = 10) => {
 // #endregion
 
 //#endregion　リヴァーサル/syudou
+
 
 
 //#region start

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penguin Step♪</title>
+    <style>
+        
+        #main{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #main .ui{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        #main .ui .icon{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            aspect-ratio: 1/1;
+        }
+        #main .ui .icon img{
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+        }
+        #main .ui .taken{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            font-size: 14px;
+        }
+        #main .ui .taken .num{
+            display: inline-block;
+            line-height: 20px;
+            font-size: 20px;
+        }
+
+        #main .bts{
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main">
+        <div class="ui">
+            <div class="icon">
+                <img src="assets/images/systems/mush.png"/>
+            </div>
+
+            <div class="taken">
+                <div class="num">NaN</div>
+                <div>/10</div>
+            </div>
+        </div>
+
+        <div class="bts">
+            <button class="bt hit">take</button>
+            <button class="bt res">res</button>
+        </div>
+    </div>
+
+    <script>
+        let DIV = document.getElementById("main");
+        let numD = DIV.querySelector(".ui .taken .num");
+        let btsD = {
+            hit: DIV.querySelector(".bts .bt.hit"),
+            res: DIV.querySelector(".bts .bt.res"),
+        }
+
+        let can = 0;
+        let taken = 0;
+        let cantake = 0;
+        let max = 10;
+
+        function update(){
+            numD.innerText = taken;
+        }
+
+        function hitF(){
+            if(!can) return;
+            if(taken == 10) return can = 1;
+
+            taken += 1;
+            if(taken > cantake) return inject();
+
+            update();
+        }
+        btsD.hit.addEventListener("click", hitF);
+
+        function resF(){
+            document.body.style.background = "#ffffff";
+            
+            taken = 0;
+            cantake = 0;
+            while(cantake < max && Math.random() < 0.75) cantake += 1;
+            
+            console.log(`[setMush] 今回のアカキノコは${cantake}個です`);
+
+            update();
+            can = 1;
+        }
+        btsD.res.addEventListener("click", resF);
+
+        function inject(){
+            can = 0;
+            document.body.style.background = "#9400a0";
+        }
+    </script>
+</body>
+</html>

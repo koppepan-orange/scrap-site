@@ -23,7 +23,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 80px;
+            width: 40px;
             aspect-ratio: 1/1;
         }
         #royal .ui .icon img{
@@ -57,8 +57,8 @@
 <body>
     <div id="royal">
         <div class="ui">
-            <div class="icon>
-                <img src="../assets/images/systems/royal.png"/>
+            <div class="icon">
+                <img src="assets/images/systems/royal.png"/>
             </div>
             <div class="rest">
                 <div class="num">0</div>
@@ -156,20 +156,24 @@
 
         let num = 6;
         let rest = [];
-        let hited = 0;
+        // 残弾数を管理する変数に変更
+        let remainingBullets = 0;
+
         function update(){
-            restD.num.innerText = hited;
+            // 表示を「残弾数 / 全弾数」にするよ
+            restD.num.innerText = remainingBullets;
             restD.max.innerText = `/${num}`;
         }
 
         function resF(){
             document.body.style.background = "#ffffff";
-            hited = 0;
-
+            
             num = random(4, 10);
+            remainingBullets = num; // 最初は全部の弾があるね
+            
             rest = [];
             for(let i=0; i<num; i++) rest.push(0);
-             rest[0] = 1;
+            rest[0] = 1; // これがアタリね
             arrayShuffle(rest);
 
             update();
@@ -180,18 +184,19 @@
             if(rest.length < 1) return;
 
             let len = rest.length;
-            console.log(`残弾:${len}/${num} (${Math.floor((len/num)*100)}%)`);
-
             let r = random(0, len-1);
             let atai = rest[r];
-            if(atai == 1) return shot();
-
-            hited += 1;
+            
+            // 弾を1つ消費するから減らす
+            remainingBullets -= 1;
             rest.splice(r, 1);
             
+            if(atai == 1) return shot();
+
             update();
         }
         btsD.hit.addEventListener("click", hitF);
+
 
         function shot(){
             document.body.style.background = "#ffcfcf";

@@ -273,7 +273,125 @@ let Charas = [
 ]
 
 
+/*
 
+function processDots(who){
+    let dots = {};
+    for(let buff of who.buffs){
+        let data = Buffs.find(a => a.name == buff.name);
+        if(data && hask(data, 'dot')){
+            let dot = data.dot;
+            let val = buff.value[dot];
+            if(typeof val == 'string' && val.endsWith('%')){
+                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
+            }
+            if(!dots[dot]) dots[dot] = 0;
+            dots[dot] += val;
+        }
+    }
+    Object.keys(dots).forEach(key => {
+        let val = dots[key];
+        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
+        who.hp -= val;
+        if(who.hp <= 0) return dead(0, who);
+    });
+
+    return 0;
+}
+
+async function turnNext(who){
+    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
+    
+    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
+
+        if(buff.name == 'onslime'){
+            if(isCrit(buff.value)){
+                buffremove(who, 'onslime');
+                addtext('なんとかスライムを取り払った!!');
+            } else {
+                addtext('スライムが邪魔して動けない!!');
+                turnBye(who);
+                 // 動けないから次の人へパス
+                return;
+            }
+        }
+        if(buffhas(who, 'skip')){
+            await logText(`>> はい${who.name}、お前スキップ〜〜`);
+            turnBye(who);
+            return;
+        }
+        if(hask(buff.value, 'palsy')){
+            if(isCrit(buff.value.palsy)){
+                data.name != 'stan'
+                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
+                    : addtext(`${who.cam}${who.me}はスタンしている....`);
+                turnBye(who);
+                return;
+            }
+        }
+        if(hask(buff.value, 'freeze')){
+            if(!isCrit(buff.value.freeze)){
+                addtext(`${who.name}は凍っている...`);
+                turnBye(who);
+                return;
+            }
+            await logText(`氷が溶けた！`);
+            buffremove(who, 'freeze');
+        }
+    }
+
+    // 前半のdotダメージ処理
+    processDots(who);
+    if(who.hp <= 0) return dead(0, who);
+
+    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
+
+    switch (who.cam){
+        case 'player':
+            playerturn(who);
+            break;
+        case 'enemie':
+            enemyturn(who);
+            break;
+    }
+}
+
+async function turnEnd(who, ares){
+    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
+    
+    for(let i = who.buffs.length - 1; i >= 0; i--){
+        who.buffs[i].time -= 1;
+        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
+    }
+    tekiou();
+
+    let extraTurn = false;
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
+        if(data && hask(data, 'luck')){
+            if(isCrit(data.luck)){
+                addtext('当たりが出たらもう一本！');
+                extraTurn = true;
+                break;
+            }
+        }
+    }
+
+    if(extraTurn){
+        if(who.cam == 'player') playerturn(who);
+        else enemyturn(who);
+        return;
+    }
+
+    processDots(who);
+    if(who.hp <= 0) return;
+
+    turnBye(who);
+}
+
+*/
 
 let Buffs = [
     {
