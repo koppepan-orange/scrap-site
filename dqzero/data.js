@@ -175,7 +175,7 @@ let Charas = [
         jpnm:'ファン・ボイ・チャウ',
         img:'color_slime_green',
         data:{
-            colorp:"color_slime_",
+            colorp:"color_slime_", //original
             color0:"green",
             colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
         },
@@ -401,17 +401,15 @@ let Buffs = [
         becauseof:'turn_start',
         hera:1,
         kiju:'lv',
-        desc:'ターン終了時、確率でもう一回行動できる。\nLv7ならば確定。\n願うと起きやすいです',
+        desc:'ターン終了時、確率でもう一回行動できる。',
+        flav:"数々のゲーマーを狂わせてきたと噂されている。",
         lvs:[
             {luck:'+20'},
             {luck:'+33'},
             {luck:'+50'},
-            {luck:'+67'},
-            {luck:'+80'},
-            {luck:'+90'},
             {luck:'+100'},
         ],
-        max:7
+        max:4
     },
     {
         name:'disappear',
@@ -439,7 +437,7 @@ let Buffs = [
             {
                 power: '+1.5',
                 spd: '+25.0',
-                crla: '+-6.5'
+                crla: '-6.5'
             }
         ],
         max:2
@@ -452,15 +450,15 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'poison',
-        desc:'ターン終了時HP割合で防御貫通ダメージ。\n毒の苦しみもお好きなんですね',
+        desc:'ターン開始時、HP割合で防御貫通ダメージを受ける。',
+        flav:"？？？「毒の苦しみもお好きなんですね」",
         lvs:[
             {poison:'5%'},
             {poison:'7%'},
             {poison:'10%'},
             {poison:'15%'},
-            {poison:'20%'},
         ],
-        max:5
+        max:4
     },
     {
         name:'poison_deadly',
@@ -470,7 +468,7 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'poison',
-        desc:'ターン終了時HP割合で防御貫通ダメージ。\nついでにランダムで他のバフ(良)の持続時間を1減少\n徐々〜に蝕まれて終わります。解消を推奨す',
+        desc:'ターン開始時、HP割合で防御貫通ダメージを受けたあと、ランダムで他のバフ(良)の持続時間を1減少される。',
         lvs:[
             {poison:'7%'},
             {poison:'10%'},
@@ -563,14 +561,14 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'elec',
-        desc:'ターン終了時固定ダメージ\nターン終了時、確率で他の味方に伝染する',
+        desc:`ターン開始時、固定ダメージを受け、さらに60%の確率で他の味方にこれが伝染する(1t)。\n
+        [1] もし金属製の防具を着ているならばこの効果で受けるダメージは2倍になる。`,
         lvs:[
-            {elec:5, spread:10},
-            {elec:10, spread:20},
-            {elec:20, spread:35},
-            {elec:30, spread:50},
-            {elec:45, spread:80},
-            {elec:60, spread:99},
+            {elec:3},
+            {elec:7},
+            {elec:10},
+            {elec:15},
+            {elec:21},
         ],
         max:6
     },
@@ -582,14 +580,13 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'elec',
-        desc:'ターン終了時固定ダメージ\nターン終了時、確率で他の味方に伝染する\nあと確率で麻痺のデバフを自身に付与します\n帯電・帯電ってなんだよ',
+        desc:'ターン開始時、固定ダメージを受ける\nターン終了時、確率で他の味方に伝染する\nあと確率で「麻痺」lv1を自身に1t付与します\n帯電・帯電ってなんだよ',
         lvs:[
-            {elec:10, spread:20, palsy:10},
-            {elec:20, spread:35, palsy:25},
-            {elec:30, spread:50, palsy:33},
-            {elec:45, spread:80, palsy:50},
-            {elec:60, spread:99, palsy:67},
-            {elec:80, spread:100, palsy:100},
+            {elec:5, palsy:10},
+            {elec:8, palsy:25},
+            {elec:11, palsy:33},
+            {elec:17, palsy:50},
+            {elec:23, palsy:100},
         ],
         max:6
     },
@@ -707,14 +704,16 @@ let Buffs = [
         ],
         max:1
     },
+    
     {
         name:'skip',
-        jpnm:'スキップ',
-        type:'debuff',
+        jpnm:'スキップカード',
+        type:'unique',
         becauseof:'turn_start',
         hera:1,
-        kiju:'lv',
-        desc:'はいお前スキップ〜〜笑笑\nぴえん超えてだっさぁですね\nえ？違う？',
+        kiju:'none',
+        desc:"ターン開始時、手番をスキップされる",
+        flav:"ゲーム終了間際で相手がこれを出してきた時の絶望感たるや..."
     },
     {
         name:'sleepiness',
@@ -723,7 +722,7 @@ let Buffs = [
         becauseof:'turn_start',
         hera:1,
         kiju:'lv',
-        desc:'睡魔..微熱魔じゃないです\nターン終了時にsleepyをnstack増加さかせます',
+        desc:'睡魔..微熱魔じゃないです\ターン終了時に「sleepy」をnstack増加させます',
         lvs:[
             {sleepy:10},
             {sleepy:20},
@@ -735,37 +734,27 @@ let Buffs = [
         name:'sleepy',
         jpnm:'眠気',
         type:'debuff',
-        becauseof:'none',
-        hera:1,
-        kiju:'stack',
-        desc:'眠くなってる状態..です....\n100stack到達でsleepingに変化します....\n変化後のsleepingのLvはsleepinessに寄りけりです\nあと、行動時にsleepyをnstack減少できます....',
-        lvs:[
-            {sleepy:6},
-            {sleepy:9},
-            {sleepy:12},
-        ],
-        max:3
+        becauseof:'act',
+        hera:10,
+        kiju:'none',
+        desc:`効果なし。\n
+        [1] 100stack到達でこの効果は消え、「睡眠」に変化する。
+        [2] 行動時、stackを10減らすことができる`,
+        flav:"いやほんと、最近ちょっと寝不足で、、すみません。なんだよ幼馴染に依存してる水魔導士って、、なんだよチェスの駒で戦う魔導士って、、、、"
     },
     {
         name:'sleeping',
         jpnm:'睡眠',
         type:'debuff',
-        becauseof:'none',
-        hera:1,
+        becauseof:'be_attack', //be_は受身の意
+        hera:10,
         kiju:'stack',
-        desc:'攻撃されると..ちょっと....起きます......\nzzz...',
-        lvs:[
-            {sleepy:50},
-            {sleepy:65},
-            {sleepy:80},
-            {sleepy:90},
-            {sleepy:95},
-            {sleepy:100},
-        ],
-        max:6
+        desc:`ターン開始時\n
+        [1] 攻撃された時、この効果は10stack減少する。`,
     },
     {
         name:'anger',
+        
         type:'debuff',
         becauseof:'none',
         hera:1,
@@ -780,7 +769,7 @@ let Buffs = [
         kiju:'stack',
         desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
         kaijo:"行動開始",
-        kaijov:"All",
+        kaijov:"",
         kaijoF:() => {
             if(hit(30)){
                 logText('纏わりついたスライムが邪魔をして動けなかった！');
