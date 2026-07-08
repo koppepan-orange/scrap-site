@@ -22,7 +22,7 @@ const Fonts = [
     {src:'comicsans', type:'ttf'},
     {src:'hangyaku', type:'ttf'},
     {src:'kurobara', type:'ttf'},
-    
+    {src:'cube12', type:'ttf'}
 ];
 
 const Images = {

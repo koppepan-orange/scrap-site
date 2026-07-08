@@ -689,6 +689,28 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     display: inline-block;
 }
 
+#cup{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    aspect-ratio: 1/1;
+    position: absolute;
+    right: 0;
+    bottom: 70px;
+    cursor: grab;
+    z-index: 3;
+}
+#cup:active{
+    scale: 0.95;
+}
+#cup img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
 #home{
     content: "home";
     gap: 50px;
@@ -1353,13 +1375,16 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     width: 100%;
     height: 100%;
 }
-#gamble .forage .gamen .dimee.mise{
-    display: flex;
-}
-#gamble .forage .gamen .dimee.mise img{
+#gamble .forage .gamen .dimee img{
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+#gamble .forage .gamen.hondie .dimee.hondie{
+    display: flex;
+}
+#gamble .forage .gamen.started .dimee.started{
+    display: flex;
 }
 
 #gamble .forage .gamen::after{
@@ -1431,7 +1456,54 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     right: 110%;
     transform: translateY(-50%);
     opacity: 0.6;
+    pointer-events: none;
     z-index: 1;
+}
+
+#gamble .forage .dai .otsu{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    width: 50px;
+    aspect-ratio: 1/1;
+    position: absolute;
+    top: 95px;
+    right: 40px;
+}
+#gamble .forage .dai .otsu img{
+    width: 100%;
+    height: 100%;
+    transform-origin: 20% center;
+    transition: transform 0.3s ease;
+    image-rendering: crisp-edges;
+    filter: none;
+    pointer-events: none;
+}
+#gamble .forage .dai .otsu:active img{
+    transform: rotate(10deg);
+}
+
+#gamble .forage .dai .disp{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+    aspect-ratio: 4/1;
+    padding-left: 2px;
+    border: 2px double #2b2b2b;
+    background: #404040;
+    position: absolute;
+    top: 70px;
+    left: 40px;
+    font-size: 18px;
+    line-height: 20px;
+    color: #de4848;
+    font-family: cube12;
+}
+#gamble .forage .dai .disp *{
+    display: inline-block;
 }
 
 #gamble .forage .dai .bottan{
@@ -1439,15 +1511,18 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 50px;
-    height: 50px;
-    /* aspect-ratio: 1/1; */
-    background: #ff8080;
+    width: 70px;
+    /* height: 50px; */
+    aspect-ratio: 1/1;
+    background: #ff3939;
     border-radius: 50%;
     position: absolute;
     top: 160px;
-    left: 15px;
+    left: 35px;
+    transition: background 0.10s;
 }
+#gamble .forage .dai .bottan:hover{background: #f24343}
+#gamble .forage .dai .bottan:active{background: #d03a3a}
 #gamble .forage .dai .bottan::after{
     content: "";
     display: block;
@@ -1455,7 +1530,24 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     aspect-ratio: 1/1;
     background: #2b2b2b;
     border-radius: 50%;
+    position: absolute;
     z-index: -1;
+}
+
+#gamble .forage .getout{
+    display: block;
+    width: 80px;
+    height: fit-content;
+    position: absolute;
+    top: 320px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#gamble .forage .getout img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 /* #endregion */
 

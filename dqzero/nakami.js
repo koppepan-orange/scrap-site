@@ -1967,7 +1967,8 @@ document.addEventListener('keyup',e => {
 let rimi = 0;
 let rimiD = document.querySelector("#rimi .num");
 let rimiC = {
-
+    cupD: document.getElementById('cup'),
+    cuped: 0
 }
 let rimiF = {};
 
@@ -2003,6 +2004,13 @@ rimiF.push = () => {
     mainF.move("home");
 }
 rimiD.addEventListener('click', rimiF.push);
+
+rimiF.cupF = () => {
+    rimiC.cuped += 1;
+    rimiF.inc(100);
+    rimiF.tekiou();
+}
+rimiC.cupD.addEventListener('click', rimiF.cupF);
 // #endregion
 
 
@@ -3325,8 +3333,55 @@ gamC.rouC.returnD.addEventListener('click', () => {
 
 */
 
+/*
+
+<div class="gamen">
+    <!-- 画面(液晶) -->
+
+    <div class="dimee started mise">
+        <img class="logo" src="assets/images/systems/foragener_logo.png" alt="DQ0">
+    </div>
+
+    <div class="dimee hondie">
+        <img src="assets/images/systems/foragener_back.png" alt="back">
+
+        <div class="mushes"></div>
+    </div>
+
+
+    <div class="dai">
+        <!-- 台 -->
+        <div class="irel">
+            <img src="assets/images/systems/100yen.png"/>
+        </div>
+
+        <div class="bottan"></div>
+
+        <div class="getout">
+            <img src="assets/images/systems/getout.png"/>
+        </div>
+    </div>
+</div>
+
+*/
+
 gamC.forD = gamD.querySelector('.forage');
 gamC.forC = {
+    gamenD: gamC.forD.querySelector('.gamen'),
+    starteD: gamC.forD.querySelector('.gamen .dimee.started'),
+    honD: gamC.forD.querySelector('.gamen .dimee.hondie'),
+    mushsD: gamC.forD.querySelector('.gamen .dimee.hondie .mushes'),
+    daiD: gamC.forD.querySelector('.gamen .dai'),
+    irelD: gamC.forD.querySelector('.gamen .dai .irel'),
+    otsuD: gamC.forD.querySelector('.gamen .dai .otsu'),
+    dispD: gamC.forD.querySelector('.gamen .dai .disp'),
+    btD: gamC.forD.querySelector('.gamen .dai .bottan'),
+    getoutD: gamC.forD.querySelector('.gamen .dai .getout'),
+    getoutID: gamC.forD.querySelector('.gamen .dai .getout img'),
+
+    bet: 0,
+    gamens: ["started", "hondie"],
+
     ing: 0,
     waiting: 0,
 
@@ -3341,14 +3396,67 @@ gamC.forC.returnD.addEventListener('click', () => {
     gamF.move("loby");
 });
 
+gamC.forF.update = () => {
+    let bet = gamC.forC.bet;
+    let disp = String(bet).padStart(9, "0");
 
+    let dispD = gamC.forC.dispD;
+    dispD.innerHTML = disp.split('').map(a => `<div>${a}</div>`).join('');
+}
+
+gamC.forF.gamenCH = (name) => {
+    for(let ch of gamC.forC.gamens){
+        if(ch == name) gamC.forC.gamenD.classList.add(ch);
+        else gamC.forC.gamenD.classList.remove(ch);
+    }
+}
 gamC.forF.enter = () => {
     
 }
 
-gamC.forF.start = () => {
-    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+gamC.forF.irel = () => {
+    // ここでエフェクトを
+    if(rimi < gamC.forC.bet+100) return tobiText(gamC.forC.irelD, "金欠乙");
+    gamC.forC.bet += 100;
+    gamC.forF.update();
+    
+
 }
+gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
+
+gamC.forC.otsuD.addEventListener('click', () => {
+    gamC.forC.bet = 0;
+    gamC.forF.update();
+})
+
+gamC.forF.bt = () => {
+    if(!(gamC.forC.ing || gamC.forC.waiting)){
+        gamC.forF.start();
+    }
+    else{
+        gamC.forF.stand();
+    }
+    
+}
+gamC.forC.btD.addEventListener('click', gamC.forF.bt);
+
+gamC.forF.start = async() => {
+    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+
+    let bet = gamC.forC.bet;
+    if(bet <= 0) return nicoText("コインを入れてねっ♡")
+    if(rimi < bet){
+        logtext("不正な額です。はい戻ってね～");
+        await delay(2000);
+        window.location.reload();
+        return
+    }
+    rimiF.dec(bet);
+    
+    gamC.forC.ing = 1;
+    gamC.forF.gamenCH('hondie');
+}
+
 
 gamC.forF.setMush = (num = 10) => {
     while(gamC.forC.cantake < 10 && Math.random() < 0.75) {
@@ -3356,6 +3464,14 @@ gamC.forF.setMush = (num = 10) => {
     }
     
     console.log(`[setMush] 今回のアカキノコは${gamC.forC.cantake}個です`);
+}
+
+
+
+gamC.forF.stand = () => {
+    if(!gamC.forC.ing) return 1;
+
+    nicoText('殺すぞ～～～～');
 }
 
 // #endregion
