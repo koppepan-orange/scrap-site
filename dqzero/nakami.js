@@ -194,7 +194,6 @@ function jouyo(A, B){
     let Q = Math.floor(A / B);
     let R = A % B;
     let res = {Q, R}
-    console.log(`${A} / ${B} = ${Q} ... ${R}`);
     
     return res;
 }
@@ -249,7 +248,7 @@ function arrayGacha(array, prob){
     if(array.length != prob.length) throw new Error("長さがあってないっす！先輩、ちゃんとチェックした方がいいっすよ〜？");
     let total = prob.reduce((sum, p) => sum + p, 0);
     let random = Math.random() * total;
-    for(let i = 0; i < array.length; i++){
+    for (let i = 0; i < array.length; i++){
         if(random < prob[i]) return array[i];
         random -= prob[i];
     };
@@ -465,7 +464,7 @@ function irohaHo(color){
 function irohaMix(c1, c2, ratio = 0.5){
     let toRGB = c => {
         c = c.replace('#', '');
-        if(c.length === 3) c = c.split('').map(x => x + x).join('');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
         let n = parseInt(c, 16);
         return [n >> 16, (n >> 8) & 255, n & 255];
     };
@@ -488,9 +487,9 @@ function irohaRan(){
     let ato = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
     return ato;
 };
-function irohaDark(color){
+function irohaDark(color) {
     color = color.replace('#', '');
-    if(color.length === 3) color = color.split('').map(x => x + x).join('');
+    if (color.length === 3) color = color.split('').map(x => x + x).join('');
     
     let r = parseInt(color.slice(0, 2), 16);
     let g = parseInt(color.slice(2, 4), 16);
@@ -705,7 +704,7 @@ async function logtext(raw, code = ""){
             }else{
                 let das = `[${code}] `;
                 das += logC.textD.innerHTML;
-                addtext(das);
+                logText_log(das);
                 let waitTime = logC.autoDelay * 1000;
                 
                 let cleanupListeners = () => {};
@@ -801,7 +800,7 @@ logF.woah = (code = NaN) => {
     if(isTog && isHid) logF.tog(0);
 };
 
-function addtext(text){
+function logText_log(text){
     logC.mainD.innerHTML += text + '<br>';
     logC.mainD.scrollTop = logC.mainD.scrollHeight;
 };
@@ -855,6 +854,83 @@ document.addEventListener('mousedown', e => {
     document.addEventListener('mouseup', onMouseUp);
 });
 //#endregion
+//#region Timer
+class Timer{
+    constructor(k = 0, d = 1, mode = 0){
+        // k:開始数 d:増加量
+        // mode| 0-分:秒 1-秒:ミリ秒
+        if(typeof k != "number" || typeof d != "number") return;
+        this.k = k;
+         this.time = k;
+        this.d = d;
+        this.mode = mode;
+
+        this.ev = null;
+
+
+        let div = document.createElement("div");
+        div.id = "timer";
+         let num = document.createElement("div");
+         div.appendChild(num);
+        div.addEventListener('click', () => {div.classList.toggle("tog")})
+        div.addEventListener("contextmenu", e => {
+            e.preventDefault();
+            div.classList.remove("show");
+        })
+        this.div = div;
+        this.numD = num;
+
+        // let div0 = document.body;
+        let div0 = mainD;
+        div0.appendChild(div);
+        this.tekiou();
+    }
+
+    tekiou(){
+        let time = this.time;
+        let kiju = 60;
+        if(this.mode) kiju = 100;
+
+        let [hun, byo] = [Math.floor(time/kiju), time%kiju]
+            .map(a => a.toFixed(0).padStart(2, "0")); //初めて自ら改行したわ
+        this.numD.textContent = `${hun}:${byo}`;
+    }
+
+    start(){
+        if(this.ev) return;
+        let inter = 1000;
+        if(this.mode) inter = 10;
+
+        this.ev = setInterval(() => {
+            this.time += this.d;
+            this.tekiou()
+        }, inter);
+    }
+    stop(){
+        if(this.ev){
+            clearInterval(this.ev);
+            this.ev = null;
+        }
+        this.tekiou();
+    }
+    reset(){
+        this.time = this.k;
+        this.tekiou();
+    }
+
+    kite(){
+        this.div.classList.add("show");
+    }
+    kiero(){
+        this.div.classList.remove("show");
+    }
+
+    share(){
+        this.stop();
+        this.div.remove();
+    }
+}
+// #endregion
 //#region tk
 class tk{
     constructor(type, x = 'half', y = 'half', w = window.innerWidth/2, h = window.innerWidth/2){
@@ -1185,7 +1261,7 @@ class Slider {
 // #endregion
 //#region takushiSen
 class TakushiSen {
-    constructor(choices, mode = "tate", data = 0){
+    constructor(choices, mode = "tate", data = 0) {
         this.choices = choices; // [{name, img}, {name, img}, ...]
         this.mode = mode;
 
@@ -1198,7 +1274,7 @@ class TakushiSen {
         this.make();
     }
 
-    make(){
+    make() {
         let div = document.createElement('div');
         div.className = `mode ${this.mode}`;
         
@@ -1208,15 +1284,14 @@ class TakushiSen {
         div.style.setProperty('--botan-ed', bEd);
         div.style.setProperty('--botan-col-ed', irohaHo(bEd));
 
-        this.choices.forEach((ma, india) => {
+        this.choices.forEach(ma => {
             let [name, gazou] = [ma.name, ma.img];
             if(typeof ma === 'string') name = ma;
 
             let item = document.createElement('div');
             item.className = `item ${name}`;
             item.textContent = name;
-            // item.dataset.name = name;
-            item.dataset.india = india;
+            item.dataset.name = name;
 
             // 画像があるならば
             if(gazou){
@@ -1232,17 +1307,16 @@ class TakushiSen {
     }
 
     // ここがメイン！await で待ち受けるやつ
-    async select(parent){
+    async select(parent) {
         return new Promise(resolve => {
             let div = this.make();
             parent.appendChild(div);
 
             div.addEventListener('click', (e) => {
                 let target = e.target.closest('.item');
-                if(target){
+                if (target) {
                     div.remove();
-                    // resolve(target.dataset.name);
-                    resolve(target.dataset.india);
+                    resolve(target.dataset.name);
                 }
             });
         });
@@ -1456,15 +1530,33 @@ let loaC = {
     erd: 0
 }
 let loaF = {};
-loaC.imgT = Object.values(Images).reduce((a,b) => a + b.length, 0);
 loaC.souT = Object.values(Sounds).reduce((a,b) => a + b.length, 0);
 
 loaF.load = async() => {
     console.log("loadを開始しました。少々お待ちください");
+
+    loaC.imgT = 0;
+    let MaaSorehaSoretoshite = (mono) => {
+        for(let key in mono){
+            if(key == 'すべて') continue;
+
+            let val = mono[key];
+            if(Array.isArray(val)){
+                loaC.imgT += val.length;
+            }
+            else if(val && typeof val == 'object'){
+                MaaSorehaSoretoshite(val);
+            }
+        }
+    };
+    MaaSorehaSoretoshite(Images);
+
     if(await loaF.loadI()) return 1;
     return 0;
 }
+
 /*
+// 元のカタチ
 loaF.loadI = async() => {
     let kasan = () => {
         loaC.imgD++;
@@ -1493,158 +1585,69 @@ loaF.loadI = async() => {
 }
 */
 loaF.loadI = async() => {
-    let stas0 = Stages.filter(a => !a.no).map(a => a.name);
-    let stas = stas0.concat(['すべて']);
-    
-    Images.maps = {};
-    Images.enemies = {};
-    for(let sta of stas){
-        if(!Images.maps[sta]) Images.maps[sta] = [];
-        Objects.filter(a => a.in == sta).map(a => a.name).forEach(name => {
-            loaC.imgT += 1;
-            if(sta != 'すべて') Images.maps[sta].push(name);
-            
-            else for(let sta2 of stas0) Images.maps[sta2].push(name);
-        });
+    if(loaC.imgT == 0) return loaF.loadS();
 
-        if(sta == 'すべて') continue;
-
-        Stages.find(a => a.name == sta).tiles.forEach(name => {
-            loaC.imgT += 1;
-            Images.maps[sta].push(name);
-        })
-
-        if(!Images.enemies[sta]) Images.enemies[sta] = [];
-        Enemies.filter(a => !a.no && (a.ins.includes(sta) || a.ins == 'すべて')).map(a => a.name).forEach(name => {
-            loaC.imgT += 1;
-            // Images.enemies.push(name);
-            
-            if(sta != 'すべて') Images.enemies[sta].push(name);
-            else for(let sta2 of stas0) Images.enemies[sta2].push(name);
-        });
-    }
-
-    Images.charas = [];
-    for(let ch of Charas){
-        let toku = 0;
-        if(ch.name == "color_slime") toku = 1;
-        if(toku == 0){
-            let img = `${ch.img}`;
-            Images.charas.push(img);
-        }
-        else{
-            switch(ch.name){
-                case "color_slime":
-                    for(let c of ch.data.colors){
-                        let img = `${ch.data.colorp}${c}`;
-                        Images.charas.push(img);
-                    }
-            }
-        }
-    }
-    
-
-    // console.log('LETS GOOOOOOOOOOO!!')
-    let T1 = (Tk) => {
-        let Tv = Images[Tk];
-        if(Array.isArray(Tv)) return loaC.imgT += Tv.length;
-        
-        T0(Tv);
-    }
-    let T0 = (moto) => {
-        for(let key in moto){
-            // T1(key);
-            T1(moto[key])
-        }
+    let kasan = () => {
+        loaC.imgD += 1;
+        if(loaC.imgD == loaC.imgT) loaF.loadS();
     }
 
     let loaloa = async(arr, route) => {
-        // console.log("Arrayでした lets 読み込み")
-        let src = "assets/images/";
-        for(let r of route) src += `${r}/`;
-        // console.log(src)
-
-        let yomi = (mono, img) => {
-            loaC.imgD += 1;
-            tar[mono] = img;
-            if(loaC.imgD == loaC.imgT) return loaF.loadS(), 4;
-        }
+        let srcBase = "assets/images/" + route.join("/") + "/";
 
         let tar = images;
         for(let r of route){
-            // console.log(r, tar)
             if(!tar[r]) tar[r] = {};
             tar = tar[r];
         }
-        // console.log("終わり", tar)
-        // console.log(images)
-        // console.log(arr);
-        // console.log(route);
-        // console.log(images);
 
-        let all = arr.length;
-        // console.error(`--- ${route.join('/')}:${all} ---`)
-        for(let mono of arr){
-            // console.log(mono);
+        arr.forEach(mono => {
             let img = new Image();
-            img.src = `${src}${mono}.png`;
+            img.src = `${srcBase}${mono}.png`;
+            
             img.onload = () => {
-                yomi(mono, img);
-            }
+                tar[mono] = img;
+                kasan();
+            };
 
             img.onerror = () => {
-                console.error(`Image ${src}${mono}.png failed to load.`);
+                console.error(`Image ${srcBase}${mono}.png failed to load.`);
                 loaC.erd += 1;
-                 if(loaC.erd > 50) return console.error('さすがにやりすぎbonus'), loaC.kokokomai = 32
+                
+                if(loaC.erd > 50) {
+                    console.error('さすがにやりすぎbonus');
+                    return;
+                }
+                
                 img.src = `assets/images/systems/error.png`;
-                yomi(mono, img);
-                erd = 1
+                tar[mono] = img;
+                kasan();
             };
-        }
-
-        // console.log('読み込み完了 これよりユグドラシルに帰還する')
-        return 0;
+        });
     }
 
-    // let gensho = Object.keys(Images);
+    // 再帰的に掘り進む
     let loaloa0 = async(mono, route = []) => {
-        let sink = route.length ? 1 : 0
-        // if(sink) console.log("not Arrayでした lets 再帰");
-        let hzd = loaC.deep;
-        // console.log("[loaloa0] route:[" + route + "]");
-        // console.log('次:monoです')
-        // console.log(mono)
         for(let key in mono){
-            // console.log(`key:${key} (all:[${Object.keys(mono)}])`)
-            if(key == 'すべて'){
-                // console.error('"すべて"だったのでスキップ');
-                route.pop()
-                continue;
-            }
+            if(key == "すべて") continue; //"すべて"はスキップ
 
-            route.push(key);
-            loaC.deep += 1;
-            // console.log(`[loaloa0ed] route:[${route}]`);
-            
-            let val = mono[key]??null;
-            if(!val) return console.error('↓↓null↓↓'), console.log(tar), console.log(mono), console.log(key), console.error('↑↑null↑↑');
-            // console.log("次、valです");
-            // console.log(val);
-            // console.log("↑Arrayかな? 結果 => "+Array.isArray(val));
+            let val = mono[key];
+            if(!val) continue;
+
+            route.push(key); //追加
+
             if(Array.isArray(val)){
-                if(await loaloa(val, route)) return console.error('南ノ南');
-                let pop = route.pop()
-                // console.log(`帰還成功、${pop}を排除`)
-                loaC.deep -= 1;
-            }//arrayなら => ロードへ
-            else await loaloa0(val, route); //まだオブジェクトなら => もっかい
+                loaloa(val, [...route]);
+            }
+            else if(typeof val == 'object'){
+                await loaloa0(val, route); //さらなる深みへ
+            }
+            
+            route.pop(); //階層を戻す
         }
-        route.pop();
-        loaC.deep -= 1;
     }
 
-    loaloa0(Images);
-
+    await loaloa0(Images);
 }
 
 loaF.loadS = async() => {
@@ -1662,7 +1665,7 @@ loaF.loadS = async() => {
             sound.preload = 'auto';
             sound.src = `assets/sounds/${belong}/${name}.mp3`;
             if(belong == 'bgm'){
-                sound.loop = 1;
+                sound.loop = true;
                 sound.dataset.type = 'bgm';
                 sound.volume = souC.bgm;
             }
@@ -1687,7 +1690,7 @@ loaF.loadS = async() => {
 }
 loaF.end = () => {
     console.log(`images & sounds loaded! (error: ${loaC.erd})`);
-    soundVolume(50);
+    souF.volume(50);
     start();
 }
 
@@ -1696,7 +1699,35 @@ let souC = {
     bgm: 0.5,
     nowBgm: null
 }
-function soundPlay(name){
+let souF = {};
+souF.play = (name) => {
+    console.log("ん")
+    if(!sounds[name]) return souF.play('error');
+    let proto = sounds[name];
+
+    if(proto.dataset.type == 'bgm'){
+        if(souC.nowBgm == name && !proto.paused) return;
+        if(souC.nowBgm && sounds[souC.nowBgm] && !sounds[souC.nowBgm].paused){
+            sounds[souC.nowBgm].pause();
+            sounds[souC.nowBgm].currentTime = 0;
+        }
+        proto.volume = souC.bgm;
+        proto.play().catch(e => console.warn('BGM 再生エラー', e));
+        souC.nowBgm = name;
+    }
+    else if(proto.dataset.type == 'se'){
+        console.log("se")
+        let clone = proto.cloneNode(1);
+        clone.volume = souC.se;
+        clone.dataset.type = 'se';
+        clone.addEventListener('ended', ()=> {
+            try{clone.src = '';}catch(e){}
+        });
+        clone.play().catch(e => console.warn('SE 再生エラー', e));
+    }
+}
+
+souF.play = (name) => {
     let proto = null;
     let category = null;
 
@@ -1708,16 +1739,13 @@ function soundPlay(name){
         }
     }
 
-    // 見つからない場合はerrorを呼び出す
     if(!proto){
-        if(name !== 'error') return soundPlay('error');
-        return;
+        if(name != 'error') return souF.play('error');
+        else return;
     }
 
     if(proto.dataset.type === 'bgm'){
-        // 現在のBGMを止める処理
         if(souC.nowBgm){
-            // souC.nowBgm からカテゴリを特定して停止する
             for(let belong in sounds){
                 if(sounds[belong][souC.nowBgm]){
                     let oldBgm = sounds[belong][souC.nowBgm];
@@ -1729,19 +1757,19 @@ function soundPlay(name){
                 }
             }
         }
-        
+
         proto.volume = souC.bgm;
         proto.play().catch(e => console.warn('BGM 再生エラー', e));
         souC.nowBgm = name;
-    } else {
+    }else{
         let clone = proto.cloneNode(true);
         clone.volume = souC.se;
         clone.dataset.type = 'se';
-        clone.addEventListener('ended', () => { clone.src = ''; });
+        clone.addEventListener('ended', () => {clone.src = ""});
         clone.play().catch(e => console.warn('SE 再生エラー', e));
     }
 }
-function soundStop(){
+souF.stop = () => {
     Object.keys(sounds).forEach(k => {
         try{
             sounds[k].pause();
@@ -1751,7 +1779,7 @@ function soundStop(){
     souC.nowBgm = null;
     document.querySelectorAll('audio,video').forEach(el => { el.pause(); el.currentTime = 0; });
 }
-function soundVolume(code, val){
+souF.volume = (code, val) => {
     if(typeof code == 'number' && typeof val == 'undefined') val = code, code = 'both';
     if(typeof val !== 'number') return console.error('val は数値にして');
     let v = val;
@@ -1962,7 +1990,6 @@ document.addEventListener('keyup',e => {
 //#endregion main
 
 
-
 // #region rimi
 let rimi = 0;
 let rimiD = document.querySelector("#rimi .num");
@@ -2009,6 +2036,16 @@ rimiF.cupF = () => {
     rimiC.cuped += 1;
     rimiF.inc(100);
     rimiF.tekiou();
+
+    let arr = [
+        "情けなぁ〜く乞食をするのはこの男〜！",
+        "プライドを捨てて貰うお金...嬉しい？",
+        "だっさぁ〜♡",
+        "そんなに必死に頼むよりもぉ、働いた方がいいと思いますよ〜？",
+        "よわよわな物乞い、お疲れ様で〜す♡"
+    ]
+    let text = arraySelect(arr);
+    console.log(`[beg](${rimiC.cuped}回目) ${text} `);
 }
 rimiC.cupD.addEventListener('click', rimiF.cupF);
 // #endregion
@@ -2802,7 +2839,7 @@ gamF.load = () => {
         div.appendChild(img);
         
         div.addEventListener('click', () => {
-            gamF.move(bas.name)
+            gamF.move(bas.name);
         })
 
         gamC.lobyD.querySelector('.bashos').appendChild(div);
@@ -2821,12 +2858,15 @@ gamF.load = () => {
 
 
 gamF.move = (to) => {
+    console.log(`[move] ${gamC.now} => ${to}`);
     if(gamC.now == to) return console.log('どういうわけか もう そこにいる');
 	if(!to) return console.error(`せんぱ〜い？${to}ってどこですか〜？笑`);
-	
+
 	for(let a of gamC.bashos) gamD.querySelector(`.heya.${a.name}`).classList.remove('show');
     gamD.querySelector(`.heya.${to}`).classList.add('show');
     gamC.now = to;
+
+    if(typeof gamF[to] === "function") gamF[to]();
 }
 
 //#region loby
@@ -2845,7 +2885,7 @@ gamC.blaC = {
     bj: 21,
     bas: 17,
     ing: 0,
-    waiting: 0,
+    wait: 0,
     stand: 0,
 
     bet: 0,
@@ -2896,9 +2936,9 @@ gamC.blaF.btext = (text = "こんにちは。") => {
 
 gamC.blaF.back = () => {
     if(gamC.blaC.ing ||
-      !gamC.blaC.waiting) return;
+      !gamC.blaC.wait) return;
     
-    gamC.blaC.waiting = 0;
+    gamC.blaC.wait = 0;
     gamC.blaD.classList.remove("ing")
     gamC.blaF.stext("っし、そろそろいくか？");
     gamC.blaF.btext("ご自由に");
@@ -3078,7 +3118,7 @@ gamC.blaF.start = async() => {
     if(res) return 1; //減らせなかった場合
 
     gamC.blaC.ing = 1;
-    gamC.blaC.waiting = 1;
+    gamC.blaC.wait = 1;
     gamC.blaD.classList.add("ing");
 
 
@@ -3098,7 +3138,7 @@ gamC.blaF.start = async() => {
         await delay(500)
     }
 
-    gamC.blaC.waiting = 0;
+    gamC.blaC.wait = 0;
     return 0;
 }
 gamC.blaC.staD.addEventListener('click', gamC.blaF.start)
@@ -3137,7 +3177,7 @@ gamC.blaF.draw = (cam, hide = 0, code = 0) => {
     card.india = all0
     
     has.push(card);
-    soundPlay('place');
+    souF.play('place');
 
     gamC.blaF.tekiou(); //適用関数
     console.log(`==> 値は${card.val}. 合計 becomes ${cardCalc(has, "bj")}`);
@@ -3160,7 +3200,7 @@ gamC.blaF.onmyway = (cam, num = 0) => {
 gamC.blaF.hit = () => {
     if(gamC.blaC.stand ||
       !gamC.blaC.ing ||
-       gamC.blaC.waiting) return 1;
+       gamC.blaC.wait) return 1;
 
     let card = gamC.blaF.draw("player");
     gamC.blaF.tekiou();
@@ -3176,7 +3216,7 @@ gamC.blaC.hitD.addEventListener('click', gamC.blaF.hit);
 gamC.blaF.stand = async(owa = 0) => {
     if(gamC.blaC.stand ||
       !gamC.blaC.ing ||
-       gamC.blaC.waiting) return 1;
+       gamC.blaC.wait) return 1;
     gamC.blaC.stand = 1;
 
     jump:{
@@ -3288,7 +3328,7 @@ gamC.blaF.end = (cam = 0, yue = "error") => {
     gamC.blaF.update();
     
     logtext(mes, "gamble");
-    gamC.blaC.waiting = 1;
+    gamC.blaC.wait = 1;
     gamC.blaC.ing = 0;
     gamC.blaF.stext("もっかいやるか？");
     gamC.blaF.btext("ん、戻りますか？");
@@ -3297,7 +3337,7 @@ gamC.blaF.end = (cam = 0, yue = "error") => {
 
 
 gamC.blaC.returnD.addEventListener('click', () => {
-    if(gamC.blaC.ing || gamC.blaC.waiting) return 1;
+    if(gamC.blaC.ing || gamC.blaC.wait) return 1;
     gamF.move("loby");
 });
 
@@ -3307,14 +3347,14 @@ gamC.blaC.returnD.addEventListener('click', () => {
 gamC.rouD = gamD.querySelector('.rourou');
 gamC.rouC = {
     ing: 0,
-    waiting: 0,
+    wait: 0,
 
     returnD: gamC.rouD.querySelector('.return')
 }
 gamC.rouF = {};
 
 gamC.rouC.returnD.addEventListener('click', () => {
-    if(gamC.rouC.ing || gamC.rouC.waiting) return 1;
+    if(gamC.rouC.ing || gamC.rouC.wait) return 1;
     gamF.move("loby");
 });
 
@@ -3333,38 +3373,6 @@ gamC.rouC.returnD.addEventListener('click', () => {
 
 */
 
-/*
-
-<div class="gamen">
-    <!-- 画面(液晶) -->
-
-    <div class="dimee started mise">
-        <img class="logo" src="assets/images/systems/foragener_logo.png" alt="DQ0">
-    </div>
-
-    <div class="dimee hondie">
-        <img src="assets/images/systems/foragener_back.png" alt="back">
-
-        <div class="mushes"></div>
-    </div>
-
-
-    <div class="dai">
-        <!-- 台 -->
-        <div class="irel">
-            <img src="assets/images/systems/100yen.png"/>
-        </div>
-
-        <div class="bottan"></div>
-
-        <div class="getout">
-            <img src="assets/images/systems/getout.png"/>
-        </div>
-    </div>
-</div>
-
-*/
-
 gamC.forD = gamD.querySelector('.forage');
 gamC.forC = {
     gamenD: gamC.forD.querySelector('.gamen'),
@@ -3380,19 +3388,23 @@ gamC.forC = {
     getoutID: gamC.forD.querySelector('.gamen .dai .getout img'),
 
     bet: 0,
+    getout: 0,
     gamens: ["started", "hondie"],
 
     ing: 0,
-    waiting: 0,
-
+    wait: 0,
+    timer: null,
+    
+    rate: 1.0,
     cantake: 0,
+    took: 0,
 
     returnD: gamC.forD.querySelector('.return')
 }
 gamC.forF = {};
 
 gamC.forC.returnD.addEventListener('click', () => {
-    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+    if(gamC.forC.ing || gamC.forC.wait) return 1;
     gamF.move("loby");
 });
 
@@ -3410,14 +3422,17 @@ gamC.forF.gamenCH = (name) => {
         else gamC.forC.gamenD.classList.remove(ch);
     }
 }
-gamC.forF.enter = () => {
-    
+gamF.forage = () => {
+    // enter
+    gamC.forF.update();
 }
 
 gamC.forF.irel = () => {
     // ここでエフェクトを
-    if(rimi < gamC.forC.bet+100) return tobiText(gamC.forC.irelD, "金欠乙");
+    if(rimi < 100) return tobiText(gamC.forC.irelD, "金欠乙");
+
     gamC.forC.bet += 100;
+    rimiF.dec(100);
     gamC.forF.update();
     
 
@@ -3425,54 +3440,188 @@ gamC.forF.irel = () => {
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
 
 gamC.forC.otsuD.addEventListener('click', () => {
+    let ryou = gamC.forC.bet;
     gamC.forC.bet = 0;
     gamC.forF.update();
+
+    gamC.forF.getout_set(ryou);
 })
 
 gamC.forF.bt = () => {
-    if(!(gamC.forC.ing || gamC.forC.waiting)){
-        gamC.forF.start();
-    }
-    else{
-        gamC.forF.stand();
-    }
+    if(!(gamC.forC.ing || gamC.forC.wait)) gamC.forF.start();
+    else gamC.forF.dropout();
     
 }
 gamC.forC.btD.addEventListener('click', gamC.forF.bt);
 
 gamC.forF.start = async() => {
-    if(gamC.forC.ing || gamC.forC.waiting) return 1;
+    if(gamC.forC.ing || gamC.forC.wait) return 1;
+
+    gamC.forC.rate = 1.0;
+    gamC.forC.took = 0;
+    gamC.forC.timer = new Timer(0, 1, 1);
 
     let bet = gamC.forC.bet;
     if(bet <= 0) return nicoText("コインを入れてねっ♡")
-    if(rimi < bet){
-        logtext("不正な額です。はい戻ってね～");
-        await delay(2000);
-        window.location.reload();
-        return
-    }
-    rimiF.dec(bet);
     
     gamC.forC.ing = 1;
+    gamC.forF.mushSet(10);
     gamC.forF.gamenCH('hondie');
-}
-
-
-gamC.forF.setMush = (num = 10) => {
-    while(gamC.forC.cantake < 10 && Math.random() < 0.75) {
-        gamC.forC.cantake += 1;
-    }
     
-    console.log(`[setMush] 今回のアカキノコは${gamC.forC.cantake}個です`);
+    gamC.forC.wait = 1;
+    await gamC.forF.mushPlace();
+    gamC.forC.wait = 0;
+
+    gamC.forC.timer.start();
+    return 0;
+}
+
+
+gamC.forF.mushSet = (num = 10) => {
+    let cantake = 0;
+    while(cantake < 10 && Math.random() < 0.75){
+        cantake += 1;
+    }
+    // 単純に「0.75**${個数}」で確率
+    
+
+    gamC.forC.cantake = cantake;
+    
+    console.log(`[mushSet] 今回のアカキノコは${cantake}個です`);
+    if(cantake == 10) console.warn(`[mushSet] ん、10個？5.63%？？？`), console.warn(`[mushSet] いやまあ...ブルアカの☆3の確率3%よりは良い方か`);
+
+    return 0;
+}
+gamC.forF.mushPlace = () => {
+    let div0 = gamC.forC.mushsD;
+    div0.innerHTML = "";
+
+    let placed = [];
+
+    for(let i=0; i<10; i++){
+        let div = document.createElement('div');
+        div.className = 'mush';
+         let img = images.systems["mush"].cloneNode();
+         div.appendChild(img);
+
+        
+        let bigger = 4;
+        let width = (bigger/64)*100;
+        div.style.width = `${width}%`;
+
+        let gridX, gridY, ticca;
+        let tried = 0;
+        do {
+            gridX = Math.floor(Math.random() * 50) + 1;
+            gridY = Math.floor(Math.random() * 33) + 1;
+            
+            ticca = placed.some(pos => {
+                return Math.abs(pos.x - gridX) < bigger && Math.abs(pos.y - gridY) < bigger;
+            });
+            tried++;
+        }while(ticca && tried<23);
+
+        placed.push({ x: gridX, y: gridY });
+
+        let totalX = 6+gridX;
+        let totalY = 6+gridY;
+
+        let left = (totalX / 64) * 100;
+        let top = (totalY / 48) * 100;
+
+        div.style.left = `${left}%`;
+        div.style.top = `${top}%`;
+
+        div.dataset.index = i;
+
+        div.addEventListener("click", () => {
+            gamC.forF.mushGet();
+            div.remove();
+        });
+
+        let acessment = "assets/images/systems/"
+        div.addEventListener("pointerenter", () => img.src = `${acessment}mush_high.png`);
+        div.addEventListener("pointerleave", () => img.src = `${acessment}mush.png`);
+
+        div0.appendChild(div);
+    }
+
+    console.log(`[mushPlace] 配置完了。ご自由に、どうぞ？`)
+
+    return 0;
+}
+gamC.forF.mushGet = () => {
+    if(gamC.forC.wait) return;
+
+    gamC.forC.took += 1;
+    let tim = gamC.forC.timer.time;
+
+    let took = gamC.forC.took;
+    let cantake = gamC.forC.cantake;
+    console.log(`[mushGet] ${took}/${cantake} (思考時間:${tim/100}s)`);
+
+    if(cantake < took) return gamC.forF.sprayed();
+
+    let up = random(5, 15)*0.1;
+    let moto = gamC.forC.rate;
+    gamC.forC.rate = Math.ceil((moto + up) *10) /10;
+
+    console.log(`[mushGet] rate上昇↑↑ ${moto} => ${gamC.forC.rate}`);
+
+    gamC.forC.timer.reset();
 }
 
 
 
-gamC.forF.stand = () => {
+gamC.forF.sprayed = () => {
+    console.log(`[sprayed] 毒、噴射 ${gamC.forC.rate} => 0.0`);
+    gamC.forC.rate = 0.0;
+    kirameki(gamC.forC.btD);
+    gamC.forF.dropout(1);
+}
+gamC.forF.dropout = (code = 0) => {
     if(!gamC.forC.ing) return 1;
 
-    nicoText('殺すぞ～～～～');
+    let rate = gamC.forC.rate;
+    let bet = gamC.forC.bet;
+    if(code == 0) console.log(`[dropout] 降りました！rateは${rate}, betは${bet}`);
+
+    let get = Math.ceil(bet*rate);
+    if(0 < get) gamC.forF.getout_set(get);
+
+    gamC.forF.end();
 }
+gamC.forF.end = () => {
+    gamC.forF.gamenCH("started");
+    gamC.forC.ing = 0;
+    gamC.forC.bet = 0;
+    gamC.forC.timer.share();
+     gamC.forC.timer = null;
+    gamC.forF.update();
+}
+
+gamC.forF.getout_set = (ryou) => {
+    // imgをgetout.png→getout_coin.pngにする。そしてdivが押されたら...imgをgetout.ongに戻し、rimiF.inc(ryou)をする
+
+    let img = gamC.forC.getoutID;
+
+    img.src = "assets/images/systems/getout_coin.png";
+    gamC.forC.getout += ryou;
+}
+gamC.forF.getout_get = () => {
+    let getout = gamC.forC.getout;
+    if(typeof getout === "number" && getout <= 0) return;
+
+    rimiF.inc(getout);
+    console.log(`[getout] Ɍ${getout}を受け取りました`)
+
+    let img = gamC.forC.getoutID;
+    img.src = "assets/images/systems/getout.png";
+    
+    gamC.forC.getout = 0;
+}
+gamC.forC.getoutD.addEventListener('click', gamC.forF.getout_get);
+
 
 // #endregion
 
@@ -3499,11 +3648,11 @@ let LoadOfWait = async() => await loaF.load();
 if(document.readyState == "loading"){
     document.addEventListener("DOMContentLoaded", init);
 }
-else LoadOfWait();
+else init();
 
 async function init(){
+    SpeciusLight(); //とくべちゅ、しよ？
     await LoadOfWait();
-    start();
 }
 //#endregion
 

@@ -26,7 +26,7 @@ const Fonts = [
 ];
 
 const Images = {
-    systems:["error",'select','circle','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon'],
+    systems:["error",'select','circle','mush','mush_high','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon'],
 }
 
 const Sounds = {
@@ -41,7 +41,57 @@ const Spaces = [
 ];
 
 
+function SpeciusLight(){
+    let stas0 = Stages.filter(a => !a.no).map(a => a.name);
+    let stas = stas0.concat(['すべて']);
+    
+    Images.maps = {};
+    Images.enemies = {};
+    for(let sta of stas){
+        if(!Images.maps[sta]) Images.maps[sta] = [];
+        Objects.filter(a => a.in == sta).map(a => a.name).forEach(name => {
+            loaC.imgT += 1;
+            if(sta != 'すべて') Images.maps[sta].push(name);
+            
+            else for(let sta2 of stas0) Images.maps[sta2].push(name);
+        });
 
+        if(sta == 'すべて') continue;
+
+        Stages.find(a => a.name == sta).tiles.forEach(name => {
+            loaC.imgT += 1;
+            Images.maps[sta].push(name);
+        })
+
+        if(!Images.enemies[sta]) Images.enemies[sta] = [];
+        Enemies.filter(a => !a.no && (a.ins.includes(sta) || a.ins == 'すべて')).map(a => a.name).forEach(name => {
+            loaC.imgT += 1;
+            // Images.enemies.push(name);
+            
+            if(sta != 'すべて') Images.enemies[sta].push(name);
+            else for(let sta2 of stas0) Images.enemies[sta2].push(name);
+        });
+    }
+
+    Images.charas = [];
+    for(let ch of Charas){
+        let toku = 0;
+        if(ch.name == "color_slime") toku = 1;
+        if(toku == 0){
+            let img = `${ch.img}`;
+            Images.charas.push(img);
+        }
+        else{
+            switch(ch.name){
+                case "color_slime":
+                    for(let c of ch.data.colors){
+                        let img = `${ch.data.colorp}${c}`;
+                        Images.charas.push(img);
+                    }
+            }
+        }
+    }
+}
 
 let Status = [
     // [whi] atkerはatker専用、逆はそれ専用、ないやつは汎用
@@ -404,10 +454,10 @@ let Buffs = [
         desc:'ターン終了時、確率でもう一回行動できる。',
         flav:"数々のゲーマーを狂わせてきたと噂されている。",
         lvs:[
-            {luck:'+20'},
-            {luck:'+33'},
-            {luck:'+50'},
-            {luck:'+100'},
+            {luck:20},
+            {luck:33},
+            {luck:50},
+            {luck:100},
         ],
         max:4
     },
@@ -415,19 +465,20 @@ let Buffs = [
         name:'disappear',
         jpnm:'消滅',
         type:'buff',
-        becauseof:'turn_start',
+        becauseof:'turn_end',
         hera:1,
-        kiju:'lv',
-        desc:'姿を消し、攻撃を受けなくなる。\nしかし範囲攻撃はちゃんと当たる。\nLv1ならば範囲攻撃で解除される。',
+        kiju:'none',
+        desc:`姿を消し、攻撃を受けなくなる。\nもし範囲攻撃を受けたならば、そのダメージを受けたのちこの効果は解除される。`,
     },
     {
         name:'cheerup',
         jpnm:'応援！',
         type:'buff',
-        becauseof:'turn_start',
+        becauseof:'turn_end',
         hera:1,
         kiju:'lv',
-        desc:'応援されている状態。攻撃力と速度が上がり会心率が下がる。\nちょっと緊張しちゃうよね、わかる',
+        desc:'応援されている状態。攻撃力と速度が上がり会心率が下がる。',
+        flav:"嬉しいけどちょっと緊張しちゃうよね。わかるぞ",
         lvs:[
             {
                 power:'+1.0',
@@ -453,10 +504,10 @@ let Buffs = [
         desc:'ターン開始時、HP割合で防御貫通ダメージを受ける。',
         flav:"？？？「毒の苦しみもお好きなんですね」",
         lvs:[
+            {poison:'3%'},
             {poison:'5%'},
             {poison:'7%'},
             {poison:'10%'},
-            {poison:'15%'},
         ],
         max:4
     },
@@ -471,12 +522,9 @@ let Buffs = [
         desc:'ターン開始時、HP割合で防御貫通ダメージを受けたあと、ランダムで他のバフ(良)の持続時間を1減少される。',
         lvs:[
             {poison:'7%'},
-            {poison:'10%'},
             {poison:'15%'},
-            {poison:'20%'},
-            {poison:'25%'},
         ],
-        max:5
+        max:2
     },
     {
         name:'blood',
@@ -486,16 +534,16 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'blood',
-        desc:'ターン終了時固定ダメージ、非攻撃毎に1.5倍に増加。\nそのままにしとくと普通に死にます',
+        desc:`ターン終了時、固定ダメージを受ける。\n
+        [1] 非攻撃時、この効果のダメージ量は現在の値のに1.5倍に増加する(ｷﾘｱｹﾞ)`,
+        flav:"傷口が広がる、ってイメージ。ターン経過は酷だしな",
         lvs:[
             {blood:2},
             {blood:5},
             {blood:7},
             {blood:10},
-            {blood:20},
-            {blood:35},
         ],
-        max:6
+        max:4
     },
     {
         name:'blood_born',
@@ -505,16 +553,15 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'blood',
-        desc:'ターン終了時固定ダメージ、ターン終了毎に2.0倍に増加。\nガチで死にかねん故早めに解除しよう',
+        desc:`ターン終了時、固定ダメージを受ける。
+            [1] 非攻撃時、この効果のダメージ量は現在の値の2倍に増加する。`,
+        flav:"私がやりたがってるゲーム。でも最初の盗賊団ですでに無理ってるから相当無理かも",
         lvs:[
             {blood:5},
-            {blood:7},
-            {blood:10},
-            {blood:20},
-            {blood:35},
-            {blood:50},
+            {blood:8},
+            {blood:14},
         ],
-        max:6
+        max:3
     },
     {
         name:'burn',
@@ -524,17 +571,15 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'burn',
-        desc:'ターン終了時固定ダメージ\nマイクラだとすごいギリで耐えるか死ぬかのやつよね',
+        desc:`ターン終了時、この効果の重複数に比例した固定ダメージを受ける。また、攻撃力が4下がる。\n
+        [1] もし木製の装備を着ているならば、この効果で受けるダメージは2倍になる。`,
+        flav:"追加効果が多い気がする、、まあいいか。木製装備へのメタになってくれ、君は",
         lvs:[
-            {burn:5},
-            {burn:10},
-            {burn:20},
-            {burn:35, atk:'-5'},
-            {burn:50, atk:'-10'},
+            {burn:"5n", atk:-4}
         ],
-        max:5
     },
     {
+        no:1,
         name:'burn_out',
         jpnm:'燃え尽き症候群',
         type:'debuff',
@@ -542,16 +587,19 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'burn',
-        desc:'ターン終了時固定ダメージ。\nあと...このデバフのダメージで死んだ場合、お金が半分燃えて消えます\n珍しいしょ〜〜戦闘外干渉系',
+        desc:`ターン終了時、この効果の重複数に比例した固定ダメージを受ける。また、攻撃力が7下がる。\n
+        [1] もし木製の装備を着ているならば、この効果で受けるダメージは2倍になる。\n
+        [2] もしこのダメージで最後のキャラが死んで負けたならば、所持金が元の半分になる`,
+        flav:"...だいじょぶかなぁ、、てあれ、これ死因も判定しないとなのでは？だ、だるくね、、？",
         lvs:[
-            {burn:10},
-            {burn:20},
-            {burn:35, atk:'-5'},
-            {burn:45, atk:'-10'},
-            {burn:55, atk:'-15'},
-            {burn:75, atk:'-25'},
+            {burn:"5n", atk:-7}
         ],
         max:6
+    },
+    {
+        new:1,
+        name:"longrange",
+        jpnm:"延焼"
     },
     {
         name:'elec',
@@ -564,13 +612,12 @@ let Buffs = [
         desc:`ターン開始時、固定ダメージを受け、さらに60%の確率で他の味方にこれが伝染する(1t)。\n
         [1] もし金属製の防具を着ているならばこの効果で受けるダメージは2倍になる。`,
         lvs:[
-            {elec:3},
+            {elec:4},
             {elec:7},
-            {elec:10},
-            {elec:15},
-            {elec:21},
+            {elec:12},
+            {elec:17},
         ],
-        max:6
+        max:4
     },
     {
         name:'elec_elec',
@@ -582,13 +629,11 @@ let Buffs = [
         dot:'elec',
         desc:'ターン開始時、固定ダメージを受ける\nターン終了時、確率で他の味方に伝染する\nあと確率で「麻痺」lv1を自身に1t付与します\n帯電・帯電ってなんだよ',
         lvs:[
-            {elec:5, palsy:10},
-            {elec:8, palsy:25},
-            {elec:11, palsy:33},
-            {elec:17, palsy:50},
-            {elec:23, palsy:100},
+            {elec:7, palsy:33},
+            {elec:11, palsy:50},
+            {elec:17, palsy:100},
         ],
-        max:6
+        max:3
     },
     {
         name:'injury',
@@ -600,10 +645,10 @@ let Buffs = [
         dot:'injury',
         desc:'攻撃毎に固定ダメージ。\n連続攻撃/行動ビルドに大打撃\n私はこのデバフが最も嫌いです。まぢ無理',
         lvs:[
-            {injury:10},
-            {injury:25},
-            {injury:40},
-            {injury:55},
+            {injury:3},
+            {injury:5},
+            {injury:9},
+            {injury:15},
         ],
         max:4
     },
@@ -615,14 +660,28 @@ let Buffs = [
         hera:1,
         kiju:'lv',
         dot:'injury',
-        desc:'行動時固定ダメージ。\nあと被回復量が半減します。\nさっさと解除せんと結構やばいです',
+        desc:'行動時固定ダメージ。\nあと被回復量が半減します。\n',
         lvs:[
-            {injury:25},
-            {injury:40},
-            {injury:55},
-            {injury:70},
+            {injury:9},
+            {injury:14},
+            {injury:18},
         ],
-        max:4
+        max:3
+    },
+    {
+        new:1,
+        name:"frostbite",
+        jpnm:"凍傷",
+        type:"debuff",
+        becauseof:"turn_start",
+        hera:1,
+        kiju:"stack",
+        desc:"spdが10低下する。さらに毎ターン開始時、1stackにつき5ダメージを受ける",
+        flav:"凍傷の英語カッコよすぎ問題、あります",
+        lvs:[
+            {spd:-10, frostbite:"5n"} //初登場、n！endsWithのnで、掛け算されます
+        ],
+        max:1
     },
     {
         name:'freeze',
@@ -634,13 +693,11 @@ let Buffs = [
         desc:'凍っている状態。\nターン開始時、n%の確率で解除されます\n炎属性の攻撃を受けても解除できます',
         lvs:[
             {freeze:75},
-            {freeze:67},
             {freeze:50},
             {freeze:33},
             {freeze:20},
-            {freeze:5},
         ],
-        max:5
+        max:4
     },
     {
         name:'freeze_blue',
@@ -651,23 +708,20 @@ let Buffs = [
         kiju:'lv',
         desc:'凍結されている状態。\nターン開始時、n%の確率で解除されます\n炎攻撃を受けても解除不可です',
         lvs:[
-            {freeze:67},
-            {freeze:50},
-            {freeze:33},
-            {freeze:20},
-            {freeze:5},
-            {freeze:1},
+            {freeze:40},
+            {freeze:18}, //ブルアカの星2
+            {freeze:3}, //ブルアカの星3
         ],
-        max:6
+        max:3
     },
     {
         name:'freeze_eternal',
         jpnm:'エターナルフリーズ',
         type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
+        becauseof:'turn_end',
+        hera:2,
         kiju:'lv',
-        desc:'エターナルフリーズ！！',
+        desc:'ターン開始時、0%の確率で解除されます',
         lvs:[
             {freeze:0}
         ],
@@ -713,7 +767,7 @@ let Buffs = [
         hera:1,
         kiju:'none',
         desc:"ターン開始時、手番をスキップされる",
-        flav:"ゲーム終了間際で相手がこれを出してきた時の絶望感たるや..."
+        flav:"ゲーム終了間際で相手がこれを出してきた時の絶望感たるや"
     },
     {
         name:'sleepiness',
@@ -722,7 +776,8 @@ let Buffs = [
         becauseof:'turn_start',
         hera:1,
         kiju:'lv',
-        desc:'睡魔..微熱魔じゃないです\ターン終了時に「sleepy」をnstack増加させます',
+        desc:'ターン終了時、「sleepy」をnstack増加させる',
+        flav:"睡魔..微熱魔じゃないです。あと決して湖のほとりの人じゃないです",
         lvs:[
             {sleepy:10},
             {sleepy:20},

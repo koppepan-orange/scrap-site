@@ -1024,6 +1024,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     top: 10px;
     left: 10px;
     /* transition: opacity 0.3s ease-in-out; */
+    z-index: 23;
 }
 #gamble .heya.show .return:hover{
     opacity: 1.0;
@@ -1380,12 +1381,8 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     height: 100%;
     object-fit: contain;
 }
-#gamble .forage .gamen.hondie .dimee.hondie{
-    display: flex;
-}
-#gamble .forage .gamen.started .dimee.started{
-    display: flex;
-}
+#gamble .forage .gamen.started .dimee.started{display: flex}
+#gamble .forage .gamen.hondie .dimee.hondie{display: flex}
 
 #gamble .forage .gamen::after{
     /* 板 */
@@ -1400,6 +1397,34 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     top: calc(100% - 1px);
     left: 0;
     z-index: -1;
+}
+
+#gamble .forage .gamen .dimee.hondie{
+    content:"本題"
+}
+#gamble .forage .gamen .dimee.hondie .mushes{
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #ff80ce9c;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+#gamble .forage .gamen .dimee.hondie .mushes .mush{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* width: 4.6875%; */
+    aspect-ratio: 1 / 1;
+    image-rendering: pixelated;
+    position: absolute;
+}
+#gamble .forage .gamen .dimee.hondie .mushes .mush img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 #gamble .forage .dai{
