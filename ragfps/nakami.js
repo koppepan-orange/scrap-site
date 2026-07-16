@@ -856,14 +856,11 @@ document.addEventListener('mousedown', e => {
 //#endregion
 //#region Timer
 class Timer{
-    constructor(k = 0, d = 1, mode = 0){
+    constructor(k = 0, d = 1){
         // k:開始数 d:増加量
-        // mode| 0-分:秒 1-秒:ミリ秒
         if(typeof k != "number" || typeof d != "number") return;
-        this.k = k;
-         this.time = k;
+        this.time = k;
         this.d = d;
-        this.mode = mode;
 
         this.ev = null;
 
@@ -888,23 +885,17 @@ class Timer{
 
     tekiou(){
         let time = this.time;
-        let kiju = 60;
-        if(this.mode) kiju = 100;
-
-        let [hun, byo] = [Math.floor(time/kiju), time%kiju]
+        let [hun, byo] = [time%60, Math.floor(time/60)]
             .map(a => a.toFixed(0).padStart(2, "0")); //初めて自ら改行したわ
-        this.numD.textContent = `${hun}:${byo}`;
+        this.numD.textContent = `${byo}:${hun}`;
     }
 
     start(){
         if(this.ev) return;
-        let inter = 1000;
-        if(this.mode) inter = 10;
-
         this.ev = setInterval(() => {
             this.time += this.d;
             this.tekiou()
-        }, inter);
+        }, 1000);
     }
     stop(){
         if(this.ev){
@@ -914,7 +905,7 @@ class Timer{
         this.tekiou();
     }
     reset(){
-        this.time = this.k;
+        this.time = 0;
         this.tekiou();
     }
 
@@ -926,7 +917,6 @@ class Timer{
     }
 
     share(){
-        this.stop();
         this.div.remove();
     }
 }
@@ -1821,93 +1811,18 @@ souF.volume = (code, val) => {
 
 //#endregion
 //#region 幸せになれる隠しコマンドがあるらしい
-let secrates = [
-    {
-        ind:0,
-        name:'koppepan',
-        arr:['k','o','p','p','e','p','a','n'],
-        limit:3,
-        func: async function(){
-            nicoText('なんにも起こらない＝ヨーン');
-        }
-    },
-    {
-        ind:0,
-        name:'re',
-        arr:['r','e'],
-        limit:1,
-        func: async function(){
-            let img = document.createElement('img');
-            img.id = 'hakaisatsu';
-            img.src = 'assets/images/systems/hakai_1.png'
-            img.dataset.phase = 1;
-            document.querySelector('body').appendChild(img);
-
-            setTimeout(() => {
-                img.remove();
-                this.ind = 0;
-                this.limit = 1;
-            }, 3000)
-
-            return 0;
-        }
-    },
-    {
-        ind:0,
-        name:'rere',
-        arr:['r','e','r','e'],
-        limit:1,
-        func: async function(){
-            let img = document.getElementById('hakaisatsu');
-            if(!img) return;
-
-            img.src = 'assets/images/systems/hakai_2.png'
-            img.dataset.phase = 2;
-
-            setTimeout(() => {
-                img.remove();
-                this.ind = 0;
-                this.limit = 1;
-            }, 3000)
-
-            return 0;
-        }
-    },
-    {
-        ind:0,
-        name:'rerere',
-        arr:['r','e','r','e','r','e'],
-        limit:1,
-        func: async function(){
-            let img = document.getElementById('hakaisatsu');
-            if(!img) return 1;
-            console.log(img.dataset.phase);
-            if(img.dataset.phase != '2') return 1;
-            location.reload();
-        }
-    },
-    {
-        ind:0,
-        name:'wawawwa',
-        arr:['w','a','w','a','w','w','a'],
-        limit:'n',
-        func: async function(){
-            staF.resetP();
-        }
-    }
-]
 const secrateses = [];
 function secratesP(key){
     secrateses.push(key);
 
-    let lenlen = secrates.sort((a,b) => b.arr.length - a.arr.length);
+    let lenlen = Secrates.sort((a,b) => b.arr.length - a.arr.length);
     let len = lenlen[0].arr.length;
     secrateses.splice(0, secrateses.length - len);
     
     secratesC();
 }
 async function secratesC(){
-    for(let sec of secrates){
+    for(let sec of Secrates){
         if(sec.limit == 0) continue;
 
         let len = sec.arr.length;
@@ -1990,1639 +1905,537 @@ document.addEventListener('keyup',e => {
 //#endregion main
 
 
-// #region rimi
-let rimi = 0;
-let rimiD = document.querySelector("#rimi .num");
-let rimiC = {
-    cupD: document.getElementById('cup'),
-    cuped: 0
-}
-let rimiF = {};
+// #region stage
+let staD = document.getElementById('stage');
+let staC = {
+    can: staD.querySelector('canvas'),
+    ctx: staD.querySelector('canvas').getContext('2d'),
+    wid: 360,
+    hei: 360,
+    row: 10, //横に長い
+    mas: null, //大きさ
 
-rimiF.tekiou = () => {
-    rimiD.textContent = `Ɍ${rimi}`;
-}
-rimiF.inc = (num = 0) => {
-    if(typeof num == 'string') return 0;
-    rimi += num;
-    rimiF.tekiou();
+    loop: 0, //可否
+    delta: 0,
+    now: 0,
+    max: 2,
 
-    return num;
-}
-rimiF.dec = (num = 0) => {
-    if(typeof num == "string") return 0;
-    if(rimi < num) num = rimi;
-    rimi -= num;
-    rimiF.tekiou();
+    q: [],
+    ing: 0,
+    moved: 0,
+    premoved: 0,
 
-    return num;
-}
-rimiF.set = (num = 0) => {
-    if(typeof num == "string") return 0;
-    if(num < 0) return 0;
-    let diff = rimi - num;
-    rimi = num;
-    rimiF.tekiou();
-
-    return diff;
-}
-
-rimiF.push = () => {
-    mainF.move("home");
-}
-rimiD.addEventListener('click', rimiF.push);
-
-rimiF.cupF = () => {
-    rimiC.cuped += 1;
-    rimiF.inc(100);
-    rimiF.tekiou();
-
-    let arr = [
-        "情けなぁ〜く乞食をするのはこの男〜！",
-        "プライドを捨てて貰うお金...嬉しい？",
-        "だっさぁ〜♡",
-        "そんなに必死に頼むよりもぉ、働いた方がいいと思いますよ〜？",
-        "よわよわな物乞い、お疲れ様で〜す♡"
-    ]
-    let text = arraySelect(arr);
-    console.log(`[beg](${rimiC.cuped}回目) ${text} `);
-}
-rimiC.cupD.addEventListener('click', rimiF.cupF);
-// #endregion
-
-
-// #region home
-let homD = document.getElementById('home');
-let homC = {
-    startD: homD.querySelector('.unit1 .venture'),
-    gamD: homD.querySelector('.unit2 .gamble'),
-    quitD: homD.querySelector('.unit3 .quit'),
-    atukD: homD.querySelector('.unit3 .atukie'),
-
-    started: 0,
-};
-let homF = {};
-
-homF.start = async() => {
-    if(homC.started) return 1;
-    homC.started = 1;
-    // return logtext('バカめ！！作者はもう逃げて遊んでるぜ！！！！');
-    // let charas = Charas.map(a => [a.jpnm, a.img]);
-    let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
-    let charaSen = new TakushiSen(charas, 'tate');
-    let chara = await charaSen.select(homD); //文字列が来るヨ
-    console.log(`選ばれたのは、[${chara.name}]でした`);
-
-    makeUnit("player", 0, chara.name);
-
-    mainF.move('batt');
-
-    encount();
-}
-homC.startD.addEventListener('click', homF.start);
-
-homF.quit = async() => {
-    logtext('え？もう帰っちゃうの？');
-    let ls = ['ああ、もちろんさ', 'ゎ、ご、ごめんなさいぃっ'];
-    let seen = new TakushiSen(ls, 'tate');
-    let ans = await seen.select(homD);
-    console.log(ans)
-    // if(ans == 0) window.location.href = "https://game.koppepan-orange.com/"
-    if(ans == 0){
-        window.location.href = "../index.html";
-        logtext("みんなも一緒にやってみようよ");
-        logtext("いくよ？");
-        logtext("ランランr");
-        logtext("と思っていたのか");
-        logtext("だにぃ？")
-    }
-    if(ans == 1) logtext("えへへ..よかった")
-}
-homC.quitD.addEventListener('click', homF.quit);
-
-homF.atukie = () => {
-    window.open("assets/txts/atukie.html", "_blank");
-}
-homC.atukD.addEventListener("click", homF.atukie)
-
-homC.gamD.addEventListener('click', () => mainF.move('gamble'))
-// #endregion home
-
-
-// #region batt
-let batD = document.getElementById('batt');
-let batC = {
-    turnD: batD.querySelector(".upui .turn .num"),
-    killD: batD.querySelector(".upui .killen .num"),
-    sesD:{
-        enemie: batD.querySelector(".humans.enemies"),
-        player: batD.querySelector(".humans.players"),
+    sttD: staD.querySelector('.settle'),
+    sttBD: staD.querySelector('.settle .body'),
+    sttTD: staD.querySelector('.settle .text'),
+    stt: "block",
+    sttT: 0,
+    
+    objs: [],
+    p: {
+        x: 3,
+        y: 0,
+        dir: 0, //向き。←→=01
+        flavor: 0, //これはUndertaleの色マスパズルを参考に
+        state: 0, //これは簡易的バフ・デバフ的な
+        img: "normal",
     },
-    bts:[
-        batD.querySelector(".bts .bt.bt0"),
-        batD.querySelector(".bts .bt.bt1"),
-        batD.querySelector(".bts .bt.bt2"),
-        batD.querySelector(".bts .bt.bt3"),
-    ],
 
-    stage: "草原",
-    turn: 0, //1巡すると++1
-    actbar: [], //行動する順番
-    acted: 0, //barの進行度。0からbar.length-1
-};
-batC.shokey = {
-    slash: ['slash', 'double slash', 'slash of light'],
-    magic: ['heal', 'power', 'shell'],
-    tool: ['aspirin', 'throw knife', 'redcard'],
-}
-let batF = {};
-
-let humans = [];
-
-
-function tekiou(){
-    for(let human of humans){
-        let cam = human.cam;
-        let chokkin = cam.substring(0,1);
-        let div0 = batC.sesD[cam]
-        let div = div0.querySelector(`.${cam}${human.me}`);
-
-        let hd = 0;
-        let srca = null;
-        if(cam == 'enemie'){
-            hd = Enemies.find(a => a.name == human.name);
-            srca = `enemies/${batC.stage}/${hd.img ?? hd.name}.png`;
-        }
-        if(cam == 'player'){
-            hd = Charas.find(a => a.name == human.name);
-            console.log(hd)
-            if(hd) srca = `charas/${hd.img}.png`;
-            if(!hd){
-                hd = Friends.find(a => a.name == human.name);
-                srca = `friends/${hd.img}.png`;
-            }
-            console.log(srca)
-        }
-
-        // console.log(`${cam}${human.me}`)
-        // console.log(human)
-        // console.log(hd)
-
-        div.querySelector('.name').textContent = human.name;
-        div.querySelector('.lv').textContent = `Lv.${human.lv}`;
-        div.querySelector('.img').src = `assets/images/${srca}`;
-        div.querySelector('.skill .naka').style.height = `${human.ep/human.maxep*100}%`;
-
-        let [half, pinch] = [2, 4]
-
-        let hpZ = div.querySelector('.bar0.hp');
-        let [hp, maxhp] = [human.hp, human.maxhp];
-        hpZ.querySelector('.text').textContent = `${hp}/${maxhp}`;
-        hpZ.querySelector('.bar .inner').style.width = `${hp/maxhp*100}%`;
-        if(hp < maxhp/pinch) div.classList.add("h-pinch");
-        else div.classList.remove("h-pinch");
-        if(hp < maxhp/half) div.classList.add("h-half");
-        else div.classList.remove("h-half");
-
-        let mpZ = div.querySelector('.mp');
-        let [mp, maxmp] = [human.mp, human.maxmp]
-        mpZ.querySelector('.text').textContent = `${mp}/${maxmp}`;
-        mpZ.querySelector('.bar .inner').style.width = `${mp/maxmp*100}%`;
-        if(mp < maxmp/pinch) div.classList.add("m-pinch");
-        else div.classList.remove("m-pinch");
-        if(mp < maxmp/half) div.classList.add("m-half");
-        else div.classList.remove("m-half");
-
-        // buff
-        let buffD = div.querySelector('.buffs');
-        buffD.innerHTML = "";
-        for(let buff of human.buffs){
-            let name = buff.name;
-            let buD = El("div", "buff");
-            let buID = El("img");
-             buID.src = `assets/images/buffs/${name}.png`;
-             buD.appendChild(buID);
-            
-            buffD.appendChild('buD')
-        }
-    }   
-}
-
-//#region 今日は何ーーーー
-function whatdo(who, are, shu, name){
-    console.log(`${who.name}が${are.name}に${shu}[${name}]をします`)
-    let [cam, me] = [who.cam, who.me];
-    
-    let ares = copy(are);
-    if(typeof ares == "object") ares = [ares];
-    let ts = [];
-    for(let ar of ares){
-        let [tcam, tme] = [ar.cam, ar.me];
-        ts.push([tcam, tme]);
+    stuD: staD.querySelector('.sturdy'),
+    stuC: {
+        teeth: staD.querySelector('.sturdy .teethcar'),
+        chest: staD.querySelector('.sturdy .chest'),
+        chestT: 0,
     }
-    
-    let res = {
-        cam,
-        me,
-        ts,
-        shu,
-        name
-    }
-    return res;
 }
-//#endregion どちらかと言うと youは何しに日本へ
+let staF = {};
 
-// #region サーチ系
-function findEquips(type, name){
-    let arr = Equips.filter()
+staF.load = () => {
+    staC.can.width = staC.wid;
+    staC.can.height = staC.hei;
+    staC.mas = staC.wid/staC.row;
+
+    // 空のmap
+    staC.map = [];
+    for(let i = 0; i < staC.row; i++) staC.map.push(new Array(staC.row).fill(0));
+
+    // settle
+    for(let bl of Blocks){
+        let img = El('img');
+        img.src = `assets/images/blocks/${bl.name}.png`;
+        
+        let text = El('div', "mozi");
+        text.textContent = bl.name;
+
+        let div = El("div", "mono", [img, text]);
+        if(bl.name == "block") div.classList.add('high');
+        div.addEventListener("click", () => {
+            staF.settle(bl.name);
+
+            staF.settleOut();
+            div.classList.add('high');
+        });
+
+        staC.sttBD.appendChild(div);
+    }
+    staF.settle('block');
+
+    staF.draw(); //描画
+    staF.tekiou(); //UI
+}
+
+// #region ちょっとここでUIを
+staC.uiD = staD.querySelector('.ui');
+staC.uiC= {
+    flavor: staC.uiD.querySelector('.disp .flavor .text'),
+    stat: staC.uiD.querySelector('.disp .stat .text'),
+
+    conD: staC.uiD.querySelector('.control'),
+    wD: staC.uiD.querySelector('.control .w'),
+    aD: staC.uiD.querySelector('.control .a'),
+    sD: staC.uiD.querySelector('.control .s'),
+    dD: staC.uiD.querySelector('.control .d'),
+}
+staF.tekiou = () => {
+    let flavor = staC.p.flavor;
+    let state = staC.p.state;
+
+    if(flavor == 0) flavor = 'なし';
+    if(state == 0) state = '健康';
+
+    staC.uiC.flavor.textContent = flavor;
+    staC.uiC.stat.textContent = state;
 }
 // #endregion
 
-function selects(arr){
-    // selects([[], [], [], []])
-    // ["ここにテキストを入力", () => {/kill @e}]
-
-    let bts = batC.bts;
-    for(let k=0; k<4; k++){
-        let youso = arr[k];
-        bts[k].innerText = youso[0];
-
-        bts[k].func = youso[1];
-        jump:{
-            if(bts[k].seted) break jump;
-            bts[k].addEventListener("click", (e) => {
-                if(typeof e.currentTarget.func == "function"){
-                    e.currentTarget.func();
-                };
-            });
-            bts[k].seted = 1;
-        }
-    }
+staF.resetP = () => {
+    staC.p = {
+        x: 3,
+        y: 0,
+        dir: 0,
+        flavor: 0,
+        state: 0,
+        img: "normal",
+    };
+    staF.draw();
+    staF.tekiou();
 }
 
-function makeUnit(cam, code, name){
-    let data = {};
-    if(cam == 'player'){
-        let data0 = Charas;
-        if(code) Friends;
-        data = data0.find(a => a.name == name);
-    }
-    if(cam == "enemie"){
-        data = arraySelect(Enemies.filter(a => !a.no));
-    }
-    if(!data) return console.log(`codeが[${code}]の${name}はいないらしい`);
-    console.log(data);
-
-    let unit = {};
-    if(cam == 'player'){
-        // pleyerはデータをそのままコピー
-        // Status.map(a => a.name).forEach(s => unit[s] = data[s]);
-        for(let data0 of Status){
-            let name = data0.name;
-            unit[name] = data[name] ?? data0.bas;
-        }
-    }
-    if(cam == "enemie"){
-        // enemieはベース値から補正値で加工
-        Status.map(a => a.name).forEach(s => {
-            let vd = Status.find(a => a.name == s);
-            unit[s] = vd.bas;
-
-            let v = data[s];
-            if(!v || 
-               typeof v != 'string') v = "+0"
-            if(v.startsWith('+') || v.startsWith('-')){
-                let num = +v.slice(1);
-                if(v.startsWith('-')) num *= -1;
-                unit[s] += num;
-            }
-            if(v.startsWith('=')){
-                unit[s] = +v.slice(1);
-            }
-        });
-    }
-
-    let me = humans.filter(a => a.cam == cam).length;;
-
-    //commonの初期化
-    unit.hp = unit.maxhp;
-    unit.mp = unit.maxmp;
-    unit.ep = 0;
-    unit.joutie = 1;
-    unit.buffs = [];
-    unit.cam = cam;
-    unit.me = me;
-
-    //each otherの初期化
-    if(cam == 'player'){
-        unit.name = name;
-        unit.lv = 1;
-        unit.exp = 0;
-        unit.sp = 0;
-        unit.attr = [];
-        unit.equips = {}
-        
-        unit.slash = unit.slash ?? batC.shokey.slash;
-        unit.magic = unit.magic ?? batC.shokey.magic;
-        unit.tool  = unit.tool ?? batC.shokey.tool;
-
-        if(!code){
-            unit.ex = data.ex;
-            unit.ns = data.ns;
-            unit.ps = data.ps;
-            unit.ts = data.ts;
-
-            Style.batSt.solid = data.buttonsolid;
-            Style.batSt.back = data.buttonback;
-            Style.batSt.aima = irohaMix(data.buttonsolid, data.buttonback);
-            Style.tekiou();
-        }else{
-            unit.e = data.e;
-            unit.s = data.s;
-            unit.n = data.p;
-            unit.p = data.p;
-            unit.t = data.t;
-        }
-    }
-    if(cam == "enemie"){
-        unit.name = data.name;
-        unit.lv = random(1, 3);
-        unit.attr = data.attr ?? [];
-        unit.lasts = [];
-        unit.equips = {};
-    }
-
-
-    let sd = Stages.find(a => a.name == batC.stage);
-
-    let nameD = El('div', 'name');
-     nameD.style.color = irohaMix('#b2b2b2', sd.color);
-     
-    let imgD = images["systems"].error.cloneNode(true);
-     imgD.classList.add("img")
-    let backD = El('div', "naka");
-     let skillD = El('div', 'skill', [backD])
-      skillD.style.borderColor = irohaMix('#2b2b2b', sd.color);
+staF.start = () => {
+    staF.resetP();
     
-    let baa = (code) => {
-        return El('div', `${code} bar0`, [
-            El('div', 'text'),
-            El('div', 'bar', [El('div', 'inner')])
-        ]);
-    }
-
-    let div = El('div', `human ${cam}${me}`, [
-        imgD,
-        skillD,
-        El('div', 'lv'),
-        nameD,
-        El('div', 'bars', [
-            baa('hp'),
-            baa('mp')
-        ]),
-        El('div', 'buffs')
-    ]);
-
-    unit.div = div;
-
-    // let container = (cam == 'player') ? batC.pD : batC.eD;
-    let belong = batC.sesD[cam];
-    belong.appendChild(div);
-
-    humans.push(unit)
-
-    // return unit;
+    staC.loop = 1;
+    staF.gameloop();
 }
+staF.stop = () => staC.loop = 0;
 
-let makePlayer = (code, name) => makeUnit('player', code, name); //code: 0 == chara, 1 == friend
-let makeEnemy  = () => makeUnit('enemy');
+staF.draw = () => {
+    staC.ctx.clearRect(0, 0, staC.wid, staC.hei);
+    staC.ctx.fillStyle = '#d8ffdb';
+    staC.ctx.fillRect(0, 0, staC.wid, staC.hei);
 
-// #region 道との遭遇
-function encount(){
-    let enemiesD = batC.sesD["enemie"];
-     enemiesD.innerHTML = "";
-    let playersD = batC.sesD["player"];
-     playersD.innerHTML = "";
+    // draw grid
+    staC.ctx.strokeStyle = '#2b2b2b';
+    staC.ctx.lineWidth = 0.25;
+    staC.ctx.strokeRect(0, 0, staC.wid, staC.hei);
+    for(let i = 0; i <= staC.row; i++){
+        staC.ctx.beginPath();
+        staC.ctx.moveTo(i * staC.mas, 0);
+        staC.ctx.lineTo(i * staC.mas, staC.hei);
+        staC.ctx.stroke();
 
-    humans = humans.filter(a => a.cam == "player");
-    let max = 1;
-    let num = random(1, max);
-    for(let i=0; i<num; i++){
-        makeUnit("enemie");
-    }
-
-    let players = humans.filter(a => a.cam == "player");
-    for(let unit of players){
-        let div = unit.div;
-        playersD.appendChild(div);
+        staC.ctx.beginPath();
+        staC.ctx.moveTo(0, i * staC.mas);
+        staC.ctx.lineTo(staC.wid, i * staC.mas);
+        staC.ctx.stroke();
     };
 
-    tekiou();
-
-    turnNew()
-}
-batC.turnD.addEventListener('click', encount)
-// #endregion
-
-// #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
-function attack(who, ares, tri, voi, prop = []){
-    if(!Array.isArray(ares)) ares = [ares];
-
-
-    let triA, triD;
-    switch(tri){
-        case "ph":
-            //物理
-            triA = "atk";
-            triD = "def";
-            break;
-        case "mg":
-            //魔法
-            triA = "matk";
-            triD = "mdef";
-            break;
-        case "cn":
-            //間接
-            triA = "catk";
-            triD = "def";
-            break;
-    }
-
-    for(let are of ares){
-        let atker = copy(who); //atk+add * power + wepatk
-        let defer = copy(are); //def * shell + cut + shldef
+    // draw player
+    let p = staC.p;
+    let img = p.img;
+    if(images.skins[img]){
         
-        let wepatk = 0, shldef = 0;
-        let weapon = atker.weapon;
-         let weaponD = findEquips("weapon", weapon);
-        let shield = defer.shield;
-         let shieldD = findEquips("shield", shield);
-        if(tri == weaponD.tri ||
-           weaponD.tri.contains(tri) ||
-           weaponD.tri == "all") wepatk = weaponD.atk;
-        if(tri == shieldD.tri ||
-           shieldD.tri.contains(tri) ||
-           shieldD.tri == "all") shldef = shieldD.def;
 
-        let nisha = ["atker", "defer"];
-        let accessment = ["ear", "neck", "tank"];
-        for(let whi of nisha){
-            for(let access0 of accessment){
-                let access = whi[access0];
-                 let accessD = findEquips(access0, access);
-                
-                if(tri == accessD.tri ||
-                   accessD.tri.contains(tri) ||
-                   accessD.tri == "all") wepatk += accessD.atk;
-                if(tri == accessD.tri ||
-                   accessD.tri.contains(tri) ||
-                   accessD.tri == "all") shldef += accessD.def;
-            } 
+        if(img == 'teethcar') {
+            staC.ctx.save();
+            staC.ctx.scale(-1, 1);
+            staC.ctx.drawImage(images.skins[img], -p.x*staC.mas -staC.mas, p.y*staC.mas, staC.mas, staC.mas);
+            staC.ctx.restore();
         }
+        else staC.ctx.drawImage(images.skins[img], p.x*staC.mas, p.y*staC.mas, staC.mas, staC.mas);
+    }
 
-        let atk = ((atker[triA]) * atker.power +atker.add + wepatk);
-        let def = ((defer[triD]) * defer.shell +defer.cut + shldef);
-
-        
+    // draw objects(map)
+    for(let x = 0; x < staC.row; x++){
+        for(let y = 0; y < staC.row; y++){
+            let obj = staC.map[x][y];
+            if(obj){
+                let img = images.blocks[obj.name];
+                if(img) staC.ctx.drawImage(img, x*staC.mas, y*staC.mas, staC.mas, staC.mas);
+            }
+        }
     }
 }
+
+staF.calc = async() => {
+    // console.log('calc');
+    let p = staC.p;
+    let edge = staC.row-1;
+    
+    let isGr = 0;
+    if(staF.search(p.x, p.y+1)) isGr = 1; //whether地面にいる
+    if(staC.p.y == edge) isGr = 1; //y:maxも床とする
+
+    p.isgr = isGr;
+
+    if(!isGr && !staF.statHas("フユウ")){
+        // console.log(`床がないので落下します (y:${p.y} -> ${p.y+1})`);
+        let d = 0;
+        while(!staF.search(p.x, p.y+d+1) && p.y+d < edge) d++;
+
+        for(let i=0; i<d; i++) await staF.move("y", 1);
+        if(p.y >= staC.row) p.y = edge;
+    }
+
+    staF.tekiou();
+    staF.draw();
+}
+
+// #region obについて！
+
+/*
+    addobで追加できる。
+    同じ個所に重複して設置することもできるが、効力はしらん..いやmapのがいいかぁ～？
+    map[
+        [],[],[],[],[]..
+    ]
+    式にして、row*row分の配列を作る..?それはloadの時にやればいい...ならばそっちのが楽そう？
+    今回滑らか移動させる気ないしな。うしそっちにしよう
+*/
+
+staF.search = (x = NaN, y = NaN) => {
+    if(isNaN(x) || isNaN(y)) return console.error('なんか たりない SU');
+
+    if(x < 0 || y < 0 || 
+        staC.row <= x || staC.row <= y){
+        // ゆくゆくは繋ぎ合わせた図面のその方向のやつに行きます...が、今は止め止め
+        return 'wall'; //壁と同じ扱いにする
+    }
+
+    let obj = staC.map[x][y];
+    if(obj) return obj;
+
+    let p = staC.p;
+    if(p.x == x && p.y == y) return p;
+
+    return 0;
+}
+staF.umaly = () => {
+    // もしも全てのマスが埋まっているならば
+    for(let x = 0; x < staC.row; x++){
+        for(let y = 0; y < staC.row; y++){
+            if(!staF.search(x, y)) return 0;
+        }
+    }
+    
+    return 1;
+}
+staF.find = (name) => {
+    if(!name) return "無条件降伏", 0;
+    let res = Blocks.find(a => a.name == name);
+    if(!res) return console.error(`${name}がナカッタ`), 0;
+    return res;
+}
+
+staF.addmap = (name, x = NaN, y = NaN, data = {}) => {
+    if(!name || isNaN(x) || isNaN(y)) return console.error('なんか たりない SU');
+    
+    // すでにあったら だめだめよ Woo
+    let senkyack = staF.search(x, y);
+    if(senkyack) return console.log("すでにあるんでcanceled"); //置き換えにするー、、？いやなし なしなしはじめ
+
+    let block = Blocks.find(a => a.name == name);
+
+    let obj = {
+        name,
+        x,
+        y,
+        on: block.on, 
+        data
+    };
+    
+    if(staC.map[x][y] == 0){
+        staC.map[x][y] = obj;
+    }
+
+    return 0
+}
+staF.delmap = (x = NaN, y = NaN) => {
+    if(isNaN(x) || isNaN(y)) return console.error('なんか たりない SU');
+
+    if(staC.map[x][y]) staC.map[x][y] = 0;
+
+    staF.draw();
+
+    return 0;
+}
+
+staF.randomap = (num = 10) => {
+    let edge = staC.row-1;
+    for(let i = 0; i < num; i++){
+        if(staF.umaly()) return console.error('マスが全部埋まってるのでキャンセル');
+
+        let x, y;
+        do{
+            x = random(0, edge);
+            y = random(0, edge);
+        }while(staF.search(x, y));
+        
+        let block = arraySelect(Blocks.filter(a => !a.no));
+        staF.addmap(block.name, x, y);
+    }
+}
+
+// #region settle
+staC.can.addEventListener('pointerdown', (e) => {
+    let rect = staC.can.getBoundingClientRect();
+
+    let scaleX = staC.can.width / rect.width;
+    let scaleY = staC.can.height / rect.height;
+
+    let x = (e.clientX - rect.left) * scaleX;
+    let y = (e.clientY - rect.top) * scaleY;
+
+    let gridX = Math.floor(x / staC.mas);
+    let gridY = Math.floor(y / staC.mas);
+
+    // console.log(`クリックした場所: マス(${gridX}, ${gridY})`);
+    
+    let aruno = staF.search(gridX, gridY);
+    if(!aruno) staF.addmap(staC.stt, gridX, gridY);
+    if(aruno) staF.delmap(gridX, gridY);
+    staF.draw()
+});
+staF.settleOut = () => {
+    let arr = staC.sttBD.querySelectorAll(".mono");
+    for(let div of arr){
+        div.classList.remove("high");
+    }
+}
+staF.settle = (name) => {
+    staC.stt = name;
+    staC.sttTD.innerText = name;
+}
+staF.settleTog = (co = NaN) => {
+    if(!isNaN(co)) staC.sttT = co;
+    else staC.sttT = fl(staC.sttT);
+    
+    if(staC.sttT) staC.sttD.classList.add("tog");
+    else staC.sttD.classList.remove("tog");
+}
+document.addEventListener("keyup", (e) => {
+    if(e.key == "e") staF.settleTog();
+})
+staC.stuC.chest.addEventListener('click', () => {
+    staF.settleTog();
+    let imgD = staC.stuC.chest.querySelector('img');
+    staC.stuC.chestT = fl(staC.stuC.chestT);
+
+    let hira = "chest_open";
+    if(hit(18)) hira = "chest_open_bug";
+    if(staC.stuC.chestT) imgD.src = `assets/images/systems/${hira}.png`;
+    else imgD.src = "assets/images/systems/chest.png";
+});
 // #endregion
 
-// #region buffとか
-function buffGet(who, name){
-    let buff = who.buffs.find(a => a.name == name);
-    if(!buff) return 0;
+// #endregion
 
-    return buff;
+// #region stateやらflavorやら
+staF.statSet = (name, code) => {
+    let p = staC.p;
+    
+    if(!staF.statData(name)) return console.error(`[statSet] stat:${name}は存在しないでーっす♡`); //← 嘘藤田ことね
 }
-function buffData(name){
-    let data = Buffs.find(a => a.name == name);
-    if(!data) return 0;
-
+staF.statData = (name) => {
+    let data = States.find(a => a.name == name || a.jpnm == name); //←この表現存在するらしい
     return data;
 }
+staF.statHas = (name = 0) => {
+    // どうせこの世界の人間俺しかいないので（？？？）
+    if(!name) return console.log("指定なしは何");
+    let p = staC.p;
+    if(p.state == name) return 1;
 
-function buffHeraso(who, name, becauseof){
-    let buff = buffGet(who, name);
-    if(!buff) return 0;
-
-    let data = buffData(name);
-    if(!data) return 0;
-
-    if(data.stack == becauseof){
-        let hera = data.hera; //numberなことが多いが、"=0"なこともある
-        if(buffDec(who, name, hera)) return 1;
-    }
-    
     return 0;
-}
-
-function buffAdd(who, are, name, num, lv){
-    console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
-    let data = buffData(name);
-    if(!data) return console.error(`buff[${name}]は存在しないらしい`);
-
-
-
-    let buff = {
-        name,
-        value: {},
-        lv
-    }
-
-
-}
-
-function buffDec(who, name, num){
-    if(num == "=0") return buffRem(who, name);
-    console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
-
-    
-    return 1;
-}
-
-function buffRem(who, name){
-    console.log(`[buffRem] ${who.name}のbuff[${name}]を解消します`);
-
-    return 1;
 }
 // #endregion
 
-// #region turnとかbarとかactedとか
 
-/*
-// これはblank
-function turnNext(who){
-    // 1. dotダメージの処理
-    // ここで who のステータスを見て、毒とかの計算をするんだよ
-    console.log(who + " のdotダメージ処理");
+staF.separate = (dir) => {
+    let num = 1;
+    if(dir == 1) num = 1;
+    if(dir == 0) num = -1;
 
-    // 2. playerかenemieかでswitchで行動を促す
-    switch(who){
-        case 'player':
-            // プレイヤーのボタン（batC.bts）を活性化させたり、入力を待つ処理
-            console.log("プレイヤーの行動選択を促すよ。よわよわ行動はナシね！");
-            break;
-            
-        case 'enemie':{
-            // 敵のAI（自動行動）の処理を呼び出す
-            console.log("enemie の自動行動を選択中...");
-            break;
-        }
-    }
+    return ["x", num]
 }
 
-function turnEnd(who, ares){
-    let reAct = 0; // ここに確率計算とかを入れる
+staF.move = async(xy, num) => {
+    // console.error(`${xy}方向に${num}だけ動く処理をqueueに追加するね〜♡`)
+    staC.premoved += 1;
+    staC.q.push({xy:xy,num:num});
+
+    if(staC.ing) return;
+    staC.ing = 1;
+    while(staC.q.length > 0){
+        staC.moved += 1;
+        // console.log(`move: ${staC.moved}/${staC.premoved}`)
+
+        let t = staC.q.shift();
+        await staF.moveEx(t.xy, t.num);
+
+        await delay(100)
+    }
+    staC.ing = 0;
+}
+
+staF.moveEx = async(xy, num) => {
+    staF.draw();
+
+    let p = staC.p;
+    let edge = staC.row-1;
+    let diff = num > 0 ? 1 : -1;
+    let cnt = Math.abs(num);
+
+    for(let i=0; i<cnt; i++){
+        let now = {x:p.x,y:p.y};
+        let tugi = {x:p.x,y:p.y};
+        tugi[xy] += diff;
+
+        let res = await staF.moveGo(tugi,now);
+        if(res)break;
+        staF.draw();
+    }
+
+    let s = staF.search(p.x, p.y+1);
+    if(s && s != "wall"){
+        let d = staF.find(s.name);
+        if(d.on == "step") await d.onF(p.x, p.y+1);
+    }
+    staF.draw();
+}
+
+staF.moveGo = async(tugi, now) => {
+    let p = staC.p;
+    let edge = staC.row-1;
+    let data = 0;
+
+    let b = staF.search(now.x,now.y+1);
+    if(b && b != "wall"){
+        data = staF.find(b.name);
+        if(data.on == "atsk") await data.onF(now.x, now.y+1);
+    }
+
+    let res = staF.search(tugi.x, tugi.y);
+    if(res == "wall") return 1;
+    if(res && res != "wall") data = staF.find(res.name);
     
-    if(reAct){
-        console.log(`再行動・${who.name}`);
-        turnNext(who);
-        return; 
-    }
+    if(res && data.on == "osu") await data.onF(tugi.x, tugi.y);
+    else if(res) return 1;
 
-    // 2. dotダメージの処理（ターンの最後にもあるの？重複に気をつけてね）
-    console.log(who + " のターン終了時のdot処理");
+    // if(now.x  < tugi.x) p.dir = 1, staF.setSkin("fullofmeka") //右
+    // if(tugi.x <  now.x) p.dir = 0, staF.setSkin("normal"); //左
 
-    turnBye(who);
-}
-
-function turnBye(who){
-    // 1. もしbar最後の行動だったなら turnNew を実行
-    // batC.acted が 進行度で、batC.actbar.length - 1 と等しいか比べる
-    if(batC.acted >= batC.actbar.length - 1){
-        console.log("このターンのbarは全員おしまい！次のターンへ");
-        turnNew(0); // 新しいbarを作る
-    } else {
-        // まだ残ってるなら進行度を1進めて、次のキャラの行動へ
-        batC.acted++;
-        let nextWho = batC.actbar[batC.acted]; // 次に行動するキャラ（'player' とか 'enemie'）
-        turnNext(nextWho);
-    }
-}
-
-function turnNew(code = 0){
-    // 1. turn数をカウントアップ（1巡したからね）
-    batC.turn++;
-    batC.turnD.innerText = batC.turn; // 画面の表示も更新しちゃう
-
-    // 2. barを再建（actbarに行動順の配列をセットする）
-    // 例: 素早さ順とかで ['player', 'enemie', 'enemie'] みたいに並べる
-    batC.actbar = ['player', 'enemie']; // ここは仮ね、お兄さんがルールを決めて
-    
-    // 3. 進行度を初期化
-    batC.acted = 0;
-
-    console.log("ターン " + batC.turn + " 開始！");
-
-    // 4. 0番の行動開始
-    let firstWho = batC.actbar[0];
-    turnNext(firstWho);
-}
-*/
-
-
-// これは全部渡した拡張
-function processDots(who){
-    let dots = {};
-    for(let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
-        if(data && hask(data, 'dot')){
-            let dot = data.dot;
-            let val = buff.value[dot];
-            if(typeof val == 'string' && val.endsWith('%')){
-                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
-            }
-            if(!dots[dot]) dots[dot] = 0;
-            dots[dot] += val;
-        }
-    }
-    Object.keys(dots).forEach(key => {
-        let val = dots[key];
-        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
-        who.hp -= val;
-        if(who.hp <= 0) return dead(0, who);
-    });
+    p.x = Math.max(0, Math.min(edge, tugi.x));
+    p.y = Math.max(0, Math.min(edge, tugi.y));
+    staF.draw();
 
     return 0;
 }
 
-async function turnNext(who){
-    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
+staF.jump = async() => {
+    let p = staC.p;
+    let dir = p.dir;
     
-    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
+    let dy = -1;
+    let dx = staF.separate(dir)[1];
+    let bro = staF.search(p.x+dx, p.y);
+    await staF.move("y", dy);
+    if(bro) await staF.move("x", dx);
 
-        if(buff.name == 'onslime'){
-            if(isCrit(buff.value)){
-                buffremove(who, 'onslime');
-                addtext('なんとかスライムを取り払った!!');
-            } else {
-                addtext('スライムが邪魔して動けない!!');
-                turnBye(who);
-                 // 動けないから次の人へパス
-                return;
-            }
-        }
-        if(buffhas(who, 'skip')){
-            await logText(`>> はい${who.name}、お前スキップ〜〜`);
-            turnBye(who);
-            return;
-        }
-        if(hask(buff.value, 'palsy')){
-            if(isCrit(buff.value.palsy)){
-                data.name != 'stan'
-                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
-                    : addtext(`${who.cam}${who.me}はスタンしている....`);
-                turnBye(who);
-                return;
-            }
-        }
-        if(hask(buff.value, 'freeze')){
-            if(!isCrit(buff.value.freeze)){
-                addtext(`${who.name}は凍っている...`);
-                turnBye(who);
-                return;
-            }
-            await logText(`氷が溶けた！`);
-            buffremove(who, 'freeze');
-        }
-    }
-
-    // 前半のdotダメージ処理
-    processDots(who);
-    if(who.hp <= 0) return dead(0, who);
-
-    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
-
-    switch (who.cam){
-        case 'player':
-            playerturn(who);
-            break;
-        case 'enemie':
-            enemyturn(who);
-            break;
-    }
+    staF.draw();
 }
 
-async function turnEnd(who, ares){
-    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
+
+//key
+staF.keyW = () => {
+    secratesP('w');
+    if(!staC.p.isgr && !staF.statHas("空気階段")) return;
+    staF.jump();
+};
+staF.keyA = () => {
+    secratesP('a');
+    staF.move("x", -1);
+    staC.p.dir = 0;
+    staF.setSkin("normal");
+};
+staF.keyS = () => {
+    secratesP('s');
+    // staF.move("y", 1);
+};
+staF.keyD = () => {
+    secratesP('d');
+    staF.move("x", 1);
+    staC.p.dir = 1;
+    staF.setSkin("fullofmeka");
+};
+document.addEventListener('keydown', (e) => {
+    if(e.repeat) return;
+    let key = e.key.toLowerCase();
+    if(key == " ") key = 'space';
+
+    if(key == "w" || key == "arrowup") staF.keyW();
+    if(key == "a" || key == "arrowleft") staF.keyA();
+    if(key == "s" || key == "arrowdown") staF.keyS();
+    if(key == "d" || key == "arrowright") staF.keyD();
+});
+staC.uiC.wD.addEventListener('click', staF.keyW);
+staC.uiC.aD.addEventListener('click', staF.keyA);
+staC.uiC.sD.addEventListener('click', staF.keyS);
+staC.uiC.dD.addEventListener('click', staF.keyD);
+
+
+staF.gameloop = () => {
+    staC.delta += 1;
+
+    if(staC.delta % 60 == 0){
+        staF.calc();
+    }
     
-    for(let i = who.buffs.length - 1; i >= 0; i--){
-        who.buffs[i].time -= 1;
-        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
-    }
-    tekiou();
-
-    let extraTurn = false;
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
-        if(data && hask(data, 'luck')){
-            if(isCrit(data.luck)){
-                addtext('当たりが出たらもう一本！');
-                extraTurn = true;
-                break;
-            }
-        }
-    }
-
-    if(extraTurn){
-        if(who.cam == 'player') playerturn(who);
-        else enemyturn(who);
-        return;
-    }
-
-    processDots(who);
-    if(who.hp <= 0) return;
-
-    turnBye(who);
+    if(staC.loop) requestAnimationFrame(staF.gameloop);
 }
 
-function turnBye(who){
-    // やりたいこと: もしbar最後の行動だったならturnNewを実行
-    batC.acted += 1;
-
-    // 今回はbatC.actbarが配列だから、lengthと比較すれば一発だね
-    if(batC.acted >= batC.actbar.length){
-        turnNew();
-    } else {
-        // まだ残ってるなら、次のインデックスの奴のターンを開始
-        let nextWho = batC.actbar[batC.acted];
-        turnNext(nextWho);
-    }
-}
-
-function turnNew(code = 0){
-    // やりたいこと: barを再建, 0番の行動開始
-    batC.turn += 1;
-
-    // 前作のソート処理をそのまま持ってきたよ
-    // batC.actbarには、前作みたいにcamとmeを分けるんじゃなくて、オブジェクトごと突っ込む配列にするのがイマドキ！
-    let combined = humans.filter(a => a.joutie && a.hp > 0)
-        .sort((a, b) => {
-            if(b.spd == a.spd){
-                if(a.cam == b.cam){
-                    return a.me - b.me;
-                }
-                return a.cam == 'player' ? -1 : 1;
-            }
-            return b.spd - a.spd;
-        });
-
-    batC.actbar = combined;
-    batC.acted = 0;
-
-    // 新しいターンの、最初の奴の行動を開始！
-    if(batC.actbar.length > 0){
-        turnNext(batC.actbar[0]);
-    }
-}
-
-// #endregion
-
-// #endregion batt
-
-
-//#region gamble
-let gamD = document.getElementById('gamble');
-let gamC = {
-    open: 0,
-    now: 'loby',
-    moving: 0,
-    togD: gamD.querySelector('.opener'),
-    lobyD: gamD.querySelector('.loby'),
-    blaD: gamD.querySelector('.blacky'),
-    rouD: gamD.querySelector('.roulette'),
-
-}
-gamC.bashos = [
+// #region skinとか
+staC.skins = [
     {
-        no: 1,
-        name: "loby",
-        color: "#f0f8ff",
+        name: "normal",
+        img: "normal",
     },
     {
-        name: "blacky",
-        color: "#f0f8ff"
-    },
-    {
-        name: "rourou",
-        color: "#f0f8ff"
-    },
-    {
-        name: "forage",
-        color: "#f0f8ff"
+        name: "fullofmeka",
+        img: "teethcar",
     }
 ]
-let gamF = {};
-
-gamF.load = () => {
-    gamC.now = 'loby';
-
-    let arr = gamC.bashos.filter(a => !a.no);
-    for(let bas of arr){
-        let div = document.createElement('div');
-        div.className = `bt ${bas.name}`;
-        
-        let text = document.createElement('div');
-         text.className = 'text';
-         text.textContent = bas.name;
-         div.appendChild(text);
-
-        let img = document.createElement('img');
-        // img.src = `assets/images/systems/${gam.name}.png`;
-        img.src = `assets/images/systems/error.png`;
-        div.appendChild(img);
-        
-        div.addEventListener('click', () => {
-            gamF.move(bas.name);
-        })
-
-        gamC.lobyD.querySelector('.bashos').appendChild(div);
-    }
-
-    for(let tak of gamC.blaC.takushe){
-        let div = El('div', `bt ${tak}`);
-        div.textContent = tak;
-        div.addEventListener('click', () => gamC.blaF.betSho(tak));
-
-        gamC.blaC.shorD.appendChild(div);
-    }
-    gamC.blaF.tekiou();
-    gamC.blaF.update();
+staF.setSkin = (name) => {
+    let skin = staC.skins.find(s => s.name == name);
+    if(!skin) return console.error(`スキン名:${name} はnot existですわよ〜ん`);
+    staC.p.img = skin.img;
+    staF.draw();
 }
 
-
-gamF.move = (to) => {
-    console.log(`[move] ${gamC.now} => ${to}`);
-    if(gamC.now == to) return console.log('どういうわけか もう そこにいる');
-	if(!to) return console.error(`せんぱ〜い？${to}ってどこですか〜？笑`);
-
-	for(let a of gamC.bashos) gamD.querySelector(`.heya.${a.name}`).classList.remove('show');
-    gamD.querySelector(`.heya.${to}`).classList.add('show');
-    gamC.now = to;
-
-    if(typeof gamF[to] === "function") gamF[to]();
-}
-
-//#region loby
-//#endregion
-
-//#region blacky
-gamC.blaD = gamD.querySelector('.blacky');
-gamC.blaC = {
-    staD: gamC.blaD.querySelector('.start'),
-    bacD: gamC.blaD.querySelector('.back'),
-
-    hitD: gamC.blaD.querySelector('.bts .bt.hit'),
-    stanD: gamC.blaD.querySelector('.bts .bt.stand'),
-    douD: gamC.blaD.querySelector('.bts .bt.double'),
-
-    bj: 21,
-    bas: 17,
-    ing: 0,
-    wait: 0,
-    stand: 0,
-
-    bet: 0,
-    betR: "min",
-    betD: gamC.blaD.querySelector('.preing .bet .num'),
-    takushe:["min", "1/8", "1/4", "1/2", "max"],
-    shorD: gamC.blaD.querySelector(".preing .main .mono.shorts"),
-    rangD: gamC.blaD.querySelector(".preing .main .mono.range"),
-
-    upuD: gamD.querySelector('.upui'),
-    diRD: gamD.querySelector('.upui .doo.diff .num'),
-    bjRD: gamD.querySelector('.upui .doo.bj .num'),
-    rate:{
-        // 初期値
-        diff: 1.50,
-        bj: 2.00,
-
-        //最小値
-        min:{
-            diff: 1.10,
-            bj: 1.40
-        },
-    },
-
-    sesD:{
-        player: gamC.blaD.querySelector(".human.player .place"),
-        dealer: gamC.blaD.querySelector(".human.dealer .place"),
-    },
-    gokD:{
-        player: gamC.blaD.querySelector(".human.player .gok .num"),
-        dealer: gamC.blaD.querySelector(".human.dealer .gok .num")
-    },
-    have:{
-        player: [],
-        dealer: [],
-    },
-
-    returnD: gamC.blaD.querySelector('.return')
-}
-gamC.blaF = {};
-
-gamC.blaF.stext = (text = "おお、やるか？") => {
-    gamC.blaC.staD.textContent = text;
-}
-gamC.blaF.btext = (text = "こんにちは。") => {
-    gamC.blaC.bacD.textContent = text;
-}
-
-gamC.blaF.back = () => {
-    if(gamC.blaC.ing ||
-      !gamC.blaC.wait) return;
-    
-    gamC.blaC.wait = 0;
-    gamC.blaD.classList.remove("ing")
-    gamC.blaF.stext("っし、そろそろいくか？");
-    gamC.blaF.btext("ご自由に");
-}
-gamC.blaC.bacD.addEventListener('click', gamC.blaF.back);
-
-// #region Upper UI
-
-gamC.blaF.update = () => {
-    let rbj = gamC.blaC.rate.bj;
-    let rdi = gamC.blaC.rate.diff
-    gamC.blaC.bjRD.textContent = rbj.toFixed(2);
-    gamC.blaC.diRD.textContent = rdi.toFixed(2);
-
-    let bet = gamC.blaC.bet;
-    gamC.blaC.betD.textContent = bet;
-}
-
+staC.stuC.teeth.addEventListener('click', () => staF.setSkin('fullofmeka'));
 // #endregion
 
-// #region pre ing
-gamC.blaF.betSet = (num = 0) => {
-    if(typeof num == "string") return console.error(`なんか、なんかnumが変です！！ {${num}}`);
-    if(!num) console.log(`0っぽいけどだいじょうぶ？`)
-
-    if(rimi < num) return console.error("多いっす。"), 1;
-    
-    gamC.blaC.bet = num; // == diff;
-    gamC.blaF.update();
-
-    return 0;
-}
-gamC.blaF.betKey10 = (code, which) => {
-    // which: RならR Nならcodeをそのままbetに
-    gamC.blaC.betR = 0;
-    gamC.blaF.betSet(1);
-
-    if(code == "min") code = 1, which = "N";
-    switch(which){
-        case "R": gamC.blaC.betR = code; break;
-        case "N": gamC.blaF.betSet(code); break;
-    }
-
-    return 0;
-}
-gamC.blaF.betSho = (code = 0) => { //あれらを押された時の反応
-    if(!code) return 1;
-    if(typeof code == "number") code = code.toString();
-    console.log(`code == ${code}`);
-
-    gamC.blaF.betKey10(code, "R")
-
-    console.log("shoのbetCalc実行！")
-    let num = gamC.blaF.betCalc();
-    gamC.blaF.betSet(num);
-}
-gamC.blaF.betCalc = () => {
-    let bet = gamC.blaC.bet;
-    let betR = gamC.blaC.betR;
-    let 特別許可券 = 0;
-    if(!betR && bet) 特別許可券 = 1;
-    else if(!betR && !bet) return console.error("ど、どっちもないです...自分眠いんで寝ていいすか？"), 0;
-
-    // takushe:["min", "1/8", "1/4", "1/2", "max"]
-    let num = 0;
-    jump:{
-        if(betR == "min" || betR == "max" ||
-           特別許可券) break jump;
-
-        if(!betR.includes("/")) betR += "/1";
-        let [A, B] = betR.split("/").map(a => {
-            if(a == "min") return 1;
-            if(a == "max") return rimi;
-            return +a;
-        });
-        let Q = A/B;
-
-        // let num = Math.floor((A*rimi) / B);
-        num = Math.floor(rimi * Q);
-    }
-
-    if(betR == "max") num = rimi;
-    if(betR == "min") num = 1;
-    
-    num = Math.max(1, Math.min(num, rimi));
-    console.log(`[betCalc] bet == ${num}`)
-
-    return num;
-}
-gamC.blaF.betHeler = () => {
-    console.log("helerのbetCalc実行！")
-    let num = gamC.blaF.betCalc();
-
-    if(rimi == 0){
-        return logtext("お客様？もうɌがございませんが...?"), 1;
-        // 何度も押したらAll for Nothingにできる〜とか、そのうち作ってもいいかもね
-    }
-    else if(rimi < num){
-        logtext("Ɍが足りないようでしたので、");
-        logtext('**AllIn**、とさせていただきますね？');
-        num = rimi;
-    }
-
-    gamC.blaF.betSet(num);
-    let bet = gamC.blaC.bet;
-
-    rimiF.dec(bet);
-
-    return 0;
-}
-
 // #endregion
-
-// #region to ing
-gamC.blaF.tekiou = () => {
-    let cams = ["player", "dealer"];
-    for(let cam of cams){
-        let hasD = gamC.blaC.sesD[cam];
-        let has = gamC.blaC.have[cam];
-
-        // hasDにカードを表示..毎回全消しして全生成するを何度もやる....?うっそー、絶対嘘、そうに決まってる....
-        let all0 = hasD.querySelectorAll('.card').length;
-        for(let i = all0; i < has.length; i++){
-            gamC.blaF.add(cam, has[i]);
-        }
-        
-        let gok = cardCalc(has, "bj");
-        gamC.blaC.gokD[cam].innerText = gok;
-    }
-    
-}
-gamC.blaF.add = (cam, card) => {
-    let hasD = gamC.blaC.sesD[cam];
-
-    let num = El('div', 'atie num');
-    num.textContent = card.num;
-    num.dataset.val = card.val;
-
-    let suit = El('div', 'atie suit')
-    suit.textContent = card.suit;
-
-    let div = El('div', 'card', [
-        num,
-        suit
-    ]); //この書き方unityみたいで楽しい やったことないけど
-    if(card.hide) div.classList.add("hide");
-    
-    div.dataset.india = card.india; //常に最新になるはず..?
-    
-    hasD.appendChild(div);
-
-    return div;
-}
-gamC.blaF.rem = (cam, india) => {
-    let hasD = gamC.blaC.sesD[cam];
-    
-    hasD.querySelector(`.card[data-india="${india}"]`)?.remove();
-
-    return 0;
-}
-
-gamC.blaF.reset = () => {
-    let cams = ["player", "dealer"];
-    for(let cam of cams){
-        gamC.blaC.sesD[cam].innerHTML = "";
-        gamC.blaC.have[cam] = [];
-    }
-
-    gamC.blaC.stand = 0;
-
-    gamC.blaF.tekiou();
-}
-gamC.blaF.start = async() => {
-    if(gamC.blaC.ing) return 1;
-
-    let res = gamC.blaF.betHeler(); //bet分rimiを減らす
-    if(res) return 1; //減らせなかった場合
-
-    gamC.blaC.ing = 1;
-    gamC.blaC.wait = 1;
-    gamC.blaD.classList.add("ing");
-
-
-    gamC.blaF.reset();
-    gamC.blaF.stext("おうよ、ま、がんばんな");
-    gamC.blaF.btext("見てますね");
-
-    let acts = [
-        ["dealer"],
-        ["dealer", 1],
-        ["player"],
-        ["player"]
-    ]
-    for(let act of acts){
-        gamC.blaF.draw(...act);
-        gamC.blaF.tekiou();
-        await delay(500)
-    }
-
-    gamC.blaC.wait = 0;
-    return 0;
-}
-gamC.blaC.staD.addEventListener('click', gamC.blaF.start)
-
-gamC.blaF.draw = (cam, hide = 0, code = 0) => {
-    if(!code || typeof code != "string") code = "";
-    let [val0, suit0] = [0, 0]
-    if(code.startsWith("指定:")){
-        let arr = code.slice(3).split(',');
-        if(arr[0]) val0 = +arr[0];
-        if(arr[1]) suit0 = arr[1];
-    }
-
-    let has = gamC.blaC.have[cam];
-    let gok = cardCalc(has, "bj");
-    console.log(`[draw] ${cam}[${gok}]がカードを引くらしい`)
-
-    if(code.startsWith("八百長")){
-        let rest = gamC.blaC.bj - gok;
-        if(code == "八百長") val0 = random(1, Math.min(rest, 13));
-        else{
-            let shetey = +code.slice(4);
-            console.log(`[draw] おい、女王様は${shetey}をご所望だ`);
-            rest = shetey - gok;
-            if(rest < 0) console.log(`[draw] 無理だったでやんす`), val0 = 1;
-            else{
-                if(13 < rest) rest = 13;
-                 val0 = rest;
-            }
-        }
-    }
-    
-    let card = cardDraw(val0, suit0); //あっちでの基本引数は0, 0だから0, 0を入れても問題ないのだ
-    if(hide) card.hide = 1; //dealerの2枚目、みたいな
-    let all0 = has.length;
-    card.india = all0
-    
-    has.push(card);
-    souF.play('place');
-
-    gamC.blaF.tekiou(); //適用関数
-    console.log(`==> 値は${card.val}. 合計 becomes ${cardCalc(has, "bj")}`);
-
-    return card;
-}
-gamC.blaF.onmyway = (cam, num = 0) => {
-    if(!num) num = gamC.blaC.bj;
-
-    let has = gamC.blaC.have[cam];
-    let gok = cardCalc(has, "bj");
-
-    let rest = num - gok;
-    if(rest < 0) rest = -1;
-    
-    return rest;
-}
-
-
-gamC.blaF.hit = () => {
-    if(gamC.blaC.stand ||
-      !gamC.blaC.ing ||
-       gamC.blaC.wait) return 1;
-
-    let card = gamC.blaF.draw("player");
-    gamC.blaF.tekiou();
-
-    let gok = cardCalc(gamC.blaC.have["player"], "bj");
-    let bj = gamC.blaC.bj;
-    if(bj < gok) return gamC.blaF.stand(1), 1;
-
-    return 0;
-}
-gamC.blaC.hitD.addEventListener('click', gamC.blaF.hit);
-
-gamC.blaF.stand = async(owa = 0) => {
-    if(gamC.blaC.stand ||
-      !gamC.blaC.ing ||
-       gamC.blaC.wait) return 1;
-    gamC.blaC.stand = 1;
-
-    jump:{
-        if(owa) break jump;
-
-        // dealer's turn
-        let cam = "dealer";
-        let bas = gamC.blaC.bas;
-        let has = gamC.blaC.have[cam];
-        let hasD = gamC.blaC.sesD[cam];
-        has = cardUnwrap(has); //hideを解除
-        
-        let hasDs = hasD.querySelectorAll('.card');
-        hasDs.forEach(a => a.classList.remove('hide'));
-
-        let gok = cardCalc(has, "bj");
-        gamC.blaF.tekiou();
-        await delay(1000);
-
-        while(gok <= bas){
-            gamC.blaF.draw(cam);
-            gok = cardCalc(has, "bj")
-            await delay(500);
-        }
-    }
-
-    gamC.blaF.judge();
-}
-gamC.blaC.stanD.addEventListener('click', () => gamC.blaF.stand(0));
-
-gamC.blaF.double = () => {
-    nicoText("まだ未実装だ、すまんな");
-}
-gamC.blaC.douD.addEventListener('click', gamC.blaF.double);
-
-gamC.blaF.judge = () => {
-    let bj = gamC.blaC.bj;
-    let gokP = cardCalc(gamC.blaC.have["player"], "bj");
-    let gokD = cardCalc(gamC.blaC.have["dealer"], "bj");
-
-    if(gokP == bj) gamC.blaF.end("player", "bj");
-    else if(gokD == bj) gamC.blaF.end("dealer", "bj");
-    else if(bj < gokP) gamC.blaF.end("dealer", "burst");
-    else if(bj < gokD) gamC.blaF.end("player", "burst");
-    else{
-        let diff = gokD - gokP
-        if(0 < diff) gamC.blaF.end("dealer", "diff");
-        if(diff < 0) gamC.blaF.end("player", "diff");
-        if(diff == 0) gamC.blaF.end(0, "diff");
-    }
-
-    return 0;
-}
-gamC.blaF.end = (cam = 0, yue = "error") => {
-    console.log(`[end] ${0}が{${yue}}で勝利しました`);
-
-    let mes = "";
-    switch(cam){
-        case "player":{
-            if(yue == "bj") mes = "うーわ！うわーー！！！やってる！お兄さんやったね？？ついに！！";
-            if(yue == "burst") mes = "ディーラーがバースト！お兄さんの勝ちだよ！";
-            if(yue == "diff") mes = "お兄さんの勝ち！やるじゃん！"
-        }
-        break;
-
-        case "dealer":{
-            if(yue == "bj") mes = "あー......おにいさんやられたね、これは完全に仕組まれたね"
-            if(yue == "burst") mes = "お兄さんがバースト！んまけ〜〜お兄さんのー？負け〜〜〜〜";
-            if(yue == "diff") mes = "はいお兄さんの負け〜〜よわよわすぎ笑";
-        }
-        break;
-
-        default:{
-            if(yue == "diff") mes = "しょーもなーー......"
-        }
-    }
-
-    let bet = gamC.blaC.bet;
-    let rate = gamC.blaC.rate;
-    let molie = 0;
-    if(cam == "player"){
-        if(yue == "bj") molie = bet * rate.bj
-        else molie = bet * rate.diff;
-        molie = Math.ceil(molie); //ceilは優しさ
-    }
-    if(cam == 0) molie = bet;
-    rimiF.inc(molie);
-    console.log(`[end] ${cam}が{${yue}}で勝利しました`);
-    
-    if(cam == "dealer"){
-        let Ddiff = randomF(0.2, 0.4, 2);
-        let Dbj = randomF(0.3, 0.5, 2);
-        
-        rate.diff += Ddiff;
-        rate.bj += Dbj;
-        console.log(`[rate] 倍率↑↑ diff:+${Ddiff} / bj:+${Dbj}`);
-        
-    }
-    if(cam == "player"){
-        let Ddiff = randomF(0.1, 0.3, 2);
-        let Dbj = randomF(0.2, 0.4, 2);
-        
-        rate.diff = Math.max(1.10, rate.diff - Ddiff);
-        rate.bj = Math.max(1.40, rate.bj - Dbj);
-        console.log(`[rate] 倍率↓↓ diff:-${Ddiff} / bj:-${Dbj}`);
-    }
-    rate.diff = +rate.diff.toFixed(2); //小数点以下は2桁まで
-    rate.bj = +rate.bj.toFixed(2);
-    gamC.blaF.update();
-    
-    logtext(mes, "gamble");
-    gamC.blaC.wait = 1;
-    gamC.blaC.ing = 0;
-    gamC.blaF.stext("もっかいやるか？");
-    gamC.blaF.btext("ん、戻りますか？");
-}
-// #endregion
-
-
-gamC.blaC.returnD.addEventListener('click', () => {
-    if(gamC.blaC.ing || gamC.blaC.wait) return 1;
-    gamF.move("loby");
-});
-
-//#endregion
-
-// #region rourou
-gamC.rouD = gamD.querySelector('.rourou');
-gamC.rouC = {
-    ing: 0,
-    wait: 0,
-
-    returnD: gamC.rouD.querySelector('.return')
-}
-gamC.rouF = {};
-
-gamC.rouC.returnD.addEventListener('click', () => {
-    if(gamC.rouC.ing || gamC.rouC.wait) return 1;
-    gamF.move("loby");
-});
-
-// #endregion
-
-// #region forage
-
-/*
-
-先に概要。
-「森でキノコを採ろう!!」
-*[水上都市]「（名称未定）」の裏の薄暗い店の一角にあるマシン。安っぽいロゴ*
-キノコが10個あるので、そこからキノコを採ろうというゲーム。1つ取るたびに倍率が上がる
-しかし、触れるだけで毒を出すキノコもある。それに触れたらゲームオーバー、倍率が0になる
-（"ハズレキノコ"はそれとしてあるわけではない。最大獲得個数というものが定められていて、それが確率。ゆえに触れるたびに判定ではない）
-
-*/
-
-gamC.forD = gamD.querySelector('.forage');
-gamC.forC = {
-    gamenD: gamC.forD.querySelector('.gamen'),
-    starteD: gamC.forD.querySelector('.gamen .dimee.started'),
-    honD: gamC.forD.querySelector('.gamen .dimee.hondie'),
-    mushsD: gamC.forD.querySelector('.gamen .dimee.hondie .mushes'),
-    daiD: gamC.forD.querySelector('.gamen .dai'),
-    irelD: gamC.forD.querySelector('.gamen .dai .irel'),
-    otsuD: gamC.forD.querySelector('.gamen .dai .otsu'),
-    dispD: gamC.forD.querySelector('.gamen .dai .disp'),
-    btD: gamC.forD.querySelector('.gamen .dai .bottan'),
-    getoutD: gamC.forD.querySelector('.gamen .dai .getout'),
-    getoutID: gamC.forD.querySelector('.gamen .dai .getout img'),
-
-    bet: 0,
-    getout: 0,
-    gamens: ["started", "hondie"],
-
-    ing: 0,
-    wait: 0,
-    timer: null,
-    
-    rate: 1.0,
-    cantake: 0,
-    took: 0,
-
-    returnD: gamC.forD.querySelector('.return')
-}
-gamC.forF = {};
-
-gamC.forC.returnD.addEventListener('click', () => {
-    if(gamC.forC.ing || gamC.forC.wait) return 1;
-    gamF.move("loby");
-});
-
-gamC.forF.update = () => {
-    let bet = gamC.forC.bet;
-    let disp = String(bet).padStart(9, "0");
-
-    let dispD = gamC.forC.dispD;
-    dispD.innerHTML = disp.split('').map(a => `<div>${a}</div>`).join('');
-}
-
-gamC.forF.gamenCH = (name) => {
-    for(let ch of gamC.forC.gamens){
-        if(ch == name) gamC.forC.gamenD.classList.add(ch);
-        else gamC.forC.gamenD.classList.remove(ch);
-    }
-}
-gamF.forage = () => {
-    // enter
-    gamC.forF.update();
-}
-
-gamC.forF.irel = () => {
-    // ここでエフェクトを
-    if(rimi < 100) return tobiText(gamC.forC.irelD, "金欠乙");
-
-    gamC.forC.bet += 100;
-    rimiF.dec(100);
-    gamC.forF.update();
-    
-
-}
-gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
-
-gamC.forC.otsuD.addEventListener('click', () => {
-    let ryou = gamC.forC.bet;
-    gamC.forC.bet = 0;
-    gamC.forF.update();
-
-    gamC.forF.getout_set(ryou);
-})
-
-gamC.forF.bt = () => {
-    if(!(gamC.forC.ing || gamC.forC.wait)) gamC.forF.start();
-    else gamC.forF.dropout();
-    
-}
-gamC.forC.btD.addEventListener('click', gamC.forF.bt);
-
-gamC.forF.start = async() => {
-    if(gamC.forC.ing || gamC.forC.wait) return 1;
-
-    gamC.forC.rate = 1.0;
-    gamC.forC.took = 0;
-    gamC.forC.timer = new Timer(0, 1, 1);
-
-    let bet = gamC.forC.bet;
-    if(bet <= 0) return nicoText("コインを入れてねっ♡")
-    
-    gamC.forC.ing = 1;
-    gamC.forF.mushSet(10);
-    gamC.forF.gamenCH('hondie');
-    
-    gamC.forC.wait = 1;
-    await gamC.forF.mushPlace();
-    gamC.forC.wait = 0;
-
-    gamC.forC.timer.start();
-    return 0;
-}
-
-
-gamC.forF.mushSet = (num = 10) => {
-    let cantake = 0;
-    while(cantake < 10 && Math.random() < 0.75){
-        cantake += 1;
-    }
-    // 単純に「0.75**${個数}」で確率
-    
-
-    gamC.forC.cantake = cantake;
-    
-    console.log(`[mushSet] 今回のアカキノコは${cantake}個です`);
-    if(cantake == 10) console.warn(`[mushSet] ん、10個？5.63%？？？`), console.warn(`[mushSet] いやまあ...ブルアカの☆3の確率3%よりは良い方か`);
-
-    return 0;
-}
-gamC.forF.mushPlace = () => {
-    let div0 = gamC.forC.mushsD;
-    div0.innerHTML = "";
-
-    let placed = [];
-
-    for(let i=0; i<10; i++){
-        let div = document.createElement('div');
-        div.className = 'mush';
-         let img = images.systems["mush"].cloneNode();
-         div.appendChild(img);
-
-        
-        let bigger = 4;
-        let width = (bigger/64)*100;
-        div.style.width = `${width}%`;
-
-        let gridX, gridY, ticca;
-        let tried = 0;
-        do {
-            gridX = Math.floor(Math.random() * 50) + 1;
-            gridY = Math.floor(Math.random() * 33) + 1;
-            
-            ticca = placed.some(pos => {
-                return Math.abs(pos.x - gridX) < bigger && Math.abs(pos.y - gridY) < bigger;
-            });
-            tried++;
-        }while(ticca && tried<23);
-
-        placed.push({ x: gridX, y: gridY });
-
-        let totalX = 6+gridX;
-        let totalY = 6+gridY;
-
-        let left = (totalX / 64) * 100;
-        let top = (totalY / 48) * 100;
-
-        div.style.left = `${left}%`;
-        div.style.top = `${top}%`;
-
-        div.dataset.index = i;
-
-        div.addEventListener("click", () => {
-            gamC.forF.mushGet();
-            div.remove();
-        });
-
-        let acessment = "assets/images/systems/"
-        div.addEventListener("pointerenter", () => img.src = `${acessment}mush_high.png`);
-        div.addEventListener("pointerleave", () => img.src = `${acessment}mush.png`);
-
-        div0.appendChild(div);
-    }
-
-    console.log(`[mushPlace] 配置完了。ご自由に、どうぞ？`)
-
-    return 0;
-}
-gamC.forF.mushGet = () => {
-    if(gamC.forC.wait) return;
-
-    gamC.forC.took += 1;
-    let tim = gamC.forC.timer.time;
-
-    let took = gamC.forC.took;
-    let cantake = gamC.forC.cantake;
-    console.log(`[mushGet] ${took}/${cantake} (思考時間:${tim/100}s)`);
-
-    if(cantake < took) return gamC.forF.sprayed();
-
-    let up = random(5, 15)*0.1;
-    let moto = gamC.forC.rate;
-    gamC.forC.rate = Math.ceil((moto + up) *10) /10;
-
-    console.log(`[mushGet] rate上昇↑↑ ${moto} => ${gamC.forC.rate}`);
-
-    gamC.forC.timer.reset();
-}
-
-
-
-gamC.forF.sprayed = () => {
-    console.log(`[sprayed] 毒、噴射: ${gamC.forC.rate} => 0.0`);
-    gamC.forC.rate = 0.0;
-    kirameki(gamC.forC.btD);
-    gamC.forF.dropout(1);
-}
-gamC.forF.dropout = (code = 0) => {
-    if(!gamC.forC.ing) return 1;
-
-    let rate = gamC.forC.rate;
-    let bet = gamC.forC.bet;
-    if(code == 0) console.log(`[dropout] 降りました！rateは${rate}, betは${bet}`);
-
-    let get = Math.ceil(bet*rate);
-    if(0 < get) gamC.forF.getout_set(get);
-
-    gamC.forF.end();
-}
-gamC.forF.end = () => {
-    gamC.forF.gamenCH("started");
-    gamC.forC.ing = 0;
-    gamC.forC.bet = 0;
-    gamC.forC.timer.share();
-     gamC.forC.timer = null;
-    gamC.forF.update();
-}
-
-gamC.forF.getout_set = (ryou) => {
-    // imgをgetout.png→getout_coin.pngにする。そしてdivが押されたら...imgをgetout.ongに戻し、rimiF.inc(ryou)をする
-
-    let img = gamC.forC.getoutID;
-
-    img.src = "assets/images/systems/getout_coin.png";
-    gamC.forC.getout += ryou;
-}
-gamC.forF.getout_get = () => {
-    let getout = gamC.forC.getout;
-    if(typeof getout === "number" && getout <= 0) return;
-
-    rimiF.inc(getout);
-    console.log(`[getout] Ɍ${getout}を受け取りました`)
-
-    let img = gamC.forC.getoutID;
-    img.src = "assets/images/systems/getout.png";
-    
-    gamC.forC.getout = 0;
-}
-gamC.forC.getoutD.addEventListener('click', gamC.forF.getout_get);
-
-
-// #endregion
-
-//#endregion　リヴァーサル/syudou
 
 
 
@@ -3632,11 +2445,12 @@ function start(){
     OBS.load();
 
     mainF.load();
-    gamF.load();
+    staF.load();
 
-    rimiF.inc(255)
 
     mainF.move('home');
+
+    staF.start();
 }
 //#endregion
 
@@ -3645,11 +2459,11 @@ let LoadOfWait = async() => await loaF.load();
 if(document.readyState == "loading"){
     document.addEventListener("DOMContentLoaded", init);
 }
-else init();
+else LoadOfWait();
 
-async function init(){
-    SpeciusLight(); //とくべちゅ、しよ？
+async function init() {
     await LoadOfWait();
+    start();
 }
 //#endregion
 

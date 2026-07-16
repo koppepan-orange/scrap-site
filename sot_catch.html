@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Catch Destroy Rhythm</title>
+    <style>
+    body{
+        margin:0;
+        height:100vh;
+        background:#111;
+        color:white;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        font-family:sans-serif;
+    }
+
+    #game{
+        text-align:center;
+    }
+
+    #action{
+        font-size:50px;
+        margin:30px;
+    }
+
+    #judge{
+        font-size:35px;
+        height:50px;
+    }
+
+    #info{
+        font-size:20px;
+        color:#aaa;
+    }
+
+    button{
+        padding:15px 30px;
+        font-size:20px;
+    }
+    </style>
+</head>
+
+<body>
+
+    <div id="game">
+
+    <h1>Catch / Destroy</h1>
+
+    <button id="start">
+    START
+    </button>
+
+    <div id="action">
+    READY
+    </div>
+
+    <div id="judge">
+    </div>
+
+    <div id="info">
+    Z : キャッチ　　X : 破壊！！
+    </div>
+
+    </div>
+
+
+    <script>
+        class RhythmGame{
+
+        constructor(bpm=120){
+
+            this.beatLength = 60/bpm;
+            this.tripletLength = this.beatLength*2/3;
+
+            this.audioCtx=null;
+
+            this.targetTime=0;
+            this.pattern=null;
+
+            this.active=false;
+            this.result=false;
+
+
+            window.addEventListener("keydown",(e)=>{
+
+                if(!this.active)return;
+
+
+                if(e.code==="KeyZ"){
+                    this.input("catch");
+                }
+
+                if(e.code==="KeyX"){
+                    this.input("destroy");
+                }
+
+            });
+
+
+        }
+
+
+
+        initAudio(){
+
+            if(!this.audioCtx){
+
+                this.audioCtx=
+                new(window.AudioContext||
+                window.webkitAudioContext)();
+
+            }
+
+        }
+
+
+
+        beep(freq,time,duration){
+
+        const osc=this.audioCtx.createOscillator();
+        const gain=this.audioCtx.createGain();
+
+
+        osc.frequency.setValueAtTime(freq,time);
+
+
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+
+
+
+        gain.gain.setValueAtTime(0,time);
+        gain.gain.linearRampToValueAtTime(
+            0.3,
+            time+0.01
+        );
+
+        gain.gain.linearRampToValueAtTime(
+            0,
+            time+duration
+        );
+
+
+        osc.start(time);
+        osc.stop(time+duration);
+
+        }
+
+
+
+
+        play(pattern){
+
+            this.initAudio();
+
+            this.active=true;
+            this.result=false;
+
+            this.pattern=pattern;
+
+
+            const start =
+                this.audioCtx.currentTime + 0.2;
+
+
+
+            if(pattern==="catch"){
+
+                action.textContent="キャッチ！！ Z";
+
+
+                // ラ ミ 高ラ
+                this.beep(
+                    440,
+                    start,
+                    0.1
+                );
+
+                this.beep(
+                    659.25,
+                    start + this.tripletLength,
+                    0.1
+                );
+
+                this.beep(
+                    880,
+                    start + this.tripletLength*2,
+                    0.1
+                );
+
+
+                // 2拍後
+                this.targetTime =
+                    start + this.beatLength*2;
+
+            }
+
+
+
+            if(pattern==="destroy"){
+
+                action.textContent="破壊！！ X";
+
+
+                // レ♭
+                this.beep(
+                    277.18,
+                    start,
+                    this.beatLength-0.05
+                );
+
+
+                let tripletStart =
+                    start + this.beatLength;
+
+
+
+                // ラ
+                this.beep(
+                    440,
+                    tripletStart,
+                    0.1
+                );
+
+
+                // ファ#
+                this.beep(
+                    369.99,
+                    tripletStart + this.tripletLength,
+                    0.1
+                );
+
+
+                // ド
+                this.beep(
+                    523.25,
+                    tripletStart + this.tripletLength*2,
+                    0.1
+                );
+
+
+
+                // レ♭開始から3拍後
+                this.targetTime =
+                    start + this.beatLength*3;
+
+            }
+
+
+
+            // 判定時間
+            setTimeout(()=>{
+
+                if(this.active&&!this.result){
+
+                    this.active=false;
+                    judge.textContent="MISS";
+
+                    setTimeout(()=>{
+                        this.next();
+                    },500);
+
+                }
+
+            },
+            500);
+
+        }
+
+
+
+
+        input(type){
+
+
+
+        if(this.result)return;
+
+
+
+        // 押したキーが違う
+
+        if(type!==this.pattern){
+
+            judge.textContent="違うキー！";
+
+            this.result=true;
+
+            this.active=false;
+
+
+            setTimeout(()=>{
+                this.next();
+            },1000);
+
+
+            return;
+
+        }
+
+
+
+        let now=
+        this.audioCtx.currentTime;
+
+
+        let diff=
+        (now-this.targetTime);
+
+
+
+        let ms=
+        Math.abs(diff*1000);
+
+
+
+        if(ms<50){
+
+            judge.textContent="PERFECT！！";
+
+        }
+
+        else if(ms<120){
+
+            judge.textContent="GOOD";
+
+        }
+
+        else{
+
+            judge.textContent="MISS";
+
+        }
+
+
+
+        this.result=true;
+        this.active=false;
+
+
+
+        setTimeout(()=>{
+
+            this.next();
+
+        },1000);
+
+
+
+        }
+
+
+
+
+        next(){
+
+            judge.textContent="";
+
+            setTimeout(()=>{
+
+                let p =
+                Math.random()<0.5
+                ?"catch"
+                :"destroy";
+
+
+                this.play(p);
+
+
+            },
+            this.beatLength*1000);
+
+        }
+
+
+        }
+
+
+
+
+        const game=
+        new RhythmGame(120);
+
+
+
+        start.onclick=()=>{
+
+        start.style.display="none";
+
+        game.next();
+
+        };
+    </script>
+
+</body>
+</html>
+
+
+
+<!-- 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rhythm Prototype</title>
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    h1 {
+      margin-bottom: 0.5rem;
+    }
+    .info {
+      margin: 0.3rem 0;
+    }
+    .btns {
+      margin-top: 1rem;
+    }
+    button {
+      margin: 0 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .log {
+      margin-top: 1.5rem;
+      width: 80%;
+      max-width: 600px;
+      height: 200px;
+      background: #222;
+      border-radius: 8px;
+      padding: 0.5rem;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+    .key-hint {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rhythm Game Prototype</h1>
+  <p class="info">BPM 120 / 「z」でキャッチ、「x」で破壊。</p>
+  <p class="info">まずどちらかのパターンを再生してから、タイミングよくキーを押してね。</p>
+
+  <div class="btns">
+    <button id="btnCatch">キャッチパターン再生 (z)</button>
+    <button id="btnDestroy">破壊パターン再生 (x)</button>
+  </div>
+
+  <p class="key-hint">入力判定結果は下のログに表示されます。</p>
+  <div id="log" class="log"></div>
+
+  <script>
+    class RhythmGame {
+      constructor(bpm = 120, logger = console.log) {
+        this.beatLength = 60 / bpm;          // 1拍（4分音符）の長さ（秒）
+        this.tripletLength = (this.beatLength * 2) / 3; // 2拍3連の1音あたりの長さ（秒）
+
+        this.audioCtx = null;
+        this.targetTime = 0;        // ユーザーがキーを押すべき絶対時間（秒）
+        this.currentPattern = null; // 'catch' または 'destroy'
+        this.hasInput = false;
+        this.logger = logger;
+      }
+
+      log(msg) {
+        this.logger(msg);
+      }
+
+      initAudio() {
+        if (!this.audioCtx) {
+          this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+      }
+
+      // キャッチパターンを再生
+      playCatch() {
+        this.initAudio();
+        this.hasInput = false;
+        this.currentPattern = 'catch';
+
+        const startTime = this.audioCtx.currentTime + 0.2; // 少し余裕を持って開始
+
+        // 「ぱっぱっぱ」（2拍3連）をスケジュール
+        this.scheduleBeep(440, startTime, 0.1); // ラ
+        this.scheduleBeep(659.25, startTime + this.tripletLength, 0.1); // ミ
+        this.scheduleBeep(880, startTime + (this.tripletLength * 2), 0.1); // ラ（1オクターブ上）
+
+        // ジャストの入力タイミングは、3連符の開始からちょうど「2拍」進んだところ
+        this.targetTime = startTime + (this.beatLength * 2);
+
+        this.log("【キャッチ】3連符スタート！ 2拍後に「z」でキャッチ！");
+      }
+
+      // 破壊パターンを再生
+      playDestroy() {
+        this.initAudio();
+        this.hasInput = false;
+        this.currentPattern = 'destroy';
+
+        const startTime = this.audioCtx.currentTime + 0.2;
+
+        // 「どぅん」（1拍）
+        this.scheduleBeep(110, startTime, this.beatLength - 0.05); // 低いラ
+
+        // 「ふぁっふぁっふぁっ」（次の2拍で2拍3連）
+        const tripletStart = startTime + this.beatLength;
+        this.scheduleBeep(440, tripletStart, 0.1); // ラ
+        this.scheduleBeep(370, tripletStart + this.tripletLength, 0.1); // ファ# (ミ#)
+        this.scheduleBeep(523.25, tripletStart + (this.tripletLength * 2), 0.1); // ド
+
+        // ジャストの入力タイミングは、最初の開始からちょうど「3拍」進んだところ
+        this.targetTime = tripletStart + (this.beatLength * 2);
+
+        this.log("【破壊】どぅん… ふぁっふぁっふぁっ！ 次の1拍後に「x」で破壊！！");
+      }
+
+      // サイン波で音を鳴らすヘルパー
+      scheduleBeep(frequency, time, duration) {
+        const osc = this.audioCtx.createOscillator();
+        const gain = this.audioCtx.createGain();
+
+        osc.frequency.setValueAtTime(frequency, time);
+        osc.connect(gain);
+        gain.connect(this.audioCtx.destination);
+
+        // プチプチ音（クリックノイズ）を防ぐエンベロープ処理
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(0.3, time + 0.01);
+        gain.gain.setValueAtTime(0.3, time + duration - 0.01);
+        gain.gain.linearRampToValueAtTime(0, time + duration);
+
+        osc.start(time);
+        osc.stop(time + duration);
+      }
+
+      // 入力判定
+      handleInput() {
+        if (this.hasInput || !this.audioCtx || !this.currentPattern) return;
+        this.hasInput = true;
+
+        const inputTime = this.audioCtx.currentTime;
+        const diff = inputTime - this.targetTime; // 誤差（秒）
+        const diffMs = diff * 1000;
+
+        this.log(
+          `入力時間: ${inputTime.toFixed(3)}s / 目標: ${this.targetTime.toFixed(3)}s / 誤差: ${diffMs.toFixed(1)}ms`
+        );
+
+        // 判定（±0.05秒 ＝ ±50ミリ秒をジャスト判定とする）
+        if (Math.abs(diff) < 0.05) {
+          if (this.currentPattern === 'catch') {
+            this.log("👉 完璧にキャッチ！！！");
+          } else {
+            this.log("💥 粉砕！！！！！！");
+          }
+        } else if (Math.abs(diff) < 0.12) {
+          this.log("😅 ちょっとズレた…");
+        } else {
+          this.log("💨 スカッ（ミス！）");
+        }
+      }
+    }
+
+    // ====== 実際のゲームセットアップ ======
+    const logEl = document.getElementById('log');
+    function appendLog(text) {
+      logEl.textContent += text + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const game = new RhythmGame(120, appendLog);
+
+    // ボタンでパターン再生
+    document.getElementById('btnCatch').addEventListener('click', () => {
+      game.playCatch();
+    });
+
+    document.getElementById('btnDestroy').addEventListener('click', () => {
+      game.playDestroy();
+    });
+
+    // キー入力: z = キャッチ, x = 破壊
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'z' || e.key === 'Z') {
+        appendLog("キー入力: z（キャッチ）");
+        game.handleInput();
+      } else if (e.key === 'x' || e.key === 'X') {
+        appendLog("キー入力: x（破壊）");
+        game.handleInput();
+      }
+    });
+
+    appendLog("準備OK：ボタンでパターンを再生して、タイミングよく「z」か「x」を押してみてね。");
+  </script>
+</body>
+</html> -->
