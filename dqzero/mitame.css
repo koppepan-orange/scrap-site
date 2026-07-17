@@ -454,10 +454,10 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 .mode .item:hover{
     background: var(--botan-ed, #2b2b2b);
     color: var(--botan-col-ed, #b2b2b2);
-    scale: 0.95;
+    scale: 1.05;
 }
 .mode .item:active{
-    scale: 1.05;
+    scale: 0.95;
 }
 
 .mode.tate .item{

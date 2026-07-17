@@ -1285,7 +1285,7 @@ class TakushiSen {
         div.style.setProperty('--botan-col-ed', irohaHo(bEd));
 
         this.choices.forEach(ma => {
-            let [name, gazou] = [ma.name, ma.img];
+            let [name, gazou] = [ma.name, ma.img = 0, ];
             if(typeof ma === 'string') name = ma;
 
             let item = document.createElement('div');
@@ -1293,7 +1293,7 @@ class TakushiSen {
             item.textContent = name;
             item.dataset.name = name;
 
-            // 画像があるならば
+            // 画像があるならば (0は無効)
             if(gazou){
                 let img = document.createElement('img');
                 img.src = gazou;
@@ -2066,12 +2066,12 @@ let homF = {};
 homF.start = async() => {
     if(homC.started) return 1;
     homC.started = 1;
-    // return logtext('バカめ！！作者はもう逃げて遊んでるぜ！！！！');
-    // let charas = Charas.map(a => [a.jpnm, a.img]);
-    let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
+    let charas = Charas.map(a => a);
+    // let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
     let charaSen = new TakushiSen(charas, 'tate');
     let chara = await charaSen.select(homD); //文字列が来るヨ
-    console.log(`選ばれたのは、[${chara.name}]でした`);
+    console.log(chara) //"color_slime"
+    console.log(`選ばれたのは、[${chara.name}]でした`); //"選ばれたのは、[undefined]でした"
 
     makeUnit("player", 0, chara.name);
 
@@ -2134,6 +2134,7 @@ batC.shokey = {
     slash: ['slash', 'double slash', 'slash of light'],
     magic: ['heal', 'power', 'shell'],
     tool: ['aspirin', 'throw knife', 'redcard'],
+    booth: ["act", "magic", "tool", "run"],
 }
 let batF = {};
 
@@ -2546,83 +2547,8 @@ function buffRem(who, name){
 
     return 1;
 }
-// #endregion
-
-// #region turnとかbarとかactedとか
-
-/*
-// これはblank
-function turnNext(who){
-    // 1. dotダメージの処理
-    // ここで who のステータスを見て、毒とかの計算をするんだよ
-    console.log(who + " のdotダメージ処理");
-
-    // 2. playerかenemieかでswitchで行動を促す
-    switch(who){
-        case 'player':
-            // プレイヤーのボタン（batC.bts）を活性化させたり、入力を待つ処理
-            console.log("プレイヤーの行動選択を促すよ。よわよわ行動はナシね！");
-            break;
-            
-        case 'enemie':{
-            // 敵のAI（自動行動）の処理を呼び出す
-            console.log("enemie の自動行動を選択中...");
-            break;
-        }
-    }
-}
-
-function turnEnd(who, ares){
-    let reAct = 0; // ここに確率計算とかを入れる
-    
-    if(reAct){
-        console.log(`再行動・${who.name}`);
-        turnNext(who);
-        return; 
-    }
-
-    // 2. dotダメージの処理（ターンの最後にもあるの？重複に気をつけてね）
-    console.log(who + " のターン終了時のdot処理");
-
-    turnBye(who);
-}
-
-function turnBye(who){
-    // 1. もしbar最後の行動だったなら turnNew を実行
-    // batC.acted が 進行度で、batC.actbar.length - 1 と等しいか比べる
-    if(batC.acted >= batC.actbar.length - 1){
-        console.log("このターンのbarは全員おしまい！次のターンへ");
-        turnNew(0); // 新しいbarを作る
-    } else {
-        // まだ残ってるなら進行度を1進めて、次のキャラの行動へ
-        batC.acted++;
-        let nextWho = batC.actbar[batC.acted]; // 次に行動するキャラ（'player' とか 'enemie'）
-        turnNext(nextWho);
-    }
-}
-
-function turnNew(code = 0){
-    // 1. turn数をカウントアップ（1巡したからね）
-    batC.turn++;
-    batC.turnD.innerText = batC.turn; // 画面の表示も更新しちゃう
-
-    // 2. barを再建（actbarに行動順の配列をセットする）
-    // 例: 素早さ順とかで ['player', 'enemie', 'enemie'] みたいに並べる
-    batC.actbar = ['player', 'enemie']; // ここは仮ね、お兄さんがルールを決めて
-    
-    // 3. 進行度を初期化
-    batC.acted = 0;
-
-    console.log("ターン " + batC.turn + " 開始！");
-
-    // 4. 0番の行動開始
-    let firstWho = batC.actbar[0];
-    turnNext(firstWho);
-}
-*/
 
 
-// これは全部渡した拡張
 function processDots(who){
     let dots = {};
     for(let buff of who.buffs){
@@ -2645,6 +2571,20 @@ function processDots(who){
     });
 
     return 0;
+}
+// #endregion
+
+
+
+
+// #region turnとかbarとかactedとか
+async function turnPlayer(who){
+    batF.boothSet(batC.shokey.booth);
+}
+
+
+async function turnEnemy(who){
+    turnEnd(who);
 }
 
 async function turnNext(who){
@@ -2698,10 +2638,10 @@ async function turnNext(who){
 
     switch (who.cam){
         case 'player':
-            playerturn(who);
+            turnPlayer(who);
             break;
         case 'enemie':
-            enemyturn(who);
+            turnEnemy(who);
             break;
     }
 }
@@ -2728,8 +2668,8 @@ async function turnEnd(who, ares){
     }
 
     if(extraTurn){
-        if(who.cam == 'player') playerturn(who);
-        else enemyturn(who);
+        if(who.cam == 'player') turnPlayer(who);
+        else turnEnemy(who);
         return;
     }
 
