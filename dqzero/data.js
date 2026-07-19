@@ -136,6 +136,50 @@ let Status = [
         tri:"mg",
         bas:0,
     },
+
+    {
+        name:"catk",
+        jpnm:"銃力..?",
+        desc:"しらねぇよ",
+        whi:"atker",
+        tri:"cn",
+        bas:10,
+    },
+
+    {
+        name:"power",
+        jpnm:"攻撃倍率",
+        desc:"そのまま。すべてに適用",
+        whi:"atker",
+        tri:"all",
+        bas:1.0,
+    },
+    {
+        name:"shell",
+        jpnm:"防御倍率",
+        desc:"そのまま。すべてに適用",
+        whi:"defer",
+        tri:"all",
+        bas:1.0,
+    },
+    
+    {
+        name:"add",
+        jpnm:"追加攻撃力",
+        desc:"攻撃倍率に左右されない攻撃力を",
+        whi:"atker",
+        tri:"all",
+        bas:0,
+    },
+    {
+        name:"cut",
+        jpnm:"追加防御力？",
+        desc:"左右されないやつだけど、、これと80%カットは違うにした方がいいか？ん、、そんな気がする。てか追加攻撃力って何？いやそれは必要るか、ぅぅ....じゃあ追加防御力の名称考えないと",
+        whi:"atker",
+        tri:"all",
+        bas:0,
+    },
+
     {
         name:"maxmp",
         jpnm:"最大魔力",
@@ -182,16 +226,16 @@ let Status = [
     {
         name:"dodge",
         jpnm:"回避率",
-        desc:"攻撃を回避する確率。\n基本0",
+        desc:'攻撃を回避しやすくなる確率。基本0',
         whi:"defer",
         bas:0
     },
     {
         name:"targe",
         jpnm:"命中率",
-        desc:"攻撃が命中する確率。\n基本100",
+        desc:'攻撃が"命中しやすい"確率。基本0',
         whi:"atker",
-        bas:100
+        bas:0
     }
 ]
 
@@ -1031,22 +1075,24 @@ const Monoze = [
     }
 ]
 
-let Attacks = [
+const Acts = [
     {
         name:'slash',
-        jpnm:'シンプル斬り',
-        desc:'必中ー倍単体刹那斬', //そのうち武士作ってこれ作りたい
+        jpnm:'斬る',
+        desc:'対象に攻撃力の60%のダメージを与える。', //そのうち武士作ってこれ作りたい
+        flav:"別に必中ではないが、必中みたいな扱いで使いがち（作者談）",
+        aim:100,
         mp:0,
         lv:1,
         tcam:'players',
         func:async function(who, are){
-            if(await damage(who, are, 100, 'ph')) return 1;
+            if(await attack(who, are, 60, 'ph', this.aim)) return 1;
 
             //elseesに移行よろ
             if(who.ps == 'sthree' && hit(25)){
                 await logText(`${who.name}は頑張った!`);
-                if(await damage(who, are, 100, 'ph')) return 1;
-                if(await damage(who, are, 100, 'ph')) return 1;
+                if(await attack(who, are, 60, 'ph', this.aim)) return 1;
+                if(await attack(who, are, 60, 'ph', this.aim)) return 1;
             }
             
             return 0;
@@ -1055,31 +1101,36 @@ let Attacks = [
     {
         name:'double slash',
         jpnm:'つばめ返し',
-        desc:'二回攻撃。あたらないこともあるけど現環境最強',
+        desc:'対象に攻撃力の90%のダメージを2回与える。',
+        flav:"命中判定は毎回ある。そのうち「ねずみざん」作りたいねぇ",
+        aim: 85,
         mp:0,
         lv:1,
         func:async function(who, are){
-            if(await damage(who, are, 100, 'ph')) return 1;
-            if(await damage(who, are, 100, 'ph')) return 1;
+            if(await attack(who, are, 90, 'ph', this.aim)) return 1;
+            if(await attack(who, are, 90, 'ph', this.aim)) return 1;
 
             return 0;
         }
     },
     {
         name:'slash of light',
-        jpnm:'一閃',//まじん斬り も作りたいね 霹靂一閃も
-        desc:'初期のロマン技。\n当たれば幸い的な感じで打ったほうが楽',
+        jpnm:'踏み込み斬り',//まじん斬り も作りたいね 霹靂一閃も
+        desc:'対象に攻撃力の300%のダメージを与える。',
+        aim: 40,
         mp:0,
         lv:1,
         func:async function(who, are){
-            let pro = 33;
-            if(who.ps == 'highsol') pro = 20;
+            let aim = this.aim;
+            let voi = 300;
+            if(who.ps == 'highsol'){
+                this.aim -= 20;
+                voi += 600; //←←？？？？？
+            }
 
-            let result = 0;
-            if(hit(pro)){
-                result = await damage(who, are,300,'ph');
-                if(result) return dead;
-            }else{
+            if(await attack(who, are, voi, 'ph', this.aim)) return 1;
+
+            // }else{
                 //let result = letsHappen(tcam, target, cam, me, 'missed', 'sl', 'slashoflight');
                 /*if(who.ps != 'solx5but'){
                         log.textContent = 'miss! ダメージを与えられない!';
@@ -1091,14 +1142,13 @@ let Attacks = [
                         log.textContent = humans[cam][me].name+'は混乱して自分を殴った！';
                         await delay(1000);
                 }*/
-                if(result) return 1;
-            }
+
             return 0;
         }
     }
 ]
 
-let Magics = [
+const Mags = [
     {
         name:'heal',
         jpnm:'heal',
@@ -1301,16 +1351,16 @@ let Magics = [
         mp:5,
         lv:1,
         func:async function(who, are){
-            // x = Object.keys(Magics).map(a => Magics[a].lv <= humans[cam][me].level ? Magics[a].name : null).filter(Boolean)
+            // x = Object.keys(Mags).map(a => Mags[a].lv <= humans[cam][me].level ? Mags[a].name : null).filter(Boolean)
             // y = Math.floor(Math.random() * x.length);
             // log.textContent = x[y]+'が出た！';await delay(1000);
             // x[y](who, are);
-            let arr = Magics.filter(a => a.lv <= who.level && a.mp <= who.mp).map(a => a.name);
+            let arr = Mags.filter(a => a.lv <= who.level && a.mp <= who.mp).map(a => a.name);
             if(arr.length >= 1){
                 let mg = arraySelect(arr);
                 await logText(`${mg}が出た！`);
                 await delay(500);
-                let res = await Magics[mg].func(who, are);
+                let res = await Mags[mg].func(who, are);
                 return res
             }else{
                 await logText(`失敗！`)
@@ -1321,7 +1371,7 @@ let Magics = [
     }, 
 ]
 
-let Equips = [
+const Equips = [
     {
         no:1,
         name:'none',
@@ -1665,7 +1715,7 @@ let Equips = [
     }
 ]
 
-let Tools = [
+const Tools = [
     {
         name:'aspirin',
         jpnm:'アスピリン',
@@ -1824,7 +1874,7 @@ let Tools = [
     }
 ]
 
-let Skills = [
+const Skills = [
     {
         no:1,
         type:'ex',
@@ -2141,7 +2191,7 @@ let Skills = [
     }
 ]
 
-let Stages = [
+const Stages = [
     {
         name:'草原',
         jpnm:'創生黎明の原野',
@@ -2162,7 +2212,8 @@ let Stages = [
     }
 ];
 
-let Objects = [
+// "物とか"
+const Objects = [
     //0|1 able:登場不可|登場可 on:乗れない|乗れる 
     {
         no:1,
@@ -2445,7 +2496,7 @@ let Objects = [
     },
 ]
 
-let Enemies = [
+const Enemies = [
     {
         name:'蒼白の粘液',
         ins:['草原', '砂漠'],

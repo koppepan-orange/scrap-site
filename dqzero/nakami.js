@@ -464,7 +464,7 @@ function irohaHo(color){
 function irohaMix(c1, c2, ratio = 0.5){
     let toRGB = c => {
         c = c.replace('#', '');
-        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        if (c.length == 3) c = c.split('').map(x => x + x).join('');
         let n = parseInt(c, 16);
         return [n >> 16, (n >> 8) & 255, n & 255];
     };
@@ -489,7 +489,7 @@ function irohaRan(){
 };
 function irohaDark(color) {
     color = color.replace('#', '');
-    if (color.length === 3) color = color.split('').map(x => x + x).join('');
+    if (color.length == 3) color = color.split('').map(x => x + x).join('');
     
     let r = parseInt(color.slice(0, 2), 16);
     let g = parseInt(color.slice(2, 4), 16);
@@ -591,7 +591,7 @@ function cursorRect(){
 }
 
 async function error(text = 'errrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr'){
-    await logtext(text);
+    await logText(text);
     await delay(2000);
     // window.open('about:blank', '_self').close();
 };
@@ -659,9 +659,9 @@ logF.waitfor = async() => {
 
     let raw0 = logC.queue.shift();
     // console.log(`${raw0[0]}を送信します`);
-    await logtext(...raw0);
+    await logText(...raw0);
 };
-async function logtext(raw, code = ""){
+async function logText(raw, code = ""){
     if(!raw) return console.log('「内容が？内容が〜〜？ないよ〜〜〜つってwwww直せ」');
     if(typeof raw != 'string') raw = String(raw);
 
@@ -720,7 +720,7 @@ async function logtext(raw, code = ""){
                 let userAction = new Promise(resolveUser => {
 
                     function waitToClear(event){
-                        if(event.type === 'click' || event.key === 'z' || event.key === 'Enter'){
+                        if(event.type == 'click' || event.key == 'z' || event.key == 'Enter'){
                             document.removeEventListener('click', waitToClear);
                             document.removeEventListener('keydown', waitToClear);
                             cleanupListeners();
@@ -754,10 +754,10 @@ async function logtext(raw, code = ""){
     });
 };
 document.addEventListener('keydown', (e) => {
-    if(e.key === 'z' || e.key === 'Enter') logC.skipT = 1;
+    if(e.key == 'z' || e.key == 'Enter') logC.skipT = 1;
 });
 document.addEventListener('keyup', (e) => {
-    if(e.key === 'z' || e.key === 'Enter') logC.skipT = 0;
+    if(e.key == 'z' || e.key == 'Enter') logC.skipT = 0;
 });
 document.addEventListener('click', () => {
     logC.skipT = 1;
@@ -1262,7 +1262,7 @@ class Slider {
 //#region takushiSen
 class TakushiSen {
     constructor(choices, mode = "tate", data = 0) {
-        this.choices = choices; // [{name, img}, {name, img}, ...]
+        this.choices = choices; // [[name, img}, [name, img], ...]
         this.mode = mode;
 
         if(!data) data = {
@@ -1285,8 +1285,9 @@ class TakushiSen {
         div.style.setProperty('--botan-col-ed', irohaHo(bEd));
 
         this.choices.forEach(ma => {
-            let [name, gazou] = [ma.name, ma.img = 0, ];
-            if(typeof ma === 'string') name = ma;
+            // console.log(ma)
+            let [name, gazou] = ma;
+            if(typeof ma == 'string') name = ma;
 
             let item = document.createElement('div');
             item.className = `item ${name}`;
@@ -1744,7 +1745,7 @@ souF.play = (name) => {
         else return;
     }
 
-    if(proto.dataset.type === 'bgm'){
+    if(proto.dataset.type == 'bgm'){
         if(souC.nowBgm){
             for(let belong in sounds){
                 if(sounds[belong][souC.nowBgm]){
@@ -2066,7 +2067,7 @@ let homF = {};
 homF.start = async() => {
     if(homC.started) return 1;
     homC.started = 1;
-    let charas = Charas.map(a => a);
+    let charas = Charas.map(a => [a.name, `assets/images/charas/${a.name}.png`]);
     // let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
     let charaSen = new TakushiSen(charas, 'tate');
     let name = await charaSen.select(homD); //文字列が来るヨ
@@ -2082,7 +2083,7 @@ homF.start = async() => {
 homC.startD.addEventListener('click', homF.start);
 
 homF.quit = async() => {
-    logtext('え？もう帰っちゃうの？');
+    await logText('え？もう帰っちゃうの？');
     let ls = ['ああ、もちろんさ', 'ゎ、ご、ごめんなさいぃっ'];
     let seen = new TakushiSen(ls, 'tate');
     let ans = await seen.select(homD);
@@ -2090,13 +2091,13 @@ homF.quit = async() => {
     // if(ans == 0) window.location.href = "https://game.koppepan-orange.com/"
     if(ans == 0){
         window.location.href = "../index.html";
-        logtext("みんなも一緒にやってみようよ");
-        logtext("いくよ？");
-        logtext("ランランr");
-        logtext("と思っていたのか");
-        logtext("だにぃ？")
+        await logText("みんなも一緒にやってみようよ");
+        await logText("いくよ？");
+        await logText("ランランr");
+        await logText("と思っていたのか");
+        await logText("だにぃ？")
     }
-    if(ans == 1) logtext("えへへ..よかった")
+    if(ans == 1) await logText("えへへ..よかった")
 }
 homC.quitD.addEventListener('click', homF.quit);
 
@@ -2131,10 +2132,10 @@ let batC = {
     acted: 0, //barの進行度。0からbar.length-1
 };
 batC.shokey = {
-    slash: ['slash', 'double slash', 'slash of light'],
-    magic: ['heal', 'power', 'shell'],
+    acts: ['斬る', 'つばめ返し', '踏み込み斬り'],
+    mags: ['heal', 'power', 'shell'],
     tool: ['aspirin', 'throw knife', 'redcard'],
-    booth: ["act", "magic", "tool", "run"],
+    booth: ["act", "mags", "tool", "run"],
 }
 let batF = {};
 
@@ -2156,18 +2157,22 @@ function tekiou(){
         }
         if(cam == 'player'){
             hd = Charas.find(a => a.name == human.name);
-            console.log(hd)
+            // console.log(hd)
             if(hd) srca = `charas/${hd.img}.png`;
             if(!hd){
                 hd = Friends.find(a => a.name == human.name);
                 srca = `friends/${hd.img}.png`;
             }
-            console.log(srca)
+            // console.log(srca)
         }
 
         // console.log(`${cam}${human.me}`)
         // console.log(human)
         // console.log(hd)
+
+        // 小数やら
+        let shos = ["hp", "maxhp", "atk", "def", "matk", "mdef", "catk"];
+        human.hp = Math.round(human.hp);
 
         div.querySelector('.name').textContent = human.name;
         div.querySelector('.lv').textContent = `Lv.${human.lv}`;
@@ -2235,11 +2240,29 @@ function whatdo(who, are, shu, name){
 
 // #region サーチ系
 function findEquips(type, name){
-    let arr = Equips.filter()
+    let arr = Equips.filter(a => a.type == type);
+    let data = arr.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
+}
+function findActs(name){
+    let data = Acts.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Actsで、「${name}」っていうものはないらしいです`), 0;
+}
+function findMags(name){
+    let data = Mags.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Magsで、「${name}」っていうものはないらしいです`), 0;
+}
+function findTool(name){
+    let data = Tool.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Toolで、「${name}」っていうものはないらしいです`), 0;
 }
 // #endregion
 
-
+// #region 人体工場
 function makeUnit(cam, code, name){
     let data = {};
     if(cam == 'player'){
@@ -2251,7 +2274,7 @@ function makeUnit(cam, code, name){
         data = arraySelect(Enemies.filter(a => !a.no));
     }
     if(!data) return console.log(`codeが[${code}]の${name}はいないらしい`);
-    console.log(data);
+    // console.log(data);
 
     let unit = {};
     if(cam == 'player'){
@@ -2302,8 +2325,8 @@ function makeUnit(cam, code, name){
         unit.attr = [];
         unit.equips = {}
         
-        unit.slash = unit.slash ?? batC.shokey.slash;
-        unit.magic = unit.magic ?? batC.shokey.magic;
+        unit.acts = unit.acts ?? batC.shokey.acts;
+        unit.mags = unit.mags ?? batC.shokey.mags;
         unit.tool  = unit.tool ?? batC.shokey.tool;
 
         if(!code){
@@ -2376,6 +2399,7 @@ function makeUnit(cam, code, name){
 
 let makePlayer = (code, name) => makeUnit('player', code, name); //code: 0 == chara, 1 == friend
 let makeEnemy  = () => makeUnit('enemy');
+// #endregion
 
 // #region 道との遭遇
 function encount(){
@@ -2404,67 +2428,171 @@ function encount(){
 batC.turnD.addEventListener('click', encount)
 // #endregion
 
+let context = {}; //consoleで変数見る用。正式実装の予定はない
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
-function attack(who, ares, tri, voi, prop = []){
+async function attack(who, ares, voi, tri, aim, props = []){
+    // console.log(ares);
+    console.log(`[attack] ${who.name}の攻撃！ ${voi} [${tri}] (${props.join(", ")})`)
+     if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
     if(!Array.isArray(ares)) ares = [ares];
 
 
     let triA, triD;
     switch(tri){
-        case "ph":
-            //物理
-            triA = "atk";
-            triD = "def";
-            break;
-        case "mg":
-            //魔法
-            triA = "matk";
-            triD = "mdef";
-            break;
-        case "cn":
-            //間接
-            triA = "catk";
-            triD = "def";
-            break;
+     case "ph":
+        //物理
+        triA = "atk";
+        triD = "def";
+        break;
+     case "mg":
+        //魔法
+        triA = "matk";
+        triD = "mdef";
+        break;
+     case "cn":
+        //間接
+        triA = "catk";
+        triD = "def"; //貫通するけどネ
+        break;
+    }
+    let matchTri = (a, b) => {
+        let [arrA, arrB] = [a, b];
+        if(!Array.isArray(a)) arrA = [a];
+        if(!Array.isArray(b)) arrB = [b];
+        
+        if(arrA.includes("all") || arrB.includes("all")) return 1;
+        
+        return arrA.some(element => arrB.includes(element)); //someです！everyの塩基対
     }
 
+
     for(let are of ares){
+        console.log(`[attack]{${voi}%} ${who.name} => ${are.name}`)
+
+
+        // 攻撃側の targe と 防御側の dodge を加味して最終命中率をだす
+        let atare = (aim+who.targe) - are.dodge;
+        console.log(atare)
+        if(!hit(atare)){
+            console.log(`[attack]{${voi}%} ${who.name}の攻撃は外れた！`);
+            tobiText(are.div, "miss");
+            await logText(`${who.name}の攻撃は外れた！`);
+            await delay(500);
+            continue;
+        }
+
         let atker = copy(who); //atk+add * power + wepatk
         let defer = copy(are); //def * shell + cut + shldef
         
         let wepatk = 0, shldef = 0;
-        let weapon = atker.weapon;
+        let weapon = atker.weapon?.name ?? "none";
          let weaponD = findEquips("weapon", weapon);
-        let shield = defer.shield;
+        let shield = defer.shield?.name ?? "none";
          let shieldD = findEquips("shield", shield);
-        if(tri == weaponD.tri ||
-           weaponD.tri.contains(tri) ||
-           weaponD.tri == "all") wepatk = weaponD.atk;
-        if(tri == shieldD.tri ||
-           shieldD.tri.contains(tri) ||
-           shieldD.tri == "all") shldef = shieldD.def;
+        if(matchTri(tri, weaponD.tri)) wepatk = weaponD.atk;
+        if(matchTri(tri, shieldD.tri)) shldef = shieldD.def;
 
-        let nisha = ["atker", "defer"];
+        let nisha = { //二者択一 似せたクイズ ダイバーシティに大抜擢 文学的なブーバキキ
+            atker, defer
+        };
         let accessment = ["ear", "neck", "tank"];
-        for(let whi of nisha){
+        for(let whi0 of Object.keys(nisha)){
+            let whi = nisha[whi0];
             for(let access0 of accessment){
-                let access = whi[access0];
+                let access = whi[access0] ?? "none";
                  let accessD = findEquips(access0, access);
                 
-                if(tri == accessD.tri ||
-                   accessD.tri.contains(tri) ||
-                   accessD.tri == "all") wepatk += accessD.atk;
-                if(tri == accessD.tri ||
-                   accessD.tri.contains(tri) ||
-                   accessD.tri == "all") shldef += accessD.def;
+                if(matchTri(tri, accessD.tri)){
+                    wepatk += accessD.atk;
+                    // console.log(`${accessD.atk}増加`);
+                }
+                if(matchTri(tri, accessD.tri)){
+                    shldef += accessD.def;
+                    // console.log(`${accessD.def}増加`);
+                }
             } 
         }
 
+        // console.log(atker), context["atker"] = atker;
+        // console.log(defer), context["defer"] = defer;
+        // console.log(wepatk, shldef), context["wepatk"] = wepatk, context["shldef"] = shldef;
         let atk = ((atker[triA]) * atker.power +atker.add + wepatk);
+         atk *= (voi*0.01);
+         if(atk < 0) atk = 0; //流石に回復は意味わからん
         let def = ((defer[triD]) * defer.shell +defer.cut + shldef);
+         if(def < 0) def = 0; //流石に攻撃力強化は意味わからん
+        let dmg = Math.max(atk - def, 1);
 
+        console.log(`[attack]{${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
         
+        if(await damage(who, are, dmg, tri, props)) return 1;
+
+        // 大丈夫そうなら次の標的へ
     }
+}
+async function damage(who, are, dmg, tri, props = []){
+    let hasp = (name) => {
+        if(props.includes(name)) return 1;
+        if(props.some(a => a.startsWith(name))) return 1;
+        return 0;
+    }
+
+    // 一旦雑に
+    if(hasp("無効")) dmg = 0; //←ズルすぎ
+    tobiText(are.div, dmg);
+    
+    let atae = dmg;
+    if(are.hp < dmg) atae = are.hp;
+    are.hp -= atae;
+    tekiou();
+
+    await delay(500); //死を表してからの
+    jump:{
+        if(0 < are.hp) break jump;
+
+        if(hasp("寸々")){ //最初はedgeにしようとしたけど...prop日本語で良くね理論を忘れていたのでパペットにしました
+            are.hp = 1;
+            tekiou();
+
+            // await logText("んっ......♡♡"); //←確信犯すぎる
+            await logText(`${are.name}「あぶね死にかけたわ」`); //←平和！！
+            break jump;
+        }
+
+        if(hasp("復活")){
+            are.hp = are.maxhp*0.5;
+            tekiou();
+
+            await logText(`${are.name}「ありがとジャンヌ」`); //ジャンヌ、#コンパスでHSを使うと味方が一回復活できる的なやつ
+            break jump;
+        }
+
+        // これ以下は"死"です
+        if(await dead(who, are, props)) return 1;
+        return 0;
+    }
+
+    return 0;
+}
+
+
+async function dead(who, are, props = 0){
+    are.joutie = 0;
+
+    let tcam = are.cam;
+    let tes = cm(tcam);
+    let res = tes.every(a => !a.joutie); //joutie:: 0:死 1:生 2↑:？？
+    if(res) return await win(who.cam);
+    
+    // ここは何？
+
+    return 0;
+}
+async function win(cam){
+    await logText(`${cam}陣営の勝ち！`)
+    await logText("それではまた、今度"); //demo版だから、ここで再起動される（？？）
+
+    location.reload();
 }
 // #endregion
 
@@ -2501,8 +2629,6 @@ function buffAdd(who, are, name, num, lv){
     console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
     let data = buffData(name);
     if(!data) return console.error(`buff[${name}]は存在しないらしい`);
-
-
 
     let buff = {
         name,
@@ -2553,48 +2679,239 @@ function processDots(who){
 }
 // #endregion
 
+// #region ターゲティング
 
+function cm(cam = '指定なし', me = '指定なし'){
+    let who = 0;
+    if(cam == '指定なし' && me == '指定なし') return humans.find(a => a.cam == 'player' && a.me == 0);
+    
+    if(me == '指定なし') return humans.filter(a => a.cam == cam);
 
+    who = humans.find(a => a.cam == cam && a.me == me);
+    if(Array.isArray(who)){
+        console.log('↓findなのにarrayになってるふぉーぜ')
+        console.log(who)
+    }
+    
+    return who;
+}
+function selectSyudou(code = 1){
+    //1:通常(1人) 2:選んだところと左右 3:選んだところと左右2人ずつ 4:選んだ陣営全員 5:全員
+    return new Promise((resolve) => {
+        let color = '#fff450';
+        let pcolor= '#f7f7f7';
+
+        let arrs = [
+            ...humans.filter(a => a.cam == 'player').map(a => `player${a.me}`),
+            ...humans.filter(a => a.cam == 'enemie').map(a => `enemie${a.me}`),
+        ];
+
+        let target = [];
+        function handleClick(event){
+            let div = event.target;
+
+            // ↓ 天才です   天 天 天才
+            while(!div.classList.contains('human')) div = div.parentElement;
+            let lis = div.classList;
+
+            let tcam = lis[1].substring(0, 6); //前半7文字(player / enemies)
+            let tme = +lis[1].substring(6); //数字。数字です。
+            // console.log(tcam, tme);
+
+            arrs.forEach(a => {
+                // console.log(a)
+                // let div0 = batC[`${a.substring(0, 1)}D`];
+                let div0 = batC.sesD[a.substring(0, 6)];
+                let div = div0.querySelector(`.${a}`);
+                
+                div.removeEventListener('click', handleClick);
+                div.classList.remove('sl')
+            });
+
+            target = [
+                tme,
+                tcam
+            ]
+
+            // console.log(target);
+
+            if(code == 2){ //拡散-3
+                let zin = humans.filter(a => a.cam == tcam && a.joutie);
+                let pnum = (zin[tme-1]?.joutie??0) ? tme - 1 : null;
+                let nnum = (zin[tme+1]?.joutie??0) ? tme + 1 : null;
+                
+                let cn = 1;
+                if(pnum) cn += 1;
+                if(nnum) cn += 1;
+                
+                let cams = Array(cn).fill(tcam);
+                
+                target = [
+                    [tme-1,tme,tme+1],
+                    cams
+                ];
+            }
+            if(code == 3){// 拡散-5
+                let zin = humans.filter(a => a.cam == tcam && a.joutie);
+                let p2num = (zin[tme-2]?.joutie??0 == 1) ? tme - 2 : null;
+                let pnum = (zin[tme-1]?.joutie??0 == 1) ? tme - 1 : null;
+                let nnum = (zin[tme+1]?.joutie??0 == 1) ? tme + 1 : null;
+                let n2num = (zin[tme+2]?.joutie??0 == 1) ? tme + 2 : null;
+                
+                let cn = 1;
+                if(pnum) cn += 1;
+                if(p2num) cn += 1;
+                if(nnum) cn += 1;
+                if(n2num) cn += 1;
+                
+                let cams = Array(cn).fill(tcam);
+                
+                target = [
+                    [tme-2,tme-1,tme,tme+1,tme+2],
+                    cams
+                ];
+            }
+            if(code == 4){ //相手陣営全員
+                let nums = cm(tcam).filter(a => a.cam == tcam && a.joutie);
+                let cams = Array(nums.length).fill(tcam); //fillは全ての値を同じ値にするやつ。同数にするために使用されがち
+                target = [
+                    nums,
+                    cams
+                ];
+            }
+            if(code == 5){ //全員
+                let tnums = cm(tcam).filter(a => a.joutie);
+                let gyaku = fl(tcam, ['player','enemie']);
+                let nums = cm(gyaku).filter(a => a.joutie);
+
+                let awase = [...tnums, ...nums];
+                
+                // let cn = tnums.length + nums.length;
+
+                let cams = [...Array(tnums.length).fill(tcam), ...Array(nums.length).fill(gyaku)];
+
+                target = [
+                    awase,
+                    cams
+                ];
+            }
+
+            // console.log(target);
+
+            let cs = target[1];
+             if(typeof cs == 'string') cs = [cs]
+            let ns = target[0];
+             if(typeof ns == 'string' || typeof ns == 'number') ns = [ns]
+            // console.log(cs, ns)
+            let whoes = [];
+            for(let i = 0; i < cs.length; i++){
+                let c = cs[i];
+                let n = ns[i];
+                console.log(`humans[${c}][${n}]を狙います！`);
+                let cn = cm(c, n);
+                // console.log(cn);
+                whoes.push(cn);
+            }
+
+            // console.log(whoes);
+
+            resolve(whoes);
+        }
+
+        arrs.forEach(a => {
+            let div = document.querySelector(`.${a}`);
+            div.addEventListener('click', handleClick);
+            div.classList.add('sl')
+        });
+    });
+}
+// #endregion
+
+batF.acts = async(who, i) => {
+    // who.acts[i]を実行するやつ
+    selects(0);
+
+    let name = who.acts[i];
+    let data = findActs(name);
+    if(!data) console.error(`${who.name}のacts[${i}]、${name}はガチ・存在しないらしいっす`);
+
+    // Jammo ja
+    if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
+    let ares = await selectSyudou(1);
+    
+    if(await data.func(who, ares)) return 1;
+    
+    // なければ
+    turnNext(who);
+    return 0;
+}
+batF.mags = (who, i) => {
+    selects(0);
+
+    let name = who.mags[i];
+    let data = findActs(name);
+    if(!data) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
+    
+}
+batF.tool = (who, i) => {
+    selects(0);
+
+    let name = who.tool[i];
+    let data = findActs(name);
+    if(!data) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
+    
+}
+async function runaway(){
+    // selects(0);
+
+    logText("未実装");
+}
 
 // #region turnとかbarとかactedとか
-function selects(arr){
-    // selects([[], [], [], []])
-    // ["ここにテキストを入力", () => {/kill @e}]
+function selects(arr = []) {
+    if(arr == 0){
+        selects([
+            ["", 0],
+            ["", 0],
+            ["", 0],
+            ["", 0]
+        ])
+        return;
+    }
 
     let bts = batC.bts;
-    for(let k=0; k<4; k++){
+    for(let k=0; k<4; k++) {
         let youso = arr[k];
         bts[k].innerText = youso[0];
-
+         let wid = bts[k].offsetWidth;
+         let nag = (wid/youso[0].length) *0.8
+         bts[k].style.fontSize = `${Math.min(nag, 23)}px`;
         bts[k].func = youso[1];
-        jump:{
-            if(bts[k].seted) break jump;
+
+        if(!bts[k].seted){
             bts[k].addEventListener("click", (e) => {
-                if(typeof e.currentTarget.func == "function"){
+                if (typeof e.currentTarget.func == "function") {
                     e.currentTarget.func();
-                };
+                }
             });
             bts[k].seted = 1;
         }
     }
 }
+
 async function turnPlayer(who){
-    batF.selects([
-        ["acts", () => {
-            batF.selects([
-                
-            ])
-        }],
-        ["mags", () => {
+    // console.log(who);
+    const makeMenu = (type) => [ //who.acts[0].data.jpnm
+        ...[0,1,2].map(i => [who[type][i], () => batF[type](who, i)]),
+        ["back", () => turnPlayer(who)]
+    ];
 
-        }],
-        ["tool", () => {
-
-        }],
-        ["away", () => {
-            
-        }]
-    ])
+    selects([
+        ["acts", () => selects(makeMenu("acts"))],
+        ["mags", () => selects(makeMenu("mags"))],
+        ["tool", () => selects(makeMenu("tool"))],
+        ["away", runaway]
+    ]);
 }
 
 
@@ -2612,9 +2929,9 @@ async function turnNext(who){
         if(buff.name == 'onslime'){
             if(isCrit(buff.value)){
                 buffremove(who, 'onslime');
-                addtext('なんとかスライムを取り払った!!');
+                await logText('なんとかスライムを取り払った!!');
             } else {
-                addtext('スライムが邪魔して動けない!!');
+                await logText('スライムが邪魔して動けない!!');
                 turnBye(who);
                  // 動けないから次の人へパス
                 return;
@@ -2628,15 +2945,15 @@ async function turnNext(who){
         if(hask(buff.value, 'palsy')){
             if(isCrit(buff.value.palsy)){
                 data.name != 'stan'
-                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
-                    : addtext(`${who.cam}${who.me}はスタンしている....`);
+                    ? await logText(`${who.cam}${who.me}は麻痺している..`)
+                    : await logText(`${who.cam}${who.me}はスタンしている....`);
                 turnBye(who);
                 return;
             }
         }
         if(hask(buff.value, 'freeze')){
             if(!isCrit(buff.value.freeze)){
-                addtext(`${who.name}は凍っている...`);
+                await logText(`${who.name}は凍っている...`);
                 turnBye(who);
                 return;
             }
@@ -2651,7 +2968,7 @@ async function turnNext(who){
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
 
-    switch (who.cam){
+    switch(who.cam){
         case 'player':
             turnPlayer(who);
             break;
@@ -2675,7 +2992,7 @@ async function turnEnd(who, ares){
         let data = buffData(buff.name);
         if(data && hask(data, 'luck')){
             if(isCrit(data.luck)){
-                addtext('当たりが出たらもう一本！');
+                await logText('当たりが出たらもう一本！');
                 extraTurn = true;
                 break;
             }
@@ -2818,7 +3135,7 @@ gamF.move = (to) => {
     gamD.querySelector(`.heya.${to}`).classList.add('show');
     gamC.now = to;
 
-    if(typeof gamF[to] === "function") gamF[to]();
+    if(typeof gamF[to] == "function") gamF[to]();
 }
 
 //#region loby
@@ -2980,17 +3297,17 @@ gamC.blaF.betCalc = () => {
 
     return num;
 }
-gamC.blaF.betHeler = () => {
+gamC.blaF.betHeler = async() => {
     console.log("helerのbetCalc実行！")
     let num = gamC.blaF.betCalc();
 
     if(rimi == 0){
-        return logtext("お客様？もうɌがございませんが...?"), 1;
+        return logText("お客様？もうɌがございませんが...?"), 1;
         // 何度も押したらAll for Nothingにできる〜とか、そのうち作ってもいいかもね
     }
     else if(rimi < num){
-        logtext("Ɍが足りないようでしたので、");
-        logtext('**AllIn**、とさせていただきますね？');
+        await logText("Ɍが足りないようでしたので、");
+        await logText('**AllIn**、とさせていただきますね？');
         num = rimi;
     }
 
@@ -3222,7 +3539,7 @@ gamC.blaF.judge = () => {
 
     return 0;
 }
-gamC.blaF.end = (cam = 0, yue = "error") => {
+gamC.blaF.end = async(cam = 0, yue = "error") => {
     console.log(`[end] ${0}が{${yue}}で勝利しました`);
 
     let mes = "";
@@ -3279,7 +3596,7 @@ gamC.blaF.end = (cam = 0, yue = "error") => {
     rate.bj = +rate.bj.toFixed(2);
     gamC.blaF.update();
     
-    logtext(mes, "gamble");
+    await logText(mes, "gamble");
     gamC.blaC.wait = 1;
     gamC.blaC.ing = 0;
     gamC.blaF.stext("もっかいやるか？");
@@ -3562,7 +3879,7 @@ gamC.forF.getout_set = (ryou) => {
 }
 gamC.forF.getout_get = () => {
     let getout = gamC.forC.getout;
-    if(typeof getout === "number" && getout <= 0) return;
+    if(typeof getout == "number" && getout <= 0) return;
 
     rimiF.inc(getout);
     console.log(`[getout] Ɍ${getout}を受け取りました`)
