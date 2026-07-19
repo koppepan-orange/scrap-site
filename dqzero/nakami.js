@@ -2069,11 +2069,11 @@ homF.start = async() => {
     let charas = Charas.map(a => a);
     // let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
     let charaSen = new TakushiSen(charas, 'tate');
-    let chara = await charaSen.select(homD); //文字列が来るヨ
-    console.log(chara) //"color_slime"
-    console.log(`選ばれたのは、[${chara.name}]でした`); //"選ばれたのは、[undefined]でした"
+    let name = await charaSen.select(homD); //文字列が来るヨ
+    console.log(name) //"color_slime"
+    console.log(`選ばれたのは、[${name}]でした`); //"選ばれたのは、[undefined]でした"
 
-    makeUnit("player", 0, chara.name);
+    makeUnit("player", 0, name);
 
     mainF.move('batt');
 
@@ -2239,27 +2239,6 @@ function findEquips(type, name){
 }
 // #endregion
 
-function selects(arr){
-    // selects([[], [], [], []])
-    // ["ここにテキストを入力", () => {/kill @e}]
-
-    let bts = batC.bts;
-    for(let k=0; k<4; k++){
-        let youso = arr[k];
-        bts[k].innerText = youso[0];
-
-        bts[k].func = youso[1];
-        jump:{
-            if(bts[k].seted) break jump;
-            bts[k].addEventListener("click", (e) => {
-                if(typeof e.currentTarget.func == "function"){
-                    e.currentTarget.func();
-                };
-            });
-            bts[k].seted = 1;
-        }
-    }
-}
 
 function makeUnit(cam, code, name){
     let data = {};
@@ -2578,8 +2557,44 @@ function processDots(who){
 
 
 // #region turnとかbarとかactedとか
+function selects(arr){
+    // selects([[], [], [], []])
+    // ["ここにテキストを入力", () => {/kill @e}]
+
+    let bts = batC.bts;
+    for(let k=0; k<4; k++){
+        let youso = arr[k];
+        bts[k].innerText = youso[0];
+
+        bts[k].func = youso[1];
+        jump:{
+            if(bts[k].seted) break jump;
+            bts[k].addEventListener("click", (e) => {
+                if(typeof e.currentTarget.func == "function"){
+                    e.currentTarget.func();
+                };
+            });
+            bts[k].seted = 1;
+        }
+    }
+}
 async function turnPlayer(who){
-    batF.boothSet(batC.shokey.booth);
+    batF.selects([
+        ["acts", () => {
+            batF.selects([
+                
+            ])
+        }],
+        ["mags", () => {
+
+        }],
+        ["tool", () => {
+
+        }],
+        ["away", () => {
+            
+        }]
+    ])
 }
 
 
