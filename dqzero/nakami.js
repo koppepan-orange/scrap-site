@@ -2476,7 +2476,6 @@ async function attack(who, ares, voi, tri, aim, props = []){
         if(!hit(atare)){
             console.log(`[attack]{${voi}%} ${who.name}の攻撃は外れた！`);
             tobiText(are.div, "miss");
-            await logText(`${who.name}の攻撃は外れた！`);
             await delay(500);
             continue;
         }
@@ -2538,7 +2537,7 @@ async function damage(who, are, dmg, tri, props = []){
     }
 
     // 一旦雑に
-    if(hasp("無効")) dmg = 0; //←ズルすぎ
+    if(hasp("無効")) return dmg = 0, tobiText(are.div, "無効"); //←ズルすぎ
     tobiText(are.div, dmg);
     
     let atae = dmg;
