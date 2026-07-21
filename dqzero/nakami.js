@@ -1063,7 +1063,7 @@ class alertD{
         let div = document.createElement('div');
         div.classList.add('alertD');
         div.style.background = back;
-        div.style.boxShadow = `${hoshoku(back)} 5px 5px 20px`;
+        div.style.boxShadow = `${irohaHo(back)} 5px 5px 20px`;
 
         let row = document.createElement('div');
         row.classList.add('row');
@@ -1076,14 +1076,14 @@ class alertD{
 
          let text = document.createElement('div');
          text.innerText = this.text;
-         text.style.color = hoshoku(back);
+         text.style.color = irohaHo(back);
          row.appendChild(text);
         div.appendChild(row);
 
         let x = document.createElement('div');
         x.className = 'x';
         x.innerText = '×';
-        x.style.color = hoshoku(back);
+        x.style.color = irohaHo(back);
         x.addEventListener('click', () => this.delete());
         div.appendChild(x);
         
@@ -3879,8 +3879,6 @@ gamC.forF.irel = () => {
     gamC.forC.bet += 100;
     rimiF.dec(100);
     gamC.forF.update();
-    
-
 }
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
 
@@ -3924,10 +3922,17 @@ gamC.forF.start = async() => {
 
 gamC.forF.mushSet = (num = 10) => {
     let cantake = 0;
-    while(cantake < 10 && Math.random() < 0.75){
+    let cack = 0.95; //←1個目だけ優しさを
+    while(cantake < 10 && Math.random() < cack){
         cantake += 1;
+        cack = 0.75;
     }
     // 単純に「0.75**${個数}」で確率
+    /*
+    現時点:2026/7/21
+    0,1,2,3,4,5,6,7,8,9,10
+    5.00,23.75,17.81,13.36,10.02,7.51,5.64,4.23,3.17,2.38,7.13
+    */
     
 
     gamC.forC.cantake = cantake;
@@ -3942,7 +3947,6 @@ gamC.forF.mushPlace = () => {
     div0.innerHTML = "";
 
     let placed = [];
-
     for(let i=0; i<10; i++){
         let div = document.createElement('div');
         div.className = 'mush';
@@ -3956,7 +3960,7 @@ gamC.forF.mushPlace = () => {
 
         let gridX, gridY, ticca;
         let tried = 0;
-        do {
+        do{
             gridX = Math.floor(Math.random() * 50) + 1;
             gridY = Math.floor(Math.random() * 33) + 1;
             
@@ -3964,7 +3968,7 @@ gamC.forF.mushPlace = () => {
                 return Math.abs(pos.x - gridX) < bigger && Math.abs(pos.y - gridY) < bigger;
             });
             tried++;
-        }while(ticca && tried<23);
+        } while(ticca && tried<23);
 
         placed.push({ x: gridX, y: gridY });
 
@@ -4011,7 +4015,11 @@ gamC.forF.mushGet = () => {
     let moto = gamC.forC.rate;
     gamC.forC.rate = Math.ceil((moto + up) *10) /10;
 
+
     console.log(`[mushGet] rate上昇↑↑ ${moto} => ${gamC.forC.rate}`);
+    let alD = new alertD(`rate上昇↑↑ ${moto} => ${gamC.forC.rate}`);
+    alD.appear();
+    // ↑一旦の策
 
     gamC.forC.timer.reset();
 }
@@ -4101,3 +4109,13 @@ async function init(){
 }
 //#endregion
 
+
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (event) => {
+    const now = Date.now();
+    if(now - lastTouchEnd <= 300){
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
