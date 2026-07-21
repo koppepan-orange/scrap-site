@@ -2245,6 +2245,21 @@ function findEquips(type, name){
     if(data) return data;
     return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
 }
+function findChara(name){
+	let data = Charad.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Charaに、「${name}」っていう人はいないらしいです`), 0;
+}
+function findFriend(name){
+	let data = Friends.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Friendに、「${name}」っていう人はいないらしいです`), 0;
+}
+function findEnemie(name){
+	let data = Enemies.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    return console.log(`[find] Enemieで、「${name}」っていう人はいないらしいです`), 0;
+}
 function findActs(name){
     let data = Acts.find(a => a.name == name || a.jpnm == name);
     if(data) return data;
@@ -2824,6 +2839,65 @@ function selectSyudou(code = 1){
         });
     });
 }
+//受動的な選択
+function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1){
+    let cam = who.cam;
+    if(tar == "who") tar = cam;
+    if(tar == "are") tar = fl(cam, ['player', 'enemie']);
+
+    console.log(`[selectJodou] ${cam}${who.me} => ${tar}の${stat}順で${hl}なやつ！ (spread: ${spread})`)
+    if(spread != 0 && spread % 2 == 0) return console.error('エラー発生 エラー発生 rangeに偶数を発見しました rangeに偶数を発見しました');
+
+    /*
+    who: それを実行した者
+    tar: 標的軍団。基本whoかareで、whoなら自軍、areなら相手軍。players/enemiesも可。allで全体も可。
+    stat: どのステータスで選ぶか。hpとかatkとか。
+    hl: [high/low/cen/random]のどれかで、statの高い方を選ぶか低い方を選ぶか自分の正面を選ぶかランダムで選ぶか。
+    spread: 1ならその一体だけ、3なら両隣も(いるなら)対象にする。5なら両隣2体も(いるなら)対象にする。2,4は存在しないぜ。0は何？全体？
+
+    spreadを0にするならば、stat,hlは0にして省略してもおk
+    つまり「敵全体」を表すならば selectJodou(who, 'are', 0, 0, 0); 無駄になげぇ まあいいけれども
+    一応0の場合の処理もおいてはおきますけどね 私は優しいので
+    */
+
+    let list0 = null;
+    if(tar != 'all') list0 = cm(tar);
+    else list0 = [...cm('player'), ...cm('enemie')];
+    let list = list0.filter(c => c.joutie); //not ソート
+     if(list.length == 0) return console.error(`errored! ${tar} is inai desu war!!`);
+
+    if(spread == 0) return list; //0は全体、そう決めたのです
+
+    let listed;
+    if(stat != 0) listed = copy(list).sort((a, b) => a[stat] - b[stat]); //ソートされたってことでed sortは元の子を破壊するらしい
+    else listed = copy(list);
+    // console.log(list);
+    
+
+    let zero;
+    if(hl == 'low') zero = listed[0];
+    if(hl == 'high') zero = listed[listed.length - 1];
+    if(hl == 'random' || hl == 0) zero = arraySelect(listed);
+    if(hl == 'cen'){
+        let whol = cm(who.cam).filter(c => c.joutie);
+        let whoi = whol.findIndex(c => c.me == who.me); //whoiが-1はまずありえん
+        zero = list[whoi]; //これは正面に無いと失敗。拡散でも同じく。
+    }
+    if(!zero) return console.error('errored! な、なんかzeroが無かったッス！これはバグの発生ッス！');
+
+    let tme = zero.me;
+    let i = list.findIndex(c => c.me == tme);
+    let range = (spread-1)/2;
+     if(range < 0) range = 0;
+    
+    let ares = [];
+    for(let i2 = i-range; i2 <= i+range; i2++){
+        let are = list[i2];
+        if(are) ares.push(are);
+    }
+
+    return ares; // [{...},{...},{...}]
+}
 // #endregion
 
 batF.acts = async(who, i) => {
@@ -2841,7 +2915,7 @@ batF.acts = async(who, i) => {
     if(await data.func(who, ares)) return 1;
     
     // なければ
-    turnNext(who);
+    turnEnd(who);
     return 0;
 }
 batF.mags = (who, i) => {
@@ -2915,7 +2989,67 @@ async function turnPlayer(who){
 
 
 async function turnEnemy(who){
-    turnEnd(who);
+    let data = findEnemie(who.name);
+
+    let are;
+    // if(data){
+	if(false){
+        let act = enemySelectAction(who);
+		let res = await act.func(who);
+         if(res.code) return 1; //こいつは特殊、というか切り札。return {code:0, are:ares}をつかいます
+		are = res.are;
+    }
+	else{
+		// ↓基本的なfuncの中身。さて
+        await logText(`${who.name}は何かで攻撃した！`)
+        are = selectJodou(who);
+        if(await attack(who, are, 80, 'ph', 100)) return 1;
+    }
+
+    turnEnd(who, are);
+}
+function enemySelectAction(who){
+    let data = Enemies.find(a => a.name == who.name);
+    let acts = [];
+    let pros = [];
+
+    if(who.lasts.length != 0){
+        //直前にreを実行していたならば、対応するabを確定実行するやつ
+        who.lasts.forEach(last => {
+            data.acts.forEach(a => {
+                let props = a.prop;
+                props.filter(b => b.startsWith('ab') && b.endsWith(last)).forEach(b => {
+                    console.log(`ノア「re${last}が記録されていますので、ab${last}である${a.name}を実行しますね♪」`)
+                    acts.push(a);
+                    pros.push(a.p);
+                });
+            })
+        })
+        who.lasts = [];
+    }
+	else{
+        data.acts.forEach(a => {
+            acts.push(a);
+            pros.push(a.p);
+        })
+    }
+    // console.log(acts);
+    // console.log(pros);
+
+    //reをするとlastを記録
+    let act = arrayGacha(acts, pros);
+    // console.log(act);
+    console.log(`act: 「${act.name}」(${act.p}%)`);
+    let props = act.prop ?? [];
+    props.forEach(p => {
+        if(p.startsWith('re')){ // reInvisi
+            console.log(`ノア「${item}を記録しました」`);
+            let item = p.slice(2);
+            who.lasts.push(item);
+        }
+    })
+
+    return act;
 }
 
 async function turnNext(who){
