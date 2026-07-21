@@ -329,7 +329,7 @@ let Charas = [
             atk:20,
             def:0,
             matk:10,
-            mdef:0,
+            mdef:20,
             maxhp:100,
             maxmp:50,
             crla:9,

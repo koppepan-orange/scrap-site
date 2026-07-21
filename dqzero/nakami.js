@@ -2297,7 +2297,7 @@ function makeUnit(cam, code, name){
         // Status.map(a => a.name).forEach(s => unit[s] = data[s]);
         for(let data0 of Status){
             let name = data0.name;
-            unit[name] = data[name] ?? data0.bas;
+            unit[name] = data.stat[name] ??data0.bas;
         }
     }
     if(cam == "enemie"){
@@ -2446,6 +2446,13 @@ batC.turnD.addEventListener('click', encount)
 let context = {}; //consoleで変数見る用。正式実装の予定はない
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
 async function attack(who, ares, voi, tri, aim, props = []){
+    let hasp = (name) => {
+        if(props.includes(name)) return name;
+        let prop = props.find(a => a.startsWith(name));
+         if(prop) return prop;
+        return "";
+    }
+
     // console.log(ares);
     console.log(`[attack] ${who.name}の攻撃！ ${voi} [${tri}] (${props.join(", ")})`)
      if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
@@ -2482,14 +2489,13 @@ async function attack(who, ares, voi, tri, aim, props = []){
 
 
     for(let are of ares){
-        console.log(`[attack]{${voi}%} ${who.name} => ${are.name}`)
+        console.log(`[attack] ${who.name} => ${are.name}`)
 
 
         // 攻撃側の targe と 防御側の dodge を加味して最終命中率をだす
         let atare = (aim+who.targe) - are.dodge;
-        console.log(atare)
         if(!hit(atare)){
-            console.log(`[attack]{${voi}%} ${who.name}の攻撃は外れた！`);
+            console.log(`[attack] ${who.name}の攻撃は外れた！(最終命中率: ${atare}%)`);
             tobiText(are.div, "miss");
             await delay(500);
             continue;
@@ -2535,9 +2541,40 @@ async function attack(who, ares, voi, tri, aim, props = []){
          if(atk < 0) atk = 0; //流石に回復は意味わからん
         let def = ((defer[triD]) * defer.shell +defer.cut + shldef);
          if(def < 0) def = 0; //流石に攻撃力強化は意味わからん
+
+        // crit | atker.crla -defer.crrs +propのなんか（会心:）（会心固:） | hitで判定
+        let cranus = atker.crla -defer.crrs;
+        jump:{
+            if(!hasp("会心")) break jump;
+            
+            let prop = hasp("会心固").slice(4); //会心固:num
+            if(+prop){
+                console.log(`[attack] prop「会心固」発動！会心率が強制的に "${prop}" になりました！`);
+                cranus = +prop;
+                break jump;
+            }
+            else return console.error(`[attack] prop{会心固:${prop}}で問題発生: 数値でないものが用いられてます`);
+            
+            prop = hasp("会心").slice(3); //会心:num
+            if(+prop){
+                console.log(`[attack] prop「会心」発動！会心率に以下の値を追加: ${prop}`);
+                cranus += +prop;
+                break jump;
+            }
+            else return console.error(`[attack] prop{会心:${prop}}で問題発生: 数値でないものが用いられてます`);
+            
+            console.log("え誰？お前誰？");
+        }
+        if(hit(cranus)){
+            console.log(`[attack] 会心の一撃発生！dmgが${atker.crdm}%になりました！ (最終会心率: ${cranus})`);
+            props.push("発生:会心");
+            atk *= (atker.crdm/100);
+        }
+
+        // さあ
         let dmg = Math.max(atk - def, 1);
 
-        console.log(`[attack]{${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
+        console.log(`[attack] {${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
         
         if(await damage(who, are, dmg, tri, props)) return 1;
 
@@ -2546,13 +2583,19 @@ async function attack(who, ares, voi, tri, aim, props = []){
 }
 async function damage(who, are, dmg, tri, props = []){
     let hasp = (name) => {
-        if(props.includes(name)) return 1;
-        if(props.some(a => a.startsWith(name))) return 1;
-        return 0;
+        if(props.includes(name)) return name;
+        let prop = props.find(a => a.startsWith(name));
+         if(prop) return prop;
+        return "";
+    }
+
+    jump:{
+        if(!hasp("発生")) break jump;
+
+        if(hasp("発生:会心")) kirameki(are.div), console.log("何？")
     }
 
     // 一旦雑に
-    if(hasp("無効")) return dmg = 0, tobiText(are.div, "無効"); //←ズルすぎ
     tobiText(are.div, dmg);
     
     let atae = dmg;
