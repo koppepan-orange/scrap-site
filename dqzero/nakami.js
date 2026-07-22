@@ -2573,6 +2573,7 @@ async function attack(who, ares, voi, tri, aim, props = []){
 
         // さあ
         let dmg = Math.max(atk - def, 1);
+		 dmg = Math.round(dmg);
 
         console.log(`[attack] {${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
         
