@@ -1581,7 +1581,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     width: 80px;
     height: fit-content;
     position: absolute;
-    top: 320px;
+    top: 210px;
     left: 50%;
     transform: translateX(-50%);
 }
