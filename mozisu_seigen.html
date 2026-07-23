@@ -24,6 +24,7 @@
         body{
             user-select: none;
             margin: 10px;
+            width:393px;
         }
         ::-webkit-scrollbar{
             display: none;
@@ -33,7 +34,7 @@
             justify-content: flex-start;
             align-items: center;
             gap: 7.5px;
-            width: calc(20% + 20px);
+            width: fit-content;
             padding: 10px;
             background: #eaf5ff;
             box-sizing: border-box;
@@ -86,16 +87,18 @@
 
         #text{
             display: block;
-            width: calc(20% + 20px);
-            height: 80%;
+            width: 100%;
+            height: fit-content;
             position: relative;
             box-sizing: border-box;
         }
         #text .text{
             width: 100%;
-            height: 100%;
+            height: 410px;
+            padding: 10px;
+            border: 2px dotted #cfe9ff;
+            border-radius: 3px;
             box-sizing: border-box;
-            padding: 5px;
         }
         #text .num{
             position: absolute;
@@ -162,8 +165,16 @@
             
             let maxCo = '#ff8080';
             let minCo = '#8080ff';
-            if(num > max) return textI.style.backgroundColor = maxCo, numD.style.color = maxCo,  1;
-            if(num < min) return textI.style.backgroundColor = minCo, numD.style.color = minCo, -1;
+            if(num > max){
+                textI.style.backgroundColor = maxCo;
+                numD.style.color = maxCo;
+                return 1;
+            }
+            if(num < min){
+                textI.style.backgroundColor = minCo;
+                numD.style.color = minCo;
+                return -1;
+            }
             
             textI.style.backgroundColor = "";
             numD.style.color = "";
