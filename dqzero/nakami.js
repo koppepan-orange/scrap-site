@@ -3886,11 +3886,13 @@ gamC.forF.irel = () => {
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
 gamC.forF.irelAuto = () => {
 	if(!gamC.forC.autoIrel){
+		gamC.forC.irelD.classList.add("activate");
 		gamC.forC.autoIrel = setInterval(() => {
 			gamC.forF.irel();
 		}, 1000)
 	}
 	else{
+		gamC.forC.irelD.classList.remove("activate");
 		clearInterval(gamC.forC.autoIrel);
 		gamC.forC.autoIrel = null;
 	}
