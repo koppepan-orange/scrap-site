@@ -3827,12 +3827,14 @@ gamC.forC = {
     mushsD: gamC.forD.querySelector('.gamen .dimee.hondie .mushes'),
     daiD: gamC.forD.querySelector('.gamen .dai'),
     irelD: gamC.forD.querySelector('.gamen .dai .irel'),
+	 autoD: gamC.forD.querySelector(".gamen .dai .irel .auto")
     otsuD: gamC.forD.querySelector('.gamen .dai .otsu'),
     dispD: gamC.forD.querySelector('.gamen .dai .disp'),
     btD: gamC.forD.querySelector('.gamen .dai .bottan'),
     getoutD: gamC.forD.querySelector('.gamen .dai .getout'),
     getoutID: gamC.forD.querySelector('.gamen .dai .getout img'),
 
+	autoIrelF: null,
     bet: 0,
     getout: 0,
     gamens: ["started", "hondie"],
@@ -3882,6 +3884,18 @@ gamC.forF.irel = () => {
     gamC.forF.update();
 }
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
+gamC.forF.irelAuto = () => {
+	if(!gamC.forC.autoIrel){
+		gamC.forC.autoIrel = setInterval(() => {
+			gamC.forF.irel();
+		}, 1000)
+	}
+	else{
+		clearInterval(gamC.forC.autoIrel);
+		gamC.forC.autoIrel = null;
+	}
+}
+gamC.forC.autoD.addEventListener("click", gamC.forF.irelAuto);
 
 gamC.forC.otsuD.addEventListener('click', () => {
     let ryou = gamC.forC.bet;
