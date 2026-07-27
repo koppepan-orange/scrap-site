@@ -1715,13 +1715,23 @@ const Equips = [
     }
 ]
 
+function buffCalc(who, arr){
+    for(let buff of who.buffs){
+        let data = buffFind(buff.name);
+        
+        for(let [k, v] of Object.entries(buff.value)){
+            if(arr.includes(k)) who[k] += v;
+        }
+    }
+}
+
 const Tools = [
     {
         name:'aspirin',
         jpnm:'アスピリン',
         price:20,
         desc:'味方単体の体力を20%回復',
-        flav:'おや、頭が痛いって？\n痛みに効くのはアスピリン！',
+        flav:'おや、頭が痛いって？頭痛に効くのはアスピリン！',
         func:async function(who, are){
             if(await heal(who, are, "20%")) return 1;
             return 0;
@@ -1730,7 +1740,7 @@ const Tools = [
     {
         name:'glucose',
         jpnm:'ブドウ糖',
-        price:25,
+        price:20,
         desc:'味方単体の体力を15%回復し、攻撃倍率を少し上昇させる。',
         flav:'これで少しは頑張れそう',
         func:async function(who,are){
@@ -1743,8 +1753,8 @@ const Tools = [
         name:'trypsin',
         jpnm:'トリプシン',
         name:'trypsin',
-        price:60,
-        desc:'味方単体の体力を50%回復するが、', //何逆説使っとんねん..たぶん何か副作用入れようとしたんだろうな
+        price:50,
+        desc:'味方単体の体力を50%回復するが、', //何使っとんねん..たぶん何か副作用入れようとしたんだろうな
         flav:'膵液に含まれる消化酵素の一種。\n薬ではない。',
         func:async function(who,are){
             if(await heal(who, are, "70%")) return 1;
@@ -1754,12 +1764,12 @@ const Tools = [
     {
         name:'lulu',
         jpnm:'ルル',
-        price:80,
-        desc:'味方単体の体力を40%回復。50%の確率で再度40%回復。',
+        price:41,
+        desc:'味方単体の体力を30%回復。50%の確率で再度40%回復。',
         flav:'sick sickな頭痛薬。\n毒が流るルルですね。',
         func:async function(who,are){
             //await logText(`求愛性 孤独 ドク 流るルル`)
-            if(await heal(who, are, '40%')) return 1;
+            if(await heal(who, are, '30%')) return 1;
             if(hit(50)) return 0;
 
             await logText('愛をもっと')
@@ -1770,7 +1780,7 @@ const Tools = [
     {
         name:'potion',
         jpnm:'魔法薬',
-        price:120,
+        price:80,
         desc:'味方単体の体力を100%回復',
         flav:'投げつけたい。敵に（？）\n内部処理的にはHPを100%にセットしてます',
         func:async function(who,are){
@@ -1782,8 +1792,8 @@ const Tools = [
     {
         name:'throwknife',
         jpnm:'投げナイフ',
-        price:20,
-        desc:'指定した人単体の現在体力の10%分のダメージを与える',
+        price:15,
+        desc:'指定した人単体の現在体力の5%分のダメージを与える',
         flav:'では、ナイフの錆にしてあげましょう',
         func:async function(who,are){
             if(await damage(who,are,"10%",'cn',["%!maxhp",'固定'])) return 1;
@@ -1870,7 +1880,7 @@ const Tools = [
         jpnm:"Nitro Booster",
         desc:`使用されたキャラクターはspd2倍、aim1.3倍を獲得する。戦闘終了時まで継続。
         [1] もし何らかの要因で発火が発生したならば、装備者はその現在体力の50%の自傷ダメージを受け、さらに「火傷」2tを付与されたのち、効果は解除される。`,
-        flav:"Why dont we go to end of Infinity? （無限の終わりに一緒に行きませんか？）（敬語）（丁寧）（あの、すみませんバズさんー）（それは木の）"
+        flav:"Why dont we go to end of Infinity? （無限の終わりに一緒に行きませんか？）（敬語）（丁寧）（あの、すみませんバズさんー）（それは木の(状態)）"
     }
 ]
 

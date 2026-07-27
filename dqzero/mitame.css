@@ -68,17 +68,25 @@ img{
 }
 
 .tobitext{
-    opacity: 1;
+    display: inline-block;
     padding: 4px 8px;
-    background: rgba(0,0,0,0.72);
+    background: var(---back);
     border-radius: 8px;
-    transform: translate(-50%, -50%) translateY(0px);
+    position: absolute;
     white-space: nowrap;
     color: #ffffff;
     position: absolute;
+    /* transform: translate(-50%, -50%) translateY(0px); */
     transition: none;
+    opacity: 1;
     pointer-events: none;
     z-index: var(--mostop);
+}
+.tobitext.booba{
+    border-radius: 50%;
+}
+.tobitext.kiki{
+    padding: 8px 20px;
 }
 
 .p_star{

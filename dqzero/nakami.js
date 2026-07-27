@@ -19,46 +19,70 @@ async function nicoText(mes){
     await delay(5000); 
     div.remove();
 };
-function tobiText(youso, mes){
+function tobiText(youso, mes, config = {}) {
+    let {
+        mode = "booba", //booba(楕円)かkiki(トゲトゲ)
+        back = "#2b2b2b",
+    } = config;
+
     let el = youso;
-    if(typeof el == 'string') el = document.querySelector(youso);
+    if(typeof el == "string") el = document.querySelector(youso);
     if(!el) return console.error('せんぱ〜い？この要素壊れてますよ〜〜？');
 
     console.log(`[tobi] ${mes}`);
 
     let rect = el.getBoundingClientRect();
-    let left = rect.left + window.scrollX + rect.width / 2;
-    let top = rect.top + window.scrollY + rect.height / 2;
+    let left = rect.left + (window.scrollX+rect.width/2);
+    let top = rect.top + (window.scrollY+rect.height/2);
 
-    let node = document.createElement('div');
-    node.className = 'tobitext';
-    node.innerText = mes;
-    node.style.top = `${top}px`;
-    node.style.left = `${left}px`;
+    let div = document.createElement('div');
+    div.className = `tobitext ${mode}`;
+    div.innerText = mes;
 
-    document.body.appendChild(node);
+    div.style.top = `${top}px`;
+    div.style.left = `${left}px`;
+    div.style.setProperty('---back', back);
+    div.style.color = "#2b2b2b";
+    if(irohaDark(back)) div.style.color = "#ffffff";
 
+    if(mode == 'kiki'){
+        let points = [];
+        let n = 18; //トゲの数
+        for (let i=0; i<n; i++) {
+            let angle = (i/n) * 360;
+            let rad = (angle*Math.PI) / 180;
+            let radius = 15 + Math.random()*10;
+             if(i%2 == 0) radius = 45 + Math.random()*10;
+
+            let x = 50 + radius*Math.cos(rad);
+            let y = 50 + radius*Math.sin(rad);
+            points.push(`${x.toFixed(1)}% ${y.toFixed(1)}%`);
+        }
+        div.style.clipPath = `polygon(${points.join(', ')})`;
+    }
+
+    document.body.appendChild(div);
+
+    // 動くよ
     let duration = 1200;
     let distance = -48;
     let jitter = (Math.random() - 0.5) * 10;
-
     let start = performance.now();
-
-    let easeOutCubic = (t) => {return 1 - Math.pow(1 - t, 3)};
+    let easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
     function frame(now){
         let t = Math.min(1, (now - start) / duration);
         let e = easeOutCubic(t);
         let tsY = distance * e;
         let tsX = jitter * (1 - e);
-        node.style.transform = `translate(-50%, -50%) translateY(${tsY}px) translateX(${tsX}px)`;
-        node.style.opacity = String(1 - t);
+        div.style.transform = `translate(-50%, -50%) translateY(${tsY}px) translateX(${tsX}px)`;
+        div.style.opacity = String(0.8 * (1 - t));
         if(t < 1) requestAnimationFrame(frame);
-        else node.remove();
+        else div.remove();
     };
 
     requestAnimationFrame(frame);
-};
+}
 function copytext(text){
     console.log(`[copy] ${text}`);
     navigator.clipboard.writeText(text)
@@ -498,8 +522,10 @@ function irohaDark(color) {
     // 相対輝度の近似計算
     // 0.2126 * R + 0.7152 * G + 0.0722 * B
     let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (isNaN(luma)) return 0; //明るい
     
-    return luma < 128; // 暗い色ならtrue
+    if(luma < 128) return 1; //暗い
+    return 0; //明るい
 }
 
 function timeDiff(kako){
@@ -2140,6 +2166,28 @@ batC.shokey = {
 let batF = {};
 
 let humans = [];
+let has = [];
+let hasM = [...Tools.map(a => a.name), ...Equips.map(a => a.name)];
+
+batF.hasTekiou = () => {
+    has.sort((a, b) => hasM.indexOf(a) - hasM.indexOf(b));
+}
+batF.hasAdd = (name, n = 1) => {
+    console.log(`[has] hasに ${name} を${n}個追加しま〜す`);
+    for(let i=0; i<n; i++) has.push(name);
+    
+    batF.hasTekiou();
+}
+batF.hasSet = (arr) => {
+    // [[name, n], [name, n], ...]
+    has = [];
+    for(let v of arr){
+        let [name, n] = v;
+        batF.hasAdd(name, n);
+    }
+
+    batF.hasTekiou();
+}
 
 
 function tekiou(){
@@ -2271,7 +2319,7 @@ function findMags(name){
     return console.log(`[find] Magsで、「${name}」っていうものはないらしいです`), 0;
 }
 function findTool(name){
-    let data = Tool.find(a => a.name == name || a.jpnm == name);
+    let data = Tools.find(a => a.name == name || a.jpnm == name);
     if(data) return data;
     return console.log(`[find] Toolで、「${name}」っていうものはないらしいです`), 0;
 }
@@ -2496,7 +2544,7 @@ async function attack(who, ares, voi, tri, aim, props = []){
         let atare = (aim+who.targe) - are.dodge;
         if(!hit(atare)){
             console.log(`[attack] ${who.name}の攻撃は外れた！(最終命中率: ${atare}%)`);
-            tobiText(are.div, "miss");
+            tobiText(are.div, "miss", {back: "#b2b2b2"});
             await delay(500);
             continue;
         }
@@ -2573,13 +2621,62 @@ async function attack(who, ares, voi, tri, aim, props = []){
 
         // さあ
         let dmg = Math.max(atk - def, 1);
-		 dmg = Math.round(dmg);
 
         console.log(`[attack] {${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
         
         if(await damage(who, are, dmg, tri, props)) return 1;
 
         // 大丈夫そうなら次の標的へ
+    }
+}
+async function heal(who, ares, val0, props=[]){
+    let hasp = (name) => {
+        if(props.includes(name)) return name;
+        let prop = props.find(a => a.startsWith(name));
+        if(prop) return prop;
+        
+        return "";
+    }
+    console.log(`[heal] ${who.name}の回復！ | ${val0} [${props.join(", ")}]`);
+    
+    if(typeof val0 != "number" && !val0.endsWith("%")) return console.error(`[heal] valに ${val0} という文字列が謎に使われてます`);
+    
+    if(!Array.isArray(ares)) ares = [];
+    for(let are of ares){
+        console.log(`[heal] ${who.name} => ${are.name} | val: ${val0}`);
+        let val = val0;
+        
+        if(typeof val == "string" && val.endsWith("%")){
+            val = val.slice(0, -1); //最後の1文字を切り取る？
+            if(+val){
+                val = +val;
+                let kiju = "maxhp";
+                if(hasp("%:")) kiju = hasp("%:").slice(2);
+                
+                if(kiju == "maxhp") val = are[kiju] * (val/100);
+                else val = who[kiju] * (val/100);
+            }
+            else console.error(`[heal] valに不明な文字列 ${val}% が用いられました。いやどないどない`);
+        }
+        
+        let atker = copy(who);
+        let defer = copy(are);
+        
+        //atker
+        let stats = Status.map(a => a.name);
+        for(let buff of atker.buffs){
+            let data = buffFind(buff.name);
+            
+            for(let [k, v] of Object.entries(buff.value)){
+                if(stats.includes(k)) atker[k] += v;
+            }
+        }
+        
+        let dmg = val;
+        
+        if(hasp("腐乱")) dmg *= -1;
+
+        if(await damage(who, are, -dmg, "hl", props)) return 1;
     }
 }
 async function damage(who, are, dmg, tri, props = []){
@@ -2590,14 +2687,27 @@ async function damage(who, are, dmg, tri, props = []){
         return "";
     }
 
+    let back = "#2b2b2b", mode = "kiki";
     jump:{
+        switch(tri){
+            case "ph": back = "#2b2b2b"; break;
+            case "mg": back = "#edb7ff"; break;
+            case "cn": back = "#bb5757"; break;
+            case "hl": back = "#dfffc4"; mode = "booba"; break;
+        }
+
         if(!hasp("発生")) break jump;
 
-        if(hasp("発生:会心")) kirameki(are.div), console.log("何？")
+        if(hasp("発生:会心")){
+            kirameki(are.div);
+            back = "#ffeb86";
+        }
     }
 
     // 一旦雑に
-    tobiText(are.div, dmg);
+    dmg = Math.ceil(dmg);
+    console.log(back, mode)
+    tobiText(are.div, dmg, {back, mode});
     
     let atae = dmg;
     if(are.hp < dmg) atae = are.hp;
@@ -2612,8 +2722,8 @@ async function damage(who, are, dmg, tri, props = []){
             are.hp = 1;
             tekiou();
 
-            // await logText("んっ......♡♡"); //←確信犯すぎる
-            await logText(`${are.name}「あぶね死にかけたわ」`); //←平和！！
+            // await logText("んっ......♡♡"); // ←確信犯すぎる
+            await logText(`${are.name}「あぶね死にかけたわ」`); // ←平和！！
             break jump;
         }
 
@@ -2686,12 +2796,13 @@ function buffHeraso(who, name, becauseof){
 function buffAdd(who, are, name, num, lv){
     console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
     let data = buffData(name);
-    if(!data) return console.error(`buff[${name}]は存在しないらしい`);
+    if(!data) return console.error(`buff[${name}] は存在しないらしい`);
 
     let buff = {
         name,
         value: {},
-        lv
+        lv,
+        data
     }
 
 
@@ -2946,14 +3057,29 @@ function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1){
 
 batF.acts = async(who, i) => {
     // who.acts[i]を実行するやつ
-    selects(0);
 
     let name = who.acts[i];
     let data = findActs(name);
     if(!data) console.error(`${who.name}のacts[${i}]、${name}はガチ・存在しないらしいっす`);
+    if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
 
     // Jammo ja
+    selects(0);
+    let ares = await selectSyudou(1);
+    if(await data.func(who, ares)) return 1;
+    
+    // なければ
+    turnEnd(who);
+    return 0;
+}
+batF.mags = async(who, i) => {
+    let name = who.mags[i];
+    let data = findMags(name);
+    if(!data) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
     if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
+    
+    // Jammo ja
+    selects(0);
     let ares = await selectSyudou(1);
     
     if(await data.func(who, ares)) return 1;
@@ -2962,21 +3088,21 @@ batF.acts = async(who, i) => {
     turnEnd(who);
     return 0;
 }
-batF.mags = (who, i) => {
-    selects(0);
-
-    let name = who.mags[i];
-    let data = findActs(name);
-    if(!data) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
-    
-}
-batF.tool = (who, i) => {
-    selects(0);
+batF.tool = async(who, i) => {
 
     let name = who.tool[i];
-    let data = findActs(name);
+    let data = findTool(name);
     if(!data) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
+    if(!has.includes(name)) return tobiText(who.div, `${name} not enough`);
     
+    // Jammo ja
+    selects(0);
+    let ares = await selectSyudou(1);
+    if(await data.func(who, ares)) return 1;
+    
+    // なければ
+    turnEnd(who);
+    return 0;
 }
 async function runaway(){
     // selects(0);
