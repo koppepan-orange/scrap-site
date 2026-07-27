@@ -3827,7 +3827,7 @@ gamC.forC = {
     mushsD: gamC.forD.querySelector('.gamen .dimee.hondie .mushes'),
     daiD: gamC.forD.querySelector('.gamen .dai'),
     irelD: gamC.forD.querySelector('.gamen .dai .irel'),
-	 autoD: gamC.forD.querySelector(".gamen .dai .irel .auto")
+	 autoD: gamC.forD.querySelector(".gamen .dai .irel .auto"),
     otsuD: gamC.forD.querySelector('.gamen .dai .otsu'),
     dispD: gamC.forD.querySelector('.gamen .dai .disp'),
     btD: gamC.forD.querySelector('.gamen .dai .bottan'),
@@ -3885,16 +3885,16 @@ gamC.forF.irel = () => {
 }
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
 gamC.forF.irelAuto = () => {
-	if(!gamC.forC.autoIrel){
+	if(!gamC.forC.autoIrelF){
 		gamC.forC.irelD.classList.add("activate");
-		gamC.forC.autoIrel = setInterval(() => {
+		gamC.forC.autoIrelF = setInterval(() => {
 			gamC.forF.irel();
 		}, 1000)
 	}
 	else{
 		gamC.forC.irelD.classList.remove("activate");
-		clearInterval(gamC.forC.autoIrel);
-		gamC.forC.autoIrel = null;
+		clearInterval(gamC.forC.autoIrelF);
+		gamC.forC.autoIrelF = null;
 	}
 }
 gamC.forC.autoD.addEventListener("click", gamC.forF.irelAuto);
