@@ -1501,6 +1501,26 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     pointer-events: none;
     z-index: 1;
 }
+#gamble .forage .dai .irel .auto{
+    width: 60%;
+    aspect-ratio: 5/3;
+    background: #ff8080;
+    border: 2px solid #b2b2b2;
+    position: absolute;
+    top: 50%;
+    left: 130%;
+    transform: translateY(-50%);
+    transition: scale 0.5s;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 18px;
+    opacity: 0.4;
+    z-index: 2;
+}
+#gamble .forage .dai .irel.activate .auto{
+    scale: 1.3;
+    opacity: 1.0;
+}
 
 #gamble .forage .dai .otsu{
     display: flex;
