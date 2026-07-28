@@ -2101,6 +2101,11 @@ homF.start = async() => {
     console.log(`選ばれたのは、[${name}]でした`); //"選ばれたのは、[undefined]でした"
 
     makeUnit("player", 0, name);
+    batF.hasSet([
+        ["aspirin", 3],
+        ["throw_knife", 3],
+        ["aspirin", 3],
+    ])
 
     mainF.move('batt');
 
@@ -3953,12 +3958,15 @@ gamC.forC = {
     mushsD: gamC.forD.querySelector('.gamen .dimee.hondie .mushes'),
     daiD: gamC.forD.querySelector('.gamen .dai'),
     irelD: gamC.forD.querySelector('.gamen .dai .irel'),
+	 autoD: gamC.forD.querySelector(".gamen .dai .irel .auto"),
     otsuD: gamC.forD.querySelector('.gamen .dai .otsu'),
     dispD: gamC.forD.querySelector('.gamen .dai .disp'),
     btD: gamC.forD.querySelector('.gamen .dai .bottan'),
     getoutD: gamC.forD.querySelector('.gamen .dai .getout'),
     getoutID: gamC.forD.querySelector('.gamen .dai .getout img'),
 
+	autoIrelF: null,
+    autoRate: 1000,
     bet: 0,
     getout: 0,
     gamens: ["started", "hondie"],
@@ -4008,6 +4016,20 @@ gamC.forF.irel = () => {
     gamC.forF.update();
 }
 gamC.forC.irelD.addEventListener('click', gamC.forF.irel);
+gamC.forF.irelAuto = () => {
+	if(!gamC.forC.autoIrelF){
+		gamC.forC.irelD.classList.add("activate");
+		gamC.forC.autoIrelF = setInterval(() => {
+			gamC.forF.irel();
+		}, gamC.forC.autoRate)
+	}
+	else{
+		gamC.forC.irelD.classList.remove("activate");
+		clearInterval(gamC.forC.autoIrelF);
+		gamC.forC.autoIrelF = null;
+	}
+}
+gamC.forC.autoD.addEventListener("click", gamC.forF.irelAuto);
 
 gamC.forC.otsuD.addEventListener('click', () => {
     let ryou = gamC.forC.bet;
