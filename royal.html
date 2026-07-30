@@ -154,53 +154,10 @@
             res: DIV.querySelector(".bts .bt.res"),
         }
 
-        let num = 6;
+        let max = 6;
         let rest = [];
-        // 残弾数を管理する変数に変更
-        let remainingBullets = 0;
+        let num = 0;
 
-        function update(){
-            // 表示を「残弾数 / 全弾数」にするよ
-            restD.num.innerText = remainingBullets;
-            restD.max.innerText = `/${num}`;
-        }
-
-        function resF(){
-            document.body.style.background = "#ffffff";
-            
-            num = random(4, 10);
-            remainingBullets = num; // 最初は全部の弾があるね
-            
-            rest = [];
-            for(let i=0; i<num; i++) rest.push(0);
-            rest[0] = 1; // これがアタリね
-            arrayShuffle(rest);
-
-            update();
-        }
-        btsD.res.addEventListener("click", resF);
-
-        function hitF(){
-            if(rest.length < 1) return;
-
-            let len = rest.length;
-            let r = random(0, len-1);
-            let atai = rest[r];
-            
-            // 弾を1つ消費するから減らす
-            remainingBullets -= 1;
-            rest.splice(r, 1);
-            
-            if(atai == 1) return shot();
-
-            update();
-        }
-        btsD.hit.addEventListener("click", hitF);
-
-
-        function shot(){
-            document.body.style.background = "#ffcfcf";
-        }
 
     </script>
 </body>

@@ -1891,6 +1891,13 @@ mainF.move = (to) => {
     document.getElementById(to).classList.add('show');
     mainC.spa = to;
 
+    switch(to){
+        case "home":{
+            homF.came();
+            break;
+        }
+    }
+
     history.replaceState(null, "", `?${to}`);
 }
 
@@ -1930,6 +1937,27 @@ document.addEventListener('keyup',e => {
 
 //#endregion main
 
+
+// #region home
+let homD = document.getElementById("home");
+let homC = {
+    goDs:{
+        farm: homD.querySelector(".uni1 .farm"),
+        cook: homD.querySelector(".uni1 .cook"),
+        shop: homD.querySelector(".uni2 .shop"),
+        door: homD.querySelector(".uni2 .door")
+    }
+}
+let homF = {};
+
+homF.load = () => {
+    for(let k of Object.keys(homC.goDs)) homC.goDs[k].addEventListener('click', () => mainF.move(k));
+}
+homF.came = () => {
+    if(hit(6)) homC.goDs["cook"].textContent = "キッキンチキンに向かう";
+}
+
+// #endregion
 
 
 let loc = 'farm';
@@ -2407,6 +2435,7 @@ function start(){
     OBS.load();
 
     mainF.load();
+    homF.load();
 
     let hash = location.hash.replace("?", "");
     let space = Spaces.find(a => a.name == hash);

@@ -1,4 +1,3 @@
-
 /* #region スターターパック */
 /* -webkitの情報-
     webkit- : Chrome, Safari, Opera
@@ -710,6 +709,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 .space{
     display: none;
     flex-direction: column;
+    align-items: center;
     width: 100%;
     height: 100%;
     position: absolute;
@@ -723,3 +723,65 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     display: flex;
 }
 
+.space .return{
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 70px;
+    aspect-ratio: 1/1;
+    object-fit: contain;
+    background-image: url(assets/images/systems/home.png);
+    transform-origin: top left;
+    background-size: contain;
+    background-position: center;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    transition: scale 0.05s;
+    cursor: pointer;
+    z-index: 255;
+    box-sizing: border-box;
+
+    &:active{
+        scale: 2.00;
+        transition: scale 2.75s linear;
+    }
+}
+
+
+#home.space{
+    content:"home";
+    gap: 30px;
+    padding: 40px 0;
+}
+#home .unit{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+    width: 92%;
+    height: fit-content;
+    padding: 25px;
+    border: 4px solid #000000;
+    box-sizing: border-box;
+}
+#home .unit .bt{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 40px;
+    padding: 5px 10px;
+    border: 3.5px solid #000000;
+    transition: scale 0.05s;
+    font-size: 16px;
+    box-sizing: border-box;
+    cursor: pointer;
+
+    &:active{
+        background: #000000;
+        scale: 0.90;
+        color: #ffffff;
+    }
+}
