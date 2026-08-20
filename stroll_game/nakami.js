@@ -178,7 +178,7 @@ homF.time = () => {
 }
 
 homF.goF = async() => {
-    console.log("あぁgoならあちらですね～");
+    // console.log("あぁgoならあちらですね～");
     roaF.start();
 }
 homC.Ds["go"].addEventListener("click", homF.goF)
@@ -198,8 +198,8 @@ let roaC = {
     ing: 0,
 
     moves:[[0, -1], [1, 0], [0, 1], [-1, 0]],
-    row: 6,
-    heyaAll: 15,
+    row: 20,
+    heyaAll: 40,
     mas: 0,
     imgN: 0,
 
@@ -223,7 +223,11 @@ roaF.start = async() => {
 
     roaF.reset();
     roaC.imgN = "assets/images/systems/star.png";
-    if(hit(16)) roaC.imgN = "assets/images/systems/star_walk.png";
+    if(hit(3)){ //ブルアカのデフォの☆3確率
+        roaC.imgN = "assets/images/systems/star_walk.png";
+        logText_log("私こそが レプリカの");
+        logText_log("スター ウォーカーだ");
+    }
     
     tekiou();
     roaF.mapMake();
@@ -243,70 +247,152 @@ roaF.mapResize = () => {
 
     roaC.mas = div.getBoundingClientRect().width;
 }
+// roaF.mapMake = () => {
+//     let row = roaC.row;
+//     let heya = roaC.heyaAll; 
+
+//     let map = []
+//     for(let i=0; i<row; i++){
+//         map[i] = [0];
+//         for(let i2=0; i2<row; i2++){
+//             map[i][i2] = {id:0};
+//         }
+//     }
+
+//     /*
+//     #idについて
+//      0 虚空
+//      1 道～～～～
+//      2 開始地点 (1, 2は同じものという扱い)
+//      3 自販機のある（かもしれない）
+//     */
+
+//     // 開始地点選定
+//     let x = random(1, row) -1;
+//     let y = random(1, row) -1;
+//     map[y][x] = { id:2, x, y, dist:0 };
+//     roaC.x = x, roaC.y = y;
+    
+//     let heyas = [];
+//     heyas.push({x, y}) 
+
+//     // スネークさんに道を作ってもらう
+//     let moves = roaC.moves;
+//     while(heyas.length < heya){
+//         let send = arraySelect(heyas); //選択ed
+//         let dir = arraySelect(moves);
+//         x = send.x + dir[0];
+//         y = send.y + dir[1];
+
+//         if(0 <= x && x < row && 0 <= y && y < row && !map[y][x]?.id) {
+//             let dist = map[send.y][send.x].dist + 1;
+//             map[y][x] = { id: 1, x, y, dist };
+//             heyas.push({x, y});
+//         }
+//     }
+
+    
+//     let zihan = random(1, 3);
+//     let zihaned = 0;
+//     while(zihaned < zihan){
+//         let send = arraySelect(heyas); //選択ed
+//         let dir = arraySelect(moves);
+//         x = send.x + dir[0];
+//         y = send.y + dir[1];
+
+//         if(0 <= x && x < row && 0 <= y && y < row && (map[y][x].id != 0 && map[y][x].id < 2)){
+//             map[y][x].id = 3;
+//             zihaned += 1;
+//         }
+//     }
+
+//     roaC.map = map;
+//     roaC.heyas = heyas;
+
+//     roaF.mapResize();
+// }
 roaF.mapMake = () => {
     let row = roaC.row;
     let heya = roaC.heyaAll; 
 
-    let map = []
-    for(let i=0; i<row; i++){
-        map[i] = [0];
-        for(let i2=0; i2<row; i2++){
-            map[i][i2] = {id:0};
+    let map = [];
+    for(let i = 0; i < row; i++){
+        map[i] = [];
+        for(let i2 = 0; i2 < row; i2++){
+            map[i][i2] = { id: 0 };
         }
     }
-
-    /*
-    #idについて
-     0 虚空
-     1 道～～～～
-     2 開始地点 (1, 2は同じものという扱い)
-     3 自販機のある（かもしれない）
-    */
 
     // 開始地点選定
-    let x = random(1, row) -1;
-    let y = random(1, row) -1;
-    map[y][x] = { id:2, x, y, dist:0 };
-    roaC.x = x, roaC.y = y;
+    let x = random(1, row) - 1;
+    let y = random(1, row) - 1;
+    map[y][x] = { id: 2, x, y, dist: 0 };
+    roaC.x = x; 
+    roaC.y = y;
     
     let heyas = [];
-    heyas.push({x, y}) 
+    heyas.push({ x, y });
 
-    // スネークさんに道を作ってもらう
-    let moves = roaC.moves;
+    let mx = x;
+    let my = y;
+    let mkdir = random(0, 3); // 最初に進むランダムな1方向を決定
+
+    let moves = roaC.moves; // [[0, -1], [1, 0], [0, 1], [-1, 0]]
+
+    // 67%の確率で直進、33%の確率で方向転換
     while(heyas.length < heya){
-        let send = arraySelect(heyas); //選択ed
-        let dir = arraySelect(moves);
-        x = send.x + dir[0];
-        y = send.y + dir[1];
+        if(hit(33)){
+            // 転換：左右下の3方向（相対的に +1, +2, +3）からランダムに選ぶ
+            let turn = arraySelect([1, 2, 3]);
+            mkdir = (mkdir + turn) % 4;
+        }
 
-        if(0 <= x && x < row && 0 <= y && y < row && !map[y][x]?.id) {
-            let dist = map[send.y][send.x].dist + 1;
-            map[y][x] = { id: 1, x, y, dist };
-            heyas.push({x, y});
+        // 次の位置を計算
+        let dirMove = moves[mkdir];
+        let nextX = mx + dirMove[0];
+        let nextY = my + dirMove[1];
+
+        // 枠内かつ未訪問のマス（id: 0）なら道（id: 1）にする
+        if(0 <= nextX && nextX < row && 0 <= nextY && nextY < row){
+            if(!map[nextY][nextX]?.id){
+                let dist = map[my][mx].dist + 1;
+                map[nextY][nextX] = { id: 1, x: nextX, y: nextY, dist };
+                heyas.push({ x: nextX, y: nextY });
+            }
+
+            // 成功・失敗にかかわらずスネークの頭を移動（既訪問マスでも突き抜けて先へ進む）
+            mx = nextX;
+            my = nextY;
+        }
+        else{
+            // 壁（外枠）にぶつかったら、既存の道の中からランダムに再スタート
+            let respawn = arraySelect(heyas);
+            mx = respawn.x;
+            my = respawn.y;
+            mkdir = random(0, 3);
         }
     }
 
-    
+    // 自販機の配置処理
     let zihan = random(1, 3);
     let zihaned = 0;
-    while(zihaned < zihan){
-        let send = arraySelect(heyas); //選択ed
+    while (zihaned < zihan) {
+        let send = arraySelect(heyas);
         let dir = arraySelect(moves);
         x = send.x + dir[0];
         y = send.y + dir[1];
 
-        if(0 <= x && x < row && 0 <= y && y < row && (map[y][x].id != 0 && map[y][x].id < 2)){
+        if (0 <= x && x < row && 0 <= y && y < row && (map[y][x].id != 0 && map[y][x].id < 2)) {
             map[y][x].id = 3;
             zihaned += 1;
         }
-    }
+    };
 
     roaC.map = map;
     roaC.heyas = heyas;
 
     roaF.mapResize();
-}
+};
 roaF.mapUpdate = () => {
     let row = roaC.row;
     let map = roaC.map;
@@ -343,18 +429,54 @@ roaF.mapPDraw = () => {
 }
 
 
+// roaF.zensen = (ret = 0) => {
+//     if(!roaC.ing) return 0;
+    
+//     let dir = roaC.dir;
+//     let moves = roaC.moves; //[[0, 1], [1, 0], [0, -1], [-1, 0]]
+//     if(!moves[dir]) return 1;
+    
+//     let ds = ["x", "y"];
+//     for(let i=0; i<2; i++){
+//         roaC[ds[i]] += moves[dir][i];
+//          if(roaC[ds[i]] < 0) roaC[ds[i]] = 0;
+//          if(roaC.row < roaC[ds[i]]) roaC[ds[i]] = roaC.row-1;
+//         if(roaC.map[roaC.y][roaC.x].id == 0){
+//             roaC[ds[i]] -= moves[dir][i];
+//             // ここで、他に行ける道を上下左右で...「行ける道: 左 後」みたいのをlogText_log(text)で出力したい
+//         }
+//     }
+
+//     roaF.mapPDraw();
+// }
 roaF.zensen = (ret = 0) => {
     if(!roaC.ing) return 0;
-    
+
     let dir = roaC.dir;
     let moves = roaC.moves; //[[0, 1], [1, 0], [0, -1], [-1, 0]]
-    if(!moves[dir]) return 1;
-    
-    let ds = ["x", "y"];
-    for(let i=0; i<2; i++){
-        roaC[ds[i]] += moves[dir][i];
-         if(roaC[ds[i]] < 0) roaC[ds[i]] = 0;
-         if(roaC.row < roaC[ds[i]]) roaC[ds[i]] = roaC.row-1
+
+    let x = roaC.x + moves[dir][0];
+    let y = roaC.y + moves[dir][1];
+
+    if(0 <= x && x < roaC.row && 0 <= y && y < roaC.row && roaC.map[y][x].id){
+        roaC.x = x;
+        roaC.y = y;
+    }
+    else{
+        let can = [];
+        let names = ["前", "右", "後", "左"];
+
+        for(let i = 0; i < 4; i++){
+            let d = (dir + i) % 4;
+            let nx = roaC.x + moves[d][0];
+            let ny = roaC.y + moves[d][1];
+
+            if(0 <= nx && nx < roaC.row && 0 <= ny && ny < roaC.row && roaC.map[ny][nx].id){
+                can.push(names[i]);
+            }
+        }
+
+        logText_log(`行ける道: ${can.join(" ")}`);
     }
 
     roaF.mapPDraw();

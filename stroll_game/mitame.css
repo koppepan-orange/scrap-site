@@ -152,34 +152,36 @@ img{
     overflow: hidden;
     box-sizing: border-box;
     z-index: 10;
-}
-#log.tog{
-    right: 0px;
-}
-#log .opener{
-    width: 30px;
-    height: 100%;
-    background: #000000ef;
-    position: absolute;
-    top: 0;
-    left: 0;
-    text-align: center;
-    box-sizing: border-box;
-    cursor: pointer;
-}
-#log .main{
-    width: calc(100% - 30px);
-    height: 100%;
-    max-height: 100%;
-    overflow-x: hidden;
-    overflow-y: scroll;
-    background: #000000de;
-    position: absolute;
-    top: 0;
-    left: 29px;
-    text-align: left;
-    font-size: 14px;
-    box-sizing: border-box;
+
+    &.tog{
+        right: 0;
+    }
+    
+    & .opener{
+        width: 30px;
+        height: 100%;
+        background: #000000ef;
+        position: absolute;
+        top: 0;
+        left: 0;
+        text-align: center;
+        box-sizing: border-box;
+        cursor: pointer;
+    }
+    & .main{
+        width: calc(100% - 30px);
+        height: 100%;
+        max-height: 100%;
+        overflow-x: hidden;
+        overflow-y: scroll;
+        background: #000000de;
+        position: absolute;
+        top: 0;
+        left: 29px;
+        text-align: left;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
 }
 @keyframes fadeIn {
     0%{
@@ -845,7 +847,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 #road .liver{
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(20, 1fr);
     align-content: space-between;
     justify-items: center;
     gap: 1px;
@@ -865,10 +867,10 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
             background: #b2b2b2;
         }
         &.mas.m2{
-            background: #c2c2c2;
+            background: #9dc7e6;
         }
         &.mas.m3{
-            background: #e8ffef;
+            background: #c8c8c8;
         }
         
         & .walker{
