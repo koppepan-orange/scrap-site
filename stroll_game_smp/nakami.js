@@ -212,6 +212,7 @@ roaF.start = async() => {
     roaF.mapMake();
     
     mainF.move("road");
+    roaF.mapUpdate();
     logText_log('Lets Go!');
 }
 
