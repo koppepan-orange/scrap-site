@@ -1,6 +1,3 @@
-
-
-
 // #region main
 let mainD = document.getElementById('main');
 let mainC = {
