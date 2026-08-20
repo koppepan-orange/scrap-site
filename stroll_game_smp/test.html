@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple Dungeon Generator</title>
+  <style>
+    body { background: #111; color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; }
+    #liver{
+        display: grid;
+        grid-template-columns: repeat(6, 60px);
+        gap: 5px;
+        background: #4b4b4b;
+
+        & .cell{
+            width: 60px;
+            aspect-ratio: 1/1;
+            background: #2b2b2b;
+        }
+    }
+    .start { background: #2b82c9; }
+    .normal { background: #444; }
+    .shop { background: #d4ac0d; }
+    .boss { background: #c0392b; }
+    button { margin-top: 20px; padding: 10px 20px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="grid"></div>
+  <button onclick="generateDungeon()">ダンジョン再生成</button>
+
+  <script>
+    const row = 6;
+    const heya = 20;
+
+    function generateDungeon() {
+      const container = document.getElementById('grid');
+      container.innerHTML = '';
+
+      // 6x6の空マップ作成
+      let map = Array.from({ length: row }, () => Array(row).fill(null));
+      
+      // 1. スタート位置（中央付近）
+      let x = 2, y = 2;
+      map[y][x] = { type: 'start', dist: 0 };
+      let roomList = [{x, y}];
+
+      // 2. ランダムウォークでノーマル部屋を配置
+      const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+      while (roomList.length < heya) {
+        let current = roomList[Math.floor(Math.random() * roomList.length)];
+        let dir = dirs[Math.floor(Math.random() * dirs.length)];
+        let nx = current.x + dir[0];
+        let ny = current.y + dir[1];
+
+        if (nx >= 0 && nx < row && ny >= 0 && ny < row && !map[ny][nx]) {
+          let dist = map[current.y][current.x].dist + 1;
+          map[ny][nx] = { type: 'normal', dist: dist };
+          roomList.push({x: nx, y: ny});
+        }
+      }
+
+      // 3. 最も遠い部屋をボス部屋にする
+      let maxDistRoom = roomList.reduce((max, r) => map[r.y][r.x].dist > map[max.y][max.x].dist ? r : max, roomList[0]);
+      map[maxDistRoom.y][maxDistRoom.x].type = 'boss';
+
+      // 4. 行き止まり（隣接1つの部屋）からショップを選ぶ
+      let deadEnds = roomList.filter(r => {
+        if (map[r.y][r.x].type !== 'normal') return false;
+        let neighbors = dirs.filter(d => {
+          let nx = r.x + d[0], ny = r.y + d[d[1]];
+          return nx >= 0 && nx < row && ny >= 0 && ny < row && map[ny] && map[ny][nx];
+        }).length;
+        return neighbors === 1;
+      });
+      if (deadEnds.length > 0) {
+        let shop = deadEnds[Math.floor(Math.random() * deadEnds.length)];
+        map[shop.y][shop.x].type = 'shop';
+      }
+
+      // 描画
+    for (let r = 0; r < row; r++) {
+        for (let c = 0; c < row; c++) {
+            const div = document.createElement('div');
+            div.className = 'cell';
+            if(map[r][c]){
+                div.classList.add(map[r][c].type);
+                div.textContent = map[r][c].type.toUpperCase();
+            }
+            container.appendChild(div);
+        }
+    }
+    }
+
+    generateDungeon();
+  </script>
+</body>
+</html>
