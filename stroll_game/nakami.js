@@ -133,7 +133,110 @@ rimiF.cupF = () => {
 rimiC.cupD.addEventListener('click', rimiF.cupF);
 // #endregion
 
+// #region phone
+let phoD = document.getElementById("phone");
+let phoC = {
+    APPs:{
+        map: phoD.querySelector(".app.map"),
+        amonds: phoD.querySelector(".app.amonds"),
+    },
+    apps:[
+        {name:"map", jpnm:"マップ"},
+        {name:"error", jpnm:"error"},
+        {name:"amonds", jpnm:"Amonds!"},
+        {name:"error", jpnm:"error"},
+        {name:"error", jpnm:"error"},
+    ],
+    Ds:{
+        apps: phoD.querySelector(".apps"),
+    },
+
+    tog:0,
+    now:0,
+}
+let phoF = {};
+phoF.tog = () => {
+    phoC.tog = fl(phoC.tog);
+    phoD.classList.toggle("tog");
+}
+phoD.addEventListener("click", (e) => {
+    let rect = phoD.getBoundingClientRect();
+    let clickY = e.clientY - rect.top;
+
+    if(0 <= clickY && clickY <= 40){
+        phoF.tog();
+    }
+    
+    if(rect.height - 40 <= clickY && clickY <= rect.height){
+        phoF.home(); // ホームボタンって感じ
+    }
+});
+
+phoF.load = () => {
+    for(let ap of phoC.apps){
+        let div = document.createElement("div");
+        div.className = `ap ${ap.name}`;
+
+        let img = images["apps"][ap.name].cloneNode();
+         div.appendChild(img);
+
+        let label = document.createElement("div");
+         label.className = "label";
+         label.textContent = ap.jpnm;
+         div.appendChild(label);
+        
+        if(ap.name != "error"){
+            div.addEventListener("click", () => {
+                phoF.activate(ap.name);
+            });
+        }
+
+        phoC.Ds["apps"].appendChild(div);
+        
+    }
+}
+phoF.activate = (name) => {
+    console.log(`[app] ${name} を起動した4`);
+    
+    for(let ap of phoC.apps.filter(a => a.name != "error")) console.log(ap.name), phoC.APPs[ap.name].classList.remove("carryout");
+    phoC.APPs[name].classList.add("carryout");
+    phoC.now = name;
+    
+    switch(name){
+        case "map":
+            
+    }
+}
+phoF.home = () => {
+    let name = phoC.now;
+    phoC.APPs[name].classList.remove("carryout");
+}
+
+phoC.mapD = phoD.querySelector(".app.map");
+phoC.mapC = {
+    Ds:{
+        liver: phoC.mapD.querySelector(".liver"),
+
+    }
+}
+phoC.mapF = {
+
+}
+
+// #endregion
+
 let playername = 'player';
+
+function findGeneric(list, type, name, extraCheck = null) {
+    let data;
+    if(extraCheck) data = extraCheck(list, name);
+     else data = list.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    
+    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
+    return 0;
+}
+const findGomis = (name) => findGeneric(Gomis, "Gomis", name);
 
 // #region home
 let homD = document.getElementById("home");
@@ -189,7 +292,7 @@ homC.Ds["go"].addEventListener("click", homF.goF)
 let roaD = document.getElementById("road");
 let roaC = {
     Ds:{
-        liver: roaD.querySelector(".liver"),
+        log: roaD.querySelector(".log"),
 
         bU: roaD.querySelector(".bts .bt.u"),
         bL: roaD.querySelector(".bts .bt.l"),
@@ -234,14 +337,21 @@ roaF.start = async() => {
     
     mainF.move("road");
     roaF.mapUpdate();
-    logText_log('Lets Go!');
+    roaF.log('Lets Go!');
 
 
     roaF.mapPDraw(); //仮
 }
 
+roaF.log = (text) => {
+    let div = document.createElement("div");
+    div.innerText = text;
+    roaC.Ds["log"].appendChild(div);
+}
+
+ // #region map
 roaF.mapResize = () => {
-    let div0 = roaC.Ds["liver"];
+    let div0 = phoC.mapC.Ds["liver"];
     let div = div0.querySelector(".cell");
     if(!div) return 0;
 
@@ -396,7 +506,7 @@ roaF.mapMake = () => {
 roaF.mapUpdate = () => {
     let row = roaC.row;
     let map = roaC.map;
-    let div0 = roaC.Ds["liver"];
+    let div0 = phoC.mapC.Ds["liver"];
     div0.innerHTML = "";
     for(let y = 0; y < row; y++){
         for(let x = 0; x < row; x++){
@@ -415,7 +525,7 @@ roaF.mapPDraw = () => {
     let img = roaC.imgN;
     let dir = roaC.dir;
 
-    let div0 = roaC.Ds["liver"];
+    let div0 = phoC.mapC.Ds["liver"];
     let img0 = div0.querySelector(".walker");
      if(img0) img0.remove();
 
@@ -427,6 +537,7 @@ roaF.mapPDraw = () => {
          cell.appendChild(img);
     }
 }
+ // #endregion 
 
 
 // roaF.zensen = (ret = 0) => {
@@ -507,6 +618,54 @@ roaF.turnRL = (code = "r") => {
 roaC.Ds["bR"].addEventListener("click", () => roaF.turnRL("r"));
 roaC.Ds["bL"].addEventListener("click", () => roaF.turnRL("l"));
 
+document.addEventListener("keydown", e => {
+    let key = e.key.toLowerCase();
+    if(key == " ") key = "space";
+
+    let btn = null;
+    if(key == "w" || key == "arrowup") btn = roaC.Ds["bU"];
+    if(key == "d" || key == "arrowright") btn = roaC.Ds["bR"];
+    if(key == "a" || key == "arrowleft") btn = roaC.Ds["bL"];
+
+    if(btn) btn.classList.add("active");
+});
+document.addEventListener("keyup", e => {
+    let key = e.key.toLowerCase();
+    if(key == " ") key = "space";
+
+    let btn = null;
+    if(key == "w" || key == "arrowup") btn = roaC.Ds["bU"];
+    if(key == "d" || key == "arrowright") btn = roaC.Ds["bR"];
+    if(key == "a" || key == "arrowleft") btn = roaC.Ds["bL"];
+
+    if(btn) {
+        btn.classList.remove("active");
+        btn.click();
+    }
+});
+
+
+roaF.ochi53 = async(gomi, skip = 0, props = []) => {
+    jump:{
+        if(skip) break jump;
+        
+        roaF.log(`あ、${gomi.type}が落ちている！`);
+    }
+    
+    let tack = new TakushiSen(["拾う", "見捨てる"], "tate", {back:"#fcd8ff", backed:"#440a49"})
+    let sen = await tack.select(mainD);
+    console.log(sen);
+
+    if(sen == "拾う") roaF.pickup(gomi, props);
+    if(sen == "見捨てる") roaF.misute(gomi, props);
+}
+roaF.pickup = async(gomi, props) => {
+    roaF.log(`あ、${gomi.type}が落ちている！`);
+    
+}
+roaF.misute = async(gomi, props) => {
+    
+}
 
 
 // #endregion
@@ -570,7 +729,7 @@ async function LetsStroll(){
     hour = 14; min = 0; tekiou();;
     vendingnum = [];
     for(i = 0; i < 8; i++){vendingnum.push((Math.floor(Math.random()*6)+1)+(6*i));};
-    logText_log('Lets Go!');
+    roaF.log('Lets Go!');
     await delay(1000);
     document.getElementById('scene').innerHTML = gostraightmove;
     yourturn();
@@ -588,7 +747,7 @@ function yourturn(){
         document.getElementById('Select2').textContent = '';
         phase = 3;
     };
-    logText_log('さあ、どうしようか？');
+    roaF.log('さあ、どうしようか？');
 }
 async function select1(){
     disappear();
@@ -598,23 +757,23 @@ async function select1(){
         min += 5;
         if(have < 4 && Math.floor(Math.random()*4) == 0){
             min -= 5;
-            logText_log('るんるる〜ん♪');
+            roaF.log('るんるる〜ん♪');
             await delay(500);
         }//3個以下ならたまにスキップする
         else if(6 > have > 3 && Math.floor(Math.random()*5)  == 0){
-            logText_log('すこしゴミを落としてしまった！');
+            roaF.log('すこしゴミを落としてしまった！');
             await delay(500);
             min += 5;
             tekiou();;
-            logText_log('全て拾い終えた!');
+            roaF.log('全て拾い終えた!');
             await delay(500);
         }//4個以上ならたまに時間ロス
         else if(have > 6 && Math.floor(Math.random()*2)  == 0){
-            logText_log('すこしゴミを落としてしまった！');
+            roaF.log('すこしゴミを落としてしまった！');
             await delay(500);
             min += 5;
             tekiou();;
-            logText_log('全て拾い終えた!');
+            roaF.log('全て拾い終えた!');
             await delay(500);
         }//4個以上ならすごい時間ロス
         tekiou();;
@@ -622,23 +781,23 @@ async function select1(){
         if(Math.floor(Math.random()*2) == 0){
             x = Math.floor(Math.random()*6);
             if(x == 6){y = '瓶'}else if(x == 5){y = '空き缶'}else{y = 'ペットボトル'};
-            logText_log(y + 'を発見した！');//缶、瓶とか増やして難易度上げてもいいかも
+            roaF.log(y + 'を発見した！');//缶、瓶とか増やして難易度上げてもいいかも
             document.getElementById('Select1').textContent = 'Pick Up';
             document.getElementById('Select2').textContent = 'Leave It';
             phase = 2;
         } else {
-            logText_log('何も見つからなかった..');
+            roaF.log('何も見つからなかった..');
             window.setTimeout(vending,500)
         }
     } else if(phase == 2){
         phase = 0;
         if(have < 10){
             have += 1;
-            logText_log(playername + 'は'+ y +'を拾った！');
+            roaF.log(playername + 'は'+ y +'を拾った！');
             tekiou();
             window.setTimeout(vending,500);
         }else{
-            logText_log('もう持てない...!!');
+            roaF.log('もう持てない...!!');
             phase = 2;
             document.getElementById('Select1').textContent = 'Pick Up';
             document.getElementById('Select2').textContent = 'Leave It';
@@ -650,18 +809,18 @@ async function select1(){
         if(traveled > 0){
             tekiou(); tekiou();;
             if(Math.floor(Math.random()*4) == 0){
-            logText_log('なんとペットボトルを発見した！');
+            roaF.log('なんとペットボトルを発見した！');
             document.getElementById('Select1').textContent = 'Pick Up';
             document.getElementById('Select2').textContent = 'Leave It';
             phase = 2;
             } else {
-                logText_log('進んだ...');
+                roaF.log('進んだ...');
                 window.setTimeout(vending,100);
             }
         } else if(traveled == 0){
             tekiou(); strollnow = 0;
             tekiou();;
-            logText_log(`${playername}は家に帰りました!`);
+            roaF.log(`${playername}は家に帰りました!`);
             await delay(1500);
             document.getElementById('scene').innerHTML = '<span id="PointScore"></span><br><span id="MovedScore"></span><br><span id="TimeScore"></span><br><br><button class="button" onclick="BackToLoby()">Back to loby</button>'
             document.getElementById('PointScore').textContent = 'ポイント:' + ptkari + 'pt';
@@ -670,7 +829,7 @@ async function select1(){
             else if(min == 5) x = '05'
             else x = min;
             document.getElementById('TimeScore').textContent = '帰宅時間:' + hour + ':' + x;
-            logText_log('これが今回のスコア!');
+            roaF.log('これが今回のスコア!');
             pt += ptkari; ptkari = 0;
         }
     }
@@ -679,11 +838,11 @@ async function select1(){
 
         if(have < 10){
             have += 1;
-            logText_log(`${playername}はペットボトルを拾った！`);
+            roaF.log(`${playername}はペットボトルを拾った！`);
             tekiou();
             window.setTimeout(vending,500);
         }
-        else logText_log('もう持てない...!!');
+        else roaF.log('もう持てない...!!');
     }
 }
 function select2(){
@@ -692,18 +851,18 @@ function select2(){
         phase = 0;
         gohomenow = 1;
         traveledmax = traveled;
-        logText_log('さあ、家に帰ろう！');
+        roaF.log('さあ、家に帰ろう！');
         window.setTimeout(yourturn,500)
     } else if(phase == 2){
         phase = 0;
-        logText_log('見捨てることにした！');
+        roaF.log('見捨てることにした！');
         window.setTimeout(vending,1000);
     } else if(phase == 3){
         phase = 0;
         yourturn();
     } else if(phase == 4){
         phase = 0;
-        logText_log('見捨てることにした！');
+        roaF.log('見捨てることにした！');
         window.setTimeout(vending,1000);
     }   
 }
@@ -711,16 +870,16 @@ async function vending(){
     phase = 0;
     disappear();
     if(vendingnum.includes(traveled)){
-        logText_log('自動販売機を発見した！');
+        roaF.log('自動販売機を発見した！');
     if(have > 0){
         await delay(500);
-        logText_log(`${playername}はすべてのペットボトルを捨て、`);
+        roaF.log(`${playername}はすべてのペットボトルを捨て、`);
         x = ptkari
         ptkari += have;
         y = ptkari - x
         have = 0;
         await delay(500);
-        logText_log(`${y}ptを得た!`);
+        roaF.log(`${y}ptを得た!`);
         tekiou();
     }
     await delay(750);
@@ -741,6 +900,7 @@ function start(){
     OBS.load();
 
     mainF.load();
+    phoF.load();
     homF.load();
 
     logF.tog();

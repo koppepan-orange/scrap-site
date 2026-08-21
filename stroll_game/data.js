@@ -2,6 +2,11 @@ let Style = {
     iPhone:{ //16
         "width": "393px",
     },
+    kPhone:{
+        "bc-hontai": "#000000",
+        "bc-jouge": "#1f1f1f",
+        "waku": "#381204",
+    },
     tekiou: function(){
         for(let section in this){
             if(section == 'tekiou') continue;
@@ -20,6 +25,7 @@ const Fonts = [
 
 const Images = {
     systems:['error'],
+    apps:["map", "amonds", "error"]
 }
 
 const Sounds = {
@@ -109,3 +115,139 @@ const Spaces = [
 ];
 
 
+const Gomis = [
+    {
+        name:"pet_bottle",
+        jpnm:"ペットボトル",
+        egs:["綾鷹", "綾鷹", "損茶", "ブルー ダ・KE・DO", "おい！おいって！お茶", "Que", "アクアリオ", "海の汗"],
+        desc:"プラスチック製。燃やすと",
+        flav:"ポリエチレンテレフタレートで作られているボトル。ちなみにポリエチレンテレフタレートはポリエステルという衣服の素材になったりする。ポリエチレンテレフタレートはPETとも略される。"
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    }
+]
+const Events = [
+    {
+        name:"find_inryo",
+        jpnm:"飲み物のごみを発見",
+        c:"zensen", //発火条件
+        p:0, //条件 - P(x)
+        h:75, //hit
+        func:async()=>{
+            let gacha = [
+                ["ペットボトル", "缶", "瓶"], //いつかここに"紙パック"も追加しようね
+                [47, 44, 9]
+            ];
+            let type = arrayGacha(...gacha);
+            let data = findGomis(type);
+             let name = arraySelect(data.egs);
+
+            let gomi = {
+                type,
+                mayshow: name, //名称
+            }
+
+            roaF.ochi53(gomi);
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+            
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+            
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+            
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+            
+        }
+    },
+    {
+        name:"",
+        jpnm:"",
+        c:,
+        p:,
+        h:,
+        func:async()=>{
+            
+        }
+    }
+]
