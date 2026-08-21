@@ -21,6 +21,7 @@ const Fonts = [
     {src:'comicsans', type:'ttf'},
     {src:'papyrus', type:'ttf'},
     {src:'cube12', type:'ttf'},
+    {src:"cinecaption226", type:"ttf"},
 ];
 
 const Images = {
@@ -120,22 +121,22 @@ const Gomis = [
         name:"pet_bottle",
         jpnm:"ペットボトル",
         egs:["綾鷹", "綾鷹", "損茶", "ブルー ダ・KE・DO", "おい！おいって！お茶", "Que", "アクアリオ", "海の汗"],
-        desc:"プラスチック製。燃やすと",
+        desc:"プラスチック製。",
         flav:"ポリエチレンテレフタレートで作られているボトル。ちなみにポリエチレンテレフタレートはポリエステルという衣服の素材になったりする。ポリエチレンテレフタレートはPETとも略される。"
     },
     {
-        name:"",
-        jpnm:"",
-        egs:[],
-        desc:"",
-        flav:"",
+        name:"can",
+        jpnm:"缶",
+        egs:["コーンポタージュ", "ココア！！", "ナタデココ入り炭酸のアレ"], //ん急に真面目っ（唐突なアドレナリンの供給停止。づがれ″だぁぁ（これはシャドバのなんか、人））
+        desc:"アルミ製のとスチール製のがある。スチール製は売ればお小遣いが貰える",
+        flav:"「まさか英語もcanとは思わんかったよね。びっくりびっくりよ」\n「それ繰り返すタイプのオノマトペちゃうで」", //これはぼくわた
     },
     {
-        name:"",
-        jpnm:"",
-        egs:[],
-        desc:"",
-        flav:"",
+        name:"bin", //違う
+        jpnm:"瓶",
+        egs:["賞金首", "源三"], 
+        desc:"普通には捨てられない曲者。バッグから使用すると、粉砕して楽しむことができる。",
+        flav:"幸せな時に発する言葉の最初。え？ちがうって？", //キヨのネコトモ実況のソレ。源三が何度も言っていた記憶
     },
     {
         name:"",
@@ -166,13 +167,87 @@ const Gomis = [
         flav:"",
     }
 ]
-const Events = [
+const WalkEvents = [
+    {
+        name:"becauseof_tree", //木のせい
+        jpnm:"なんか腕に虫がいる気がする",
+        c:"proceed",
+        p:"状態,過負荷/所持,1,より下",
+        h:7,
+        func:async()=>{
+            if(roaC.wait) return 0;
+            roaC.wait = 1;
+
+            roaF.log("わっ！なんか、、なんかぞわっとした！！");
+            roaF.log("腕かな");
+            await delay(2000);
+            roaF.log("いないわ");
+            roaF.log("じゃあ...あ、首！首っぽい！");
+            await delay(2400)
+            roaF.log("いないわ");
+            roaF.log("...気のせいか");
+
+            roaC.wait = 0;
+
+            // 激キモイベントやなぁ、、、笑
+        }
+    },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
     {
         name:"find_inryo",
         jpnm:"飲み物のごみを発見",
-        c:"zensen", //発火条件
+        c:"proceed", //発火条件
         p:0, //条件 - P(x)
-        h:75, //hit
+        h:66, //hit
         func:async()=>{
             let gacha = [
                 ["ペットボトル", "缶", "瓶"], //いつかここに"紙パック"も追加しようね
@@ -185,69 +260,11 @@ const Events = [
             let gomi = {
                 type,
                 mayshow: name, //名称
+                data
             }
 
-            roaF.ochi53(gomi);
+            await roaF.ochi53(gomi);
         }
     },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-
-        }
-    },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-            
-        }
-    },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-            
-        }
-    },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-            
-        }
-    },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-            
-        }
-    },
-    {
-        name:"",
-        jpnm:"",
-        c:,
-        p:,
-        h:,
-        func:async()=>{
-            
-        }
-    }
 ]
+

@@ -1019,6 +1019,8 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
      border-top: none;
      border-bottom: none;
     color: #2b2b2b;
+    font-size: 12px;
+    font-family: cinecaption226;
     /* #f1fff0 */
 }
 #road .bts{

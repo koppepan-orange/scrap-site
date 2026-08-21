@@ -299,6 +299,8 @@ let roaC = {
         bR: roaD.querySelector(".bts .bt.r"),
     },
     ing: 0,
+    
+    wait:0,
 
     moves:[[0, -1], [1, 0], [0, 1], [-1, 0]],
     row: 20,
@@ -309,6 +311,7 @@ let roaC = {
     // 以下reset要素
     x: 0, 
     y: 0, 
+    has: [],
     have: 0, //缶を持ってる量
     trus: 0, //缶を捨てた量
     dir: 0, //向き。上右下左-0123
@@ -347,6 +350,11 @@ roaF.log = (text) => {
     let div = document.createElement("div");
     div.innerText = text;
     roaC.Ds["log"].appendChild(div);
+}
+
+roaF.tekiou = () => {
+    let has = roaC.has;
+    roaC.have = has.length;
 }
 
  // #region map
@@ -540,7 +548,49 @@ roaF.mapPDraw = () => {
  // #endregion 
 
 
-// roaF.zensen = (ret = 0) => {
+roaF.happen = async(act) => {
+    let bun = (oo) => oo.split(",");
+    let arr0 = WalkEvents.filter(a => a.c == act);
+    let arr = copy(arr0);
+    console.log(arr)
+    arr.filter(a => {
+        // console.log(a)
+         if(typeof a.p != "string") a.p = a.p.toString();
+        let li = a.p.split("/");
+        console.log(li)
+        let res = li.every(l => {
+            console.log(l)
+            if(!l) return console.error(li);
+            if(l == 0) return 1;
+            if(l.startsWith("所持")){
+                let [, n, dir] = bun(l);
+                if(dir == "より上" && n < roaC.have) return 1;
+                if(dir == "より下" && roaC.have < n) return 1;
+            }
+            
+        });
+        return res;
+    });
+    
+    let num = arrayGacha(
+        [1, 2, 3],
+        [79, 18, 3]//ブルアカと同じ
+    );
+    for(let i=0; i<num; i++){
+        // for(let ev of arr){
+        for(let i2=0; i2<arr.length; i2++){
+            let ev = arr[i2];
+            if(!hit(ev.h)){continue}; //だからEvents自身の順番が大事なんですね〜
+            console.log(ev.jpnm);
+            let res = await ev.func();
+            if(res) return 1;
+
+            arr.splice(i2, 1); //終わったら捨てる
+        }
+    }
+}
+
+// roaF.proceed = (ret = 0) => {
 //     if(!roaC.ing) return 0;
     
 //     let dir = roaC.dir;
@@ -560,8 +610,9 @@ roaF.mapPDraw = () => {
 
 //     roaF.mapPDraw();
 // }
-roaF.zensen = (ret = 0) => {
+roaF.proceed = async(ret = 0) => {
     if(!roaC.ing) return 0;
+    if(roaC.wait) return 0;
 
     let dir = roaC.dir;
     let moves = roaC.moves; //[[0, 1], [1, 0], [0, -1], [-1, 0]]
@@ -587,17 +638,20 @@ roaF.zensen = (ret = 0) => {
             }
         }
 
-        logText_log(`行ける道: ${can.join(" ")}`);
+        return logText_log(`行ける道: ${can.join(" ")}`);
     }
 
     roaF.mapPDraw();
+
+    await roaF.happen("proceed");
 }
-roaC.Ds["bU"].addEventListener("click", roaF.zensen);
-roaF.turnRL = (code = "r") => {
+roaC.Ds["bU"].addEventListener("click", roaF.proceed);
+roaF.turnRL = async(code = "r") => {
     //codeが数字なら: 既定の方角へ
     //codeがrまたはl: dir += 1か -= 1
 
     if(!roaC.ing) return 0;
+    if(roaC.wait) return 0;
     
     let dir = roaC.dir;
     if(typeof code == "number") dir = code;
@@ -660,8 +714,9 @@ roaF.ochi53 = async(gomi, skip = 0, props = []) => {
     if(sen == "見捨てる") roaF.misute(gomi, props);
 }
 roaF.pickup = async(gomi, props) => {
-    roaF.log(`あ、${gomi.type}が落ちている！`);
-    
+    roaF.log(`${gomi.mayshow}の${gomi.type}を拾った`);
+    roaC.has.push(gomi);
+    roaF.tekiou();
 }
 roaF.misute = async(gomi, props) => {
     
