@@ -6,8 +6,8 @@
     khtml- : Konqueror(考えなくてヨシ)
     o- : 古いOpera(考えなくてヨシ)
     ただし、-webkit-は**Safari以外**ではプレフィックスなしで使用可能なプロパティも多い。
-    例外的に、user-selectは全てのブラウザでプレフィックスが必要。
-    さらに例外的に、touch-calloutはSafariでしか使用できない。
+    例外的に、user-selectは全てのブラウザでプレフィックスが必要
+    さらに例外的に、touch-calloutはSafariでしか使用できない
 */
 html{
     margin: -8px;
@@ -712,6 +712,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     align-items: center;
     width: 100%;
     height: 100%;
+    padding: 40px 0;
     position: absolute;
     top: 0;
     left: 50%;
@@ -727,32 +728,85 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
-    width: 70px;
+    width: 40px;
     aspect-ratio: 1/1;
     object-fit: contain;
     background-image: url(assets/images/systems/home.png);
-    transform-origin: top left;
     background-size: contain;
     background-position: center;
     position: absolute;
     top: 5px;
     left: 5px;
     transition: scale 0.05s;
+    transform-origin: top left;
     cursor: pointer;
     z-index: 255;
     box-sizing: border-box;
 
     &:active{
-        scale: 2.00;
-        transition: scale 2.75s linear;
+        scale: 3.00;
+        transition: scale 0.85s linear;
     }
+
+    &.shop{background-image: url(assets/images/systems/door_blue.png)}
+    &.door{background-image: url(assets/images/systems/door_brow.png)}
+}
+
+
+#rimi{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    opacity: 1.0;
+    width: fit-content;
+    height: 33px;
+    padding: 5px;
+    border-radius: 5px;
+    background: #ffe9bac0;
+    border: 3px solid #8f6610;
+    position: absolute;
+    top: 7px;
+    right: 7px;
+    transition: opacity 0.5s ease-in-out;
+    font-size: 19px;
+    line-height: 19px;
+    box-sizing: border-box;
+    z-index: 255;
+}
+#rimi:hover{
+    opacity: 0.2;
+}
+#rimi .num{
+    display: inline-block;
+}
+
+#cup{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    aspect-ratio: 1/1;
+    position: absolute;
+    right: 0;
+    bottom: 70px;
+    cursor: grab;
+    z-index: 3;
+}
+#cup:active{
+    scale: 0.95;
+}
+#cup img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
 }
 
 
 #home.space{
     content:"home";
     gap: 30px;
-    padding: 40px 0;
 }
 #home .unit{
     display: flex;
@@ -785,3 +839,463 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         color: #ffffff;
     }
 }
+
+
+
+/* #region door */
+#door.space{
+    content: "door 賭けエリア";
+}
+#door .area{
+    display: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+
+    &.show{
+        display: flex;
+    }
+}
+
+/* repeat 500 cliclick -e 500 w:500 c:1375,890 w:2000 c:1615,865 w:38500 */
+/* #region loby */
+#door .area.loby{
+    content:"loby";
+}
+#door .area.loby .paints{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: fit-content;
+    height: fit-content;
+     max-height: 600px;
+    box-sizing: border-box;
+
+    & .paint{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+        width: 80px;
+        height: fit-content;
+        padding: 20px 15px;
+        background: #ffefd9;
+        border: 2.5px solid #b2b2b2;
+        border-radius: 30px;
+        transition: scale 0.10s ease-in-out, background 0.02s;
+        &:active{
+            scale: 0.90;
+            background: #e0c093;
+        }
+
+        & img{
+            width: 90%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+        }
+    }
+}
+
+/* #endregion */
+
+/* #region cryoLion */
+/* #endregion */
+
+/* #region cave */
+#door .area.cave{
+    content: "cave。競馬だね 馬じゃないけど";
+    gap: 40px;
+}
+#door .area.cave .racers{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 3px;
+    width: 100%;
+    height: fit-content;
+    padding: 0;
+    box-sizing: border-box;
+}
+#door .area.cave .racers .racer{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: fit-content;;
+}
+#door .area.cave .racers .racer .road{
+    display: block;
+    width: 100%;
+    aspect-ratio: 1/1;
+    background-image: url("assets/images/systems/road.png");
+    background-size: contain;
+    background-position: center;
+    box-sizing: border-box;
+
+    & .at{
+        content: "@";
+        display: block;
+        width: 100%;
+        height: fit-content;
+        object-fit: contain;
+        font-size: 20px;
+        line-height: 100%;
+        font-family: genjuu;
+        box-sizing: border-box;
+    }
+}
+
+/* #endregion */
+
+/* #region jump */
+#door .area.jump{
+    content: "JumpUpするDiceのやつです これはギャンブルなのか？";
+    gap: 15px;
+    padding: 15px;
+}
+#door .area.jump .gaku{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 50px;
+    background: #ffe7c6;
+    border: 3px solid #2b2b2b;
+    box-sizing: border-box;
+
+    & .label, .aima{
+        font-family: hangyaku;
+        font-size: 25px;
+    }
+    & .num{
+        margin-left: 5px;
+        font-family: craft;
+        font-size: 22px;
+    }
+}
+#door .area.jump .output{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 75%;
+     max-height: 75%;
+    padding: 15px 5px;
+    background: #ffe7c6;
+    border: 3px solid #2b2b2b;
+    box-sizing: border-box;
+
+    & .len{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 95%;
+        height: fit-content;
+        padding: 5px 0;
+        border-bottom: 2px dashed #b2b2b2;
+
+        &.oo{
+            border-color: #34d366;
+        }
+        
+        & .dice{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            aspect-ratio: 1/1;
+            background: #f8f8f8;
+            border: 2px solid #2b2b2b;
+            font-size: 25px;
+            font-family: cube12;
+
+            &.kira{
+                background: #fffbbd;
+                border-color: #da8420;
+            }
+        }
+    }
+}
+#door .area.jump .bts{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    box-sizing: border-box;
+
+    & .bt{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 30px;
+        padding: 5px 10px;
+        background: #ffeacd;
+        border: 3px solid #2b2b2b;
+        font-family: craft;
+        font-size: 20px;
+
+        &:active{
+            scale: 0.90;
+        }
+    }
+}
+/* #endregion */
+
+/* #region forage */
+#door .area.forage{
+    content: "forage";
+}
+
+#door .forage .gamen{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    aspect-ratio: 4/3;
+    position: relative;
+}
+#door .forage .gamen .dimee{
+    display: none;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+}
+#door .forage .gamen .dimee img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+#door .forage .gamen.started .dimee.started{display: flex}
+#door .forage .gamen.hondie .dimee.hondie{display: flex}
+
+#door .forage .gamen::after{
+    /* 板 */
+    content:"";
+    display: block;
+    width: 100%;
+    height: 50px;
+    /* background: #b2b2b2; */
+    background: linear-gradient(to bottom, #b2b2b2, #727272);
+    clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    z-index: -1;
+}
+
+#door .forage .gamen .dimee.hondie{
+    content:"本題"
+}
+#door .forage .gamen .dimee.hondie .mushes{
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* background: #ff80ce9c; */
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+}
+#door .forage .gamen .dimee.hondie .mushes .mush{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* width: 4.6875%; */
+    aspect-ratio: 1 / 1;
+    image-rendering: pixelated;
+    position: absolute;
+}
+#door .forage .gamen .dimee.hondie .mushes .mush img{
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+#door .forage .dai{
+    content:"台";
+    display: block;
+    width: 60%;
+    height: 100vh; /*100%*/
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #727272;
+    z-index: -1;
+}
+#door .forage .dai .irel{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    aspect-ratio: 1/1;
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    z-index: 2;
+}
+#door .forage .dai .irel::after{
+    /* 丸 */
+    content: "";
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #b2b2b2;
+}
+#door .forage .dai .irel::before{
+    /* 竪穴 */
+    content: "";
+    height: 80%;
+    aspect-ratio: 1/8;
+    /* background: #2b2b2b; */
+    /* 内側にグラデーション。#2b2b2bから#000000 */
+    background: radial-gradient(circle at center, #000000, #4b4b4b);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+#door .forage .dai .irel img{
+    width: 60%;
+    aspect-ratio: 1/1;
+    object-fit: contain;
+    position: absolute;
+    top: 50%;
+    right: 110%;
+    transform: translateY(-50%);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 1;
+}
+#door .forage .dai .irel .auto{
+        display: flex;
+    align-items: center;
+    width: fit-content;
+    aspect-ratio: 6 / 3;
+    background: #ff8080;
+    border: 2px solid #b2b2b2;
+    position: absolute;
+    padding: 0 4px;
+    top: 50%;
+    left: 130%;
+    transform: translateY(-50%);
+    transition: scale 0.5s;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 18px;
+    opacity: 0.4;
+    z-index: 2;
+}
+#door .forage .dai .irel.activate .auto{
+    scale: 1.3;
+    opacity: 1.0;
+}
+
+#door .forage .dai .otsu{
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    width: 50px;
+    aspect-ratio: 1/1;
+    position: absolute;
+    top: 95px;
+    right: 40px;
+}
+#door .forage .dai .otsu img{
+    width: 100%;
+    height: 100%;
+    transform-origin: 20% center;
+    transition: transform 0.3s ease;
+    image-rendering: crisp-edges;
+    filter: none;
+    pointer-events: none;
+}
+#door .forage .dai .otsu:active img{
+    transform: rotate(10deg);
+}
+
+#door .forage .dai .disp{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    height: 20px;
+    aspect-ratio: 4/1;
+    padding-left: 2px;
+    border: 2px double #2b2b2b;
+    background: #404040;
+    position: absolute;
+    top: 70px;
+    left: 40px;
+    font-size: 18px;
+    line-height: 20px;
+    color: #de4848;
+    font-family: cube12;
+}
+#door .forage .dai .disp *{
+    display: inline-block;
+}
+
+#door .forage .dai .bottan{
+    content:"ボタン";
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 70px;
+    /* height: 50px; */
+    aspect-ratio: 1/1;
+    background: #ff3939;
+    border-radius: 50%;
+    position: absolute;
+    top: 160px;
+    left: 35px;
+    transition: background 0.10s;
+}
+#door .forage .dai .bottan:hover{background: #f24343}
+#door .forage .dai .bottan:active{background: #d03a3a}
+#door .forage .dai .bottan::after{
+    content: "";
+    display: block;
+    width: 110%;
+    aspect-ratio: 1/1;
+    background: #2b2b2b;
+    border-radius: 50%;
+    position: absolute;
+    z-index: -1;
+}
+
+#door .forage .getout{
+    display: block;
+    width: 80px;
+    height: fit-content;
+    position: absolute;
+    top: 170px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+#door .forage .getout img{
+    display: block;
+    width: 100%;
+    height: fit-content;
+    object-fit: contain;
+}
+/* #endregion */
+
+
+/* #endregion */

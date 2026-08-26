@@ -26,7 +26,7 @@ const Fonts = [
 
 const Images = {
     systems:['error'],
-    apps:["map", "amonds", "error"]
+    apps:["map", "amonds", "error","nero"]
 }
 
 const Sounds = {
@@ -266,5 +266,14 @@ const WalkEvents = [
             await roaF.ochi53(gomi);
         }
     },
+]
+const RoaBuffs = [
+    {
+        name:"overload",
+        jpnm:"過負荷",
+        desc:"疲れが溜まり始めた状態です。",
+        flav:"ぼんっ",
+        type:""
+    }
 ]
 

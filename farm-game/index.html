@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -32,6 +32,15 @@
     <div id="main">
         <!-- アージャ・アステリオン -->
 
+        <div id="rimi">
+            <div>Rimi:</div>
+            <div class="num">0</div>
+        </div>
+
+        <div id="cup">
+            <img src="assets/images/systems/cup.png"/>
+        </div>
+        
         <div id="home" class="space">
             <!-- 自室 -->
             <div class="unit uni1">
@@ -48,30 +57,101 @@
         </div>
 
         <div id="farm" class="space">
+            <div class="return" data-belong="farm"></div>
             <!-- 畑 -->
-            <div class="return"></div>
-            
 
         </div>
 
         <div id="cook" class="space">
+            <div class="return" data-belong="cook"></div>
             <!-- やあ！僕はキッキンチキン！ -->
 
         </div>
 
         <div id="shop" class="space">
+            <div class="return" data-belong="shop"></div>
             <!-- 売店 -->
         </div>
 
         <div id="door" class="space">
+            <div class="return" data-belong="door"></div>
             <!-- 謎のドア。これを通って階段を降りると謎カジノへ -->
 
+            <div class="area loby">
+                <!--ろびーです-->
+                <div class="paints"></div>
+            </div>
+
+            <div class="area cryo">
+                <!--Scuro e Nero Soldatoの縮小版です-->
+
+            </div>
+
+            <div class="area cave">
+                <!--競馬です 馬じゃないけど-->
+
+                <div class="bts">
+                    <div class="bt start">staRt</div>
+                </div>
+
+                <div class="racers"></div>
+            </div>
+
+            <div class="area jump">
+                <div class="gaku">
+                    <div class="label">合計</div>
+                    <div class="aima">:</div>
+                    <div class="num">0</div>
+                </div>
+
+                <div class="output"></div>
+                
+                <div class="bts">
+                    <div class="bt vai">費用: Ɍ0</div>
+                    <div class="bt start">Start</div>
+                </div>
+            </div>
+
+
+            <div class="area forage">
+                <div class="gamen started">
+                    <!-- 画面(液晶) -->
+
+                    <div class="dimee started">
+                        <img class="logo" src="assets/images/forages/foragener_logo.png" alt="DQ0">
+                    </div>
+
+                    <div class="dimee hondie">
+                        <img src="assets/images/forages/foragener_back.png" alt="back">
+
+                        <div class="mushes"></div>
+                    </div>
+
+                    <div class="dai">
+                        <!-- 台 -->
+                        <div class="irel">
+                            <img src="assets/images/forages/100yen.png"/>
+                            <div class="auto">Auto</div>
+                        </div>
+
+                        <div class="otsu">
+                            <img src="assets/images/forages/lever.png"/>
+                        </div>
+
+                        <div class="disp"></div>
+
+                        <div class="bottan"></div>
+
+                        <div class="getout">
+                            <img src="assets/images/forages/getout.png"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
     
-    <!-- <script src="data.js" defer></script> -->
-    <!-- <script src="nakami.js" defer></script> -->
 
     <script>
         (async() => {
@@ -86,8 +166,9 @@
                     document.head.appendChild(script);
                 });        
             }
-            await ZettaiTukawarenaiKannsuu(`data`);
-            await ZettaiTukawarenaiKannsuu(`nakami`);
+            await ZettaiTukawarenaiKannsuu("data");
+            await ZettaiTukawarenaiKannsuu("komagome");
+            await ZettaiTukawarenaiKannsuu("nakami");
         })();
     </script>
 </body>

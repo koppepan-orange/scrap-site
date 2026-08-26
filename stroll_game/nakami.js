@@ -146,6 +146,7 @@ let phoC = {
         {name:"amonds", jpnm:"Amonds!"},
         {name:"error", jpnm:"error"},
         {name:"error", jpnm:"error"},
+        {name:"nero", jpnm:"BJD(仮)"},
     ],
     Ds:{
         apps: phoD.querySelector(".apps"),
@@ -237,6 +238,7 @@ function findGeneric(list, type, name, extraCheck = null) {
     return 0;
 }
 const findGomis = (name) => findGeneric(Gomis, "Gomis", name);
+const findRoaBuffs = (name) => findGeneric(RoaBuffs, "RoaBuffs", name);
 
 // #region home
 let homD = document.getElementById("home");
@@ -315,6 +317,7 @@ let roaC = {
     have: 0, //缶を持ってる量
     trus: 0, //缶を捨てた量
     dir: 0, //向き。上右下左-0123
+    buffs: [],
 }
 let roaF = {}
 
@@ -552,7 +555,7 @@ roaF.happen = async(act) => {
     let bun = (oo) => oo.split(",");
     let arr0 = WalkEvents.filter(a => a.c == act);
     let arr = copy(arr0);
-    console.log(arr)
+    // console.log(arr)
     arr.filter(a => {
         // console.log(a)
          if(typeof a.p != "string") a.p = a.p.toString();
@@ -567,7 +570,12 @@ roaF.happen = async(act) => {
                 if(dir == "より上" && n < roaC.have) return 1;
                 if(dir == "より下" && roaC.have < n) return 1;
             }
-            
+            if(l.startsWith("状態")){
+                let [, name] = bun(l);
+                if(roaF.buffHas(name)) return 1;
+            }
+
+            return 0;
         });
         return res;
     });
@@ -720,6 +728,54 @@ roaF.pickup = async(gomi, props) => {
 }
 roaF.misute = async(gomi, props) => {
     
+}
+
+roaF.buffAdd = async(name, lv = 1, time = 1) => {
+    if(!name) return console.error(`[buff] ${name}`);
+
+    // 重複は許可しよう！！
+
+    let data = findRoaBuff(name);
+    let buff = {
+        name, 
+        jpnm: data.jpnm,
+        type: data.type ?? "foot",
+        time,
+        lv,
+        data
+    }
+
+    roaC.buffs.push(buff);
+
+    return buff;
+}
+roaF.buffDec = async(name, time = 1) => {
+    if(!name) return console.error(`[buff] ${name}`);
+    
+    let buff = roaF.buffHas(name);
+    buff.time -= time; //これ反映されてんのか？
+
+    if(buff.time <= 0) roaC.buffs = roaC.buffs.filter(b => b != buff); //just
+
+    return buff.time;
+}
+roaF.buffCle = async(name) => {
+    if(!name) return console.error(`[buff] ${name}`);
+    
+    if(name == "all") roaC.buffs = [];
+    else roaC.buffs = roaC.buffs.filter(a => a.name != name && a.jpnm != name);
+
+    return 0;
+}
+roaF.buffHas = (name, lv = 0) => {
+    if(!name) return console.error(`[buff] ${name}`);
+    
+    let buffs = roaC.buffs.filter(a => a.name == name || a.jpnm == name);
+    let buff;
+    if(lv) buff = buffs.find(a => a.lv == lv);
+     else buff = buffs[0];
+
+    return buff;
 }
 
 
