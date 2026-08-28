@@ -1764,7 +1764,7 @@ dooC.forF.mushPlace = () => {
     for(let i=0; i<10; i++){
         let div = document.createElement('div');
         div.className = 'mush';
-         let img = images.systems["mush"].cloneNode();
+         let img = images.forages["mush"].cloneNode();
          div.appendChild(img);
 
         
@@ -1802,7 +1802,7 @@ dooC.forF.mushPlace = () => {
             div.remove();
         });
 
-        let acessment = "assets/images/systems/"
+        let acessment = "assets/images/forages/"
         div.addEventListener("pointerenter", () => img.src = `${acessment}mush_high.png`);
         div.addEventListener("pointerleave", () => img.src = `${acessment}mush.png`);
 
@@ -1872,7 +1872,7 @@ dooC.forF.getout_set = (ryou) => {
 
     let img = dooC.forC.getoutID;
 
-    img.src = "assets/images/systems/getout_coin.png";
+    img.src = "assets/images/forages/getout_coin.png";
     dooC.forC.getout += ryou;
 }
 dooC.forF.getout_get = () => {
@@ -1883,7 +1883,7 @@ dooC.forF.getout_get = () => {
     console.log(`[getout] Ɍ${getout}を受け取りました`)
 
     let img = dooC.forC.getoutID;
-    img.src = "assets/images/systems/getout.png";
+    img.src = "assets/images/forages/getout.png";
     
     dooC.forC.getout = 0;
 }

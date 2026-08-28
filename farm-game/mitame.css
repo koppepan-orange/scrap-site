@@ -1298,6 +1298,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 /* #region forage */
 #door .area.forage{
     content: "forage";
+    pointer-events: none;
 }
 
 #door .forage .gamen{
@@ -1314,6 +1315,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     align-items: center;
     width: 100%;
     height: 100%;
+    pointer-events: all;
 }
 #door .forage .gamen .dimee img{
     width: 100%;
@@ -1376,7 +1378,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     left: 50%;
     transform: translateX(-50%);
     background: #727272;
+    pointer-events: none;
     z-index: -1;
+    
+    & *{
+        pointer-events: all;
+    }
 }
 #door .forage .dai .irel{
     display: flex;

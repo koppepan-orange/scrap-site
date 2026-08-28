@@ -27,7 +27,8 @@ const Fonts = [
 
 const Images = {
     systems:['error', "loby", "cryo", "cave", "jump", "forage"],
-    apps:["map", "amonds", "error","nero"]
+    apps:["map", "amonds", "error","nero"],
+    forages:["mush"]
 }
 
 const Sounds = {
@@ -174,6 +175,25 @@ const Foods = [
 ];
 
 const Recipes = [
+    {
+        name:"flour",
+        jpnm:"小麦粉",
+    },
+    {
+        name:"bread",
+        jpnm:"パン",
+        from:["flour"], // 必要な材料（ソートして判定）
+        act: "bake",          // 調理法
+        need:"oven"  // 必要なら調理器具など
+    },
+    {
+        name:"pancake",
+        jpnm:"パンケーキ",
+        from:["egg", "flour", "milk"], // 複数材料
+        act: "bake",
+    }
+];
+const pre_Recipes = [
     {
         name:"flour",
         madefrom:"wheat",
