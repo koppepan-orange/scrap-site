@@ -1000,6 +1000,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     }
 }
 
+/* #region road */
 #road{
     gap: 30px;
     font-family: comicsans;
@@ -1058,3 +1059,4 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         }
     }
 }
+/* #endregion */

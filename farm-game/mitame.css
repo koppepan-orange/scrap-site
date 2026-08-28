@@ -455,6 +455,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     top: 0;
     left: 0;
     box-sizing: border-box;
+    z-index: 255;
     pointer-events: none;
 }
 .mode.tate{
@@ -699,7 +700,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 #main{
     display: block;
     width: var(--iPhone-width);
-    height: 100%;
+    height: 95%;
     margin: 0 auto;
     position: relative;
     overflow: hidden;
@@ -752,6 +753,26 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     &.door{background-image: url(assets/images/systems/door_brow.png)}
 }
 
+#time{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90px;
+    height: fit-content;
+    padding: 5px 10px;
+    background: #2b2b2bbb;
+    border-radius: 10px;
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #efefef;
+    font-size: 23px;
+    font-family: cube12;
+    z-index: 20;
+}
+
+
 
 #rimi{
     display: flex;
@@ -803,6 +824,165 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     pointer-events: none;
 }
 
+/* #region phone */
+#phone{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 350px;
+    height: 600px;
+    padding: 40px 16px;
+    background: var(--kPhone-bc-hontai);
+    border-radius: 30px;
+    position: absolute;
+    bottom: -550px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: bottom 0.95s ease-in-out;
+    overflow: hidden;
+    box-sizing: border-box;
+    z-index: 21;
+
+    & .gz-waku{
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 8px solid var(--kPhone-waku);
+         border-radius: inherit;
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        pointer-events: none;
+        z-index: 3;
+    }
+    &::before{
+        /* 上部 */
+        content: "";
+        width: 100%;
+        height: 40px;
+        background: var(--kPhone-bc-jouge);
+         border-radius: inherit;
+        position: inherit;
+        top: 0;
+        left: 0;
+    }
+    &::after{
+        /* 上部 */
+        content: "";
+        width: 100%;
+        height: 40px;
+        background: var(--kPhone-bc-jouge);
+         border-radius: inherit;
+        position: inherit;
+        bottom: 0;
+        left: 0;
+    }
+
+    &.tog{
+        bottom: -6px;
+    }
+}
+#phone .apps{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px 10px;
+    width: 100%;
+    height: fit-content;
+    padding-top: 15px;
+    box-sizing: border-box;
+
+    & .ap{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;   
+        width: 100%;
+        height: 60px;
+        transition: filter 0.1s;
+        box-sizing: border-box;
+
+        & img{
+            width: 65%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+        }
+        &:active img{filter: brightness(0.5)}
+
+        & .label{
+            color: #fefefe;
+            font-size: 12px;
+        }
+        
+    }
+}
+#phone .app{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    transition: scale 0.3s;
+    box-sizing: border-box;
+    scale: 0;
+
+    &.carryout{
+        scale: 1;
+    }
+}
+#phone .app.map{
+    content: "マップアプリ。価格未定";
+    background: #2b2b2b;
+}
+#phone .app.map .liver{
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    align-content: space-between;
+    justify-items: center;
+    gap: 1px;
+    width: 80%;
+    aspect-ratio: 1/1;
+    padding: 3px;
+    background: #4b4b4b;
+    box-sizing: border-box;
+
+    & .cell{
+        width: 100%;
+        aspect-ratio: 1/1;
+        background: #2b2b2b;
+        position: relative;
+
+        &.mas.m1{
+            background: #b2b2b2;
+        }
+        &.mas.m2{
+            background: #9dc7e6;
+        }
+        &.mas.m3{
+            background: #c8c8c8;
+        }
+        
+        & .walker{
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            position: absolute;
+            inset: 0;
+
+            &.dir0{transform: rotate(0deg)}
+            &.dir1{transform: rotate(90deg)}
+            &.dir2{transform: rotate(180deg)}
+            &.dir3{transform: rotate(270deg)}
+        }
+    }
+}
+/* #endregion */
+
+
 
 #home.space{
     content:"home";
@@ -841,6 +1021,67 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 
 
+/* #region road */
+#road{
+    gap: 30px;
+    font-family: comicsans;
+}
+#road .log{
+    display: flex;  
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 2px;
+    width: 70%;
+    height: 150px;
+     max-height: 150px;
+    padding: 4px 2px;
+    background: #f6fff6;
+    border: 4px dotted #90c88b;
+     border-top: none;
+     border-bottom: none;
+    color: #2b2b2b;
+    font-size: 12px;
+    font-family: cinecaption226;
+    /* #f1fff0 */
+    overflow: scroll;
+}
+#road .bts{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 80%;
+
+    & .row{
+        justify-content: center;
+        gap: 20px;
+        width: 100%;
+    }
+
+    & .bt{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50px;
+        padding: 10px;  
+        background: #b2b2b2;
+        border: 3px solid #2b2b2b;
+        transition: scale 0.10s;
+
+        &.u{
+            width: 35%;
+        }
+        &.l, &.r{
+            width: 25%;
+        }
+
+        &:active, &.active{
+            scale: 0.90;
+        }
+    }
+}
+/* #endregion */
 
 /* #region door */
 #door.space{

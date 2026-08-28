@@ -2,6 +2,11 @@ const Style = {
     iPhone:{ //16
         "width": "393px",
     },
+    kPhone:{
+        "bc-hontai": "#000000",
+        "bc-jouge": "#1f1f1f",
+        "waku": "#381204",
+    },
     tekiou: function(){
         for(let section in this){
             if(section == 'tekiou') continue;
@@ -22,6 +27,7 @@ const Fonts = [
 
 const Images = {
     systems:['error', "loby", "cryo", "cave", "jump", "forage"],
+    apps:["map", "amonds", "error","nero"]
 }
 
 const Sounds = {
@@ -109,10 +115,12 @@ const Spaces = [
     { name:'home', rank:2, back:'#f0f8ff', sho:1 },
     { name:'farm', rank:2, back:'#fff8e2' },
     { name:'cook', rank:2, back:'#fff8e2' },
+    { name:'road', rank:2, back:'#dcffda' },
     { name:'shop', rank:2, back:'#daf9ff' },
     { name:'door', rank:2, back:'#ffe4be' },
 ];
 
+// #region farm-cool
 
 /*
 畑の様子を見にいく
@@ -209,8 +217,170 @@ const Recipes = [
         madeof:["choco_cream"]
     }
 ]
+// #endregion
 
+// #region road
+const Gomis = [
+    {
+        name:"pet_bottle",
+        jpnm:"ペットボトル",
+        egs:["綾鷹", "綾鷹", "損茶", "ブルー ダ・KE・DO", "おい！おいって！お茶", "Que", "アクアリオ", "海の汗"],
+        desc:"プラスチック製。",
+        flav:"ポリエチレンテレフタレートで作られているボトル。ちなみにポリエチレンテレフタレートはポリエステルという衣服の素材になったりする。ポリエチレンテレフタレートはPETとも略される。"
+    },
+    {
+        name:"can",
+        jpnm:"缶",
+        egs:["コーンポタージュ", "ココア！！", "ナタデココ入り炭酸のアレ"], //ん急に真面目っ（唐突なアドレナリンの供給停止。づがれ″だぁぁ（これはシャドバのなんか、人））
+        desc:"アルミ製のとスチール製のがある。スチール製は売ればお小遣いが貰える",
+        flav:"「まさか英語もcanとは思わんかったよね。びっくりびっくりよ」\n「それ繰り返すタイプのオノマトペちゃうで」", //これはぼくわた
+    },
+    {
+        name:"bin", //違う
+        jpnm:"瓶",
+        egs:["賞金首", "源三"], 
+        desc:"普通には捨てられない曲者。バッグから使用すると、粉砕して楽しむことができる。",
+        flav:"幸せな時に発する言葉の最初。え？ちがうって？", //キヨのネコトモ実況のソレ。源三が何度も言っていた記憶
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    },
+    {
+        name:"",
+        jpnm:"",
+        egs:[],
+        desc:"",
+        flav:"",
+    }
+]
+const WalkEvents = [
+    {
+        name:"becauseof_tree", //木のせい
+        jpnm:"なんか腕に虫がいる気がする",
+        c:"proceed",
+        p:"状態,過負荷/所持,1,より下",
+        h:7,
+        func:async()=>{
+            if(roaC.insectSearch) return 0;
+           roaC.insectSearch = 1;
+            roaF.log("わっ！なんか、、なんかぞわっとした！！");
+            roaF.log("腕かな");
+            await delay(2000);
+            roaF.log("いないわ");
+            roaF.log("じゃあ...あ、首！首っぽい！");
+            await delay(2400)
+            roaF.log("いないわ");
+            roaF.log("...気のせいか");
+           roaC.insectSearch = 0;
 
+            // 激キモイベントやなぁ、、、笑
+        }
+    },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    // {
+    //     name:"",
+    //     jpnm:"",
+    //     c:,
+    //     p:,
+    //     h:,
+    //     func:async()=>{
+            
+    //     }
+    // },
+    {
+        name:"find_inryo",
+        jpnm:"飲み物のごみを発見",
+        c:"proceed", //発火条件
+        p:0, //条件 - P(x)
+        h:66, //hit
+        func:async()=>{
+            let gacha = [
+                ["ペットボトル", "缶", "瓶"], //いつかここに"紙パック"も追加しようね
+                [47, 44, 9]
+            ];
+            let type = arrayGacha(...gacha);
+            let data = findGomis(type);
+             let name = arraySelect(data.egs);
+
+            let gomi = {
+                type,
+                mayshow: name, //名称
+                data
+            }
+
+            await roaF.ochi53(gomi);
+        }
+    },
+]
+const RoaBuffs = [
+    {
+        name:"overload",
+        jpnm:"過負荷",
+        desc:"疲れが溜まり始めた状態です。",
+        flav:"ぼんっ",
+        type:""
+    }
+]
+// #endregion
+
+// #region door
 const Racers = [
     /*
 
@@ -418,4 +588,5 @@ const Buffs = [
         efs:["効果無効,スタン"],
     }
 ]
+// #endregion
 
