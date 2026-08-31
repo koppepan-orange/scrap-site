@@ -862,6 +862,7 @@ let dooC = {
             D: dooD.querySelector(".area.cave")
         },
         {
+            no:1,
             name:"jump",
             jpnm:"JumpUpStars", //怒られろ
             D: dooD.querySelector(".area.jump")
@@ -879,7 +880,7 @@ dooF.came = () => {
     dooF.move("loby");
 }
 dooF.load = () => {
-    for(let are of dooC.areus){
+    for(let are of dooC.areus.filter(a => !a.no)){
         let name = are.name;
          if(name == "loby") continue;
         
