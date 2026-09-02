@@ -980,6 +980,67 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         }
     }
 }
+
+#phone .app.uwub{
+    content: "BJ。初期体力は♡3つで、尽きるとゲームオーバー......全体の色が変わって二ラウンド目。1敗ごとに3から1選択型でレリックを獲得。shop機能をつけてもいいかもしれない";
+    background: #c6c6c6;
+
+    & .area{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+
+        & .card{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80px;
+            aspect-ratio: 3/2;
+            background: #ffffff;
+            border: 2px solid #43269a;
+             border-radius: 5px;
+            position: relative;
+            color: #2b2b2b;
+            font-size: 26px;
+            font-family: hangyaku;
+
+            &.ura{
+                color: #43269a;
+                background-color: #43269a;
+            }
+        }
+
+        &.dealer{
+
+        }
+    }
+
+    & .bts{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        & .bt{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            width: 60px;
+            height: 75px;
+            &:active{
+                scale: 0.90;
+            }
+
+            &.bt0{background: #f980ff}
+            &.bt1{background: #94d8ff}
+            &.bt2{background: #ffce80}
+            &.bt3{background: #84ff80}
+        }
+    }
+}
 /* #endregion */
 
 

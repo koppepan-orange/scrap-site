@@ -133,6 +133,20 @@ rimiF.cupF = () => {
 rimiC.cupD.addEventListener('click', rimiF.cupF);
 // #endregion
 
+function findGeneric(list, type, name, extraCheck = null){
+    let data;
+    if(extraCheck) data = extraCheck(list, name);
+     else data = list.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    
+    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
+    return 0;
+}
+const findGomis = (name) => findGeneric(Gomis, "Gomis", name);
+const findRoaBuffs = (name) => findGeneric(RoaBuffs, "RoaBuffs", name);
+const findBuff = (name) => findGeneric(Buffs, "Buffs", name);
+const findRacer = (name) => findGeneric(Racers, "Racers", name);
+
 
 // #region phone
 let phoD = document.getElementById("phone");
@@ -160,9 +174,9 @@ phoC.apps = [
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
     {
-        name:"nero",
-        jpnm:"三石の民", //こっちは普通のBJ。BJDはDoorの方
-        D: phoD.querySelector(".app.nero")
+        name:"uwub",
+        jpnm:"暇つぶジャック", //こっちは普通のBJ。BJDはDoorの方
+        D: phoD.querySelector(".app.uwub")
     },
 ];
 
@@ -219,8 +233,8 @@ phoF.activate = (name) => {
     phoC.now = name;
     
     switch(name){
-        case "map":
-            
+        case "uwub":
+            phoC.uwubF.came();
     }
 }
 phoF.home = () => {
@@ -229,6 +243,7 @@ phoF.home = () => {
      tarD.D.classList.remove("carryout");
 }
 
+// #region phone-map
 phoC.mapD = phoD.querySelector(".app.map");
 phoC.mapC = {
     Ds:{
@@ -239,6 +254,90 @@ phoC.mapC = {
 phoC.mapF = {
 
 }
+// #endregion
+
+// #region phone-uwub
+phoC.uwubD = phoC.apps.find(a => a.name == "uwub").D;
+phoC.uwubC = {
+    Ds:{
+        dere: phoC.uwubD.querySelector(".area.dealer"),
+        pere: phoC.uwubD.querySelector(".area.player"),
+
+        // hit, stand, bag
+        btsD: phoC.uwubD.querySelector(".bts"),
+        
+    },
+
+    kaishi:0, //ingではない
+    waiting:0,
+    
+    h:{
+        dealer:{
+            name:"dealer",
+            buffs:[],
+        },
+        player:{
+            name:"player",
+            buffs:[]
+        }
+    }
+}
+phoC.uwubF = {};
+
+phoC.uwubF.load = () => {
+    let labelD = El("div", "label")
+     labelD.textContent = "";
+    for(let i=0; i<4; i++){
+        let div = El("div", `bt bt${i}`, [labelD.cloneNode()]);
+        div.addEventListener("click", () => {
+            let cla = Array.from(div.classList).find(c => c != "mars" && !c.startsWith("bt"));
+            phoC.uwubF.execute(cla);
+        })
+        phoC.uwubC.Ds.btsD.appendChild(div);
+    }
+    phoC.uwubC.Ds.bts = [
+        phoC.uwubD.querySelector(".bts .bt0"),
+        phoC.uwubD.querySelector(".bts .bt1"),
+        phoC.uwubD.querySelector(".bts .bt2"),
+        phoC.uwubD.querySelector(".bts .bt3")
+    ]
+}
+phoC.uwubF.came = () => {
+    phoC.uwubF.btSet(0, "hit");
+    phoC.uwubF.btSet(1, "start");
+}
+
+phoC.uwubF.btSet = (id, name) => {
+    if(2 < id) return 0;
+    let div = phoC.uwubC.Ds.bts[id];
+     div.classList.remove("mars");
+    Array.from(div.classList).filter(a => a != "mars" && !a.startsWith("bt"))
+     .forEach(a => div.classList.remove(a));
+    
+    div.classList.add(name);
+    div.querySelector(".label").textContent = name;
+}
+phoC.uwubF.btDel = (id) => {
+    if(2 < id) return 0;
+    let div = phoC.uwubC.Ds.bts[id];
+     div.classList.remove("mars");
+}
+
+phoC.uwubF.execute = (code) => {
+    switch(code){
+        case "start":
+            console.log("うおおファンファーレ")
+            phoC.uwubF.start();
+            break;
+        case "hit":
+            phoC.uwubF.hit();
+            break;
+        case "stand":
+            phoC.uwubF.stand();
+            break;
+    }
+}
+// #endregion
 
 // #endregion
 
@@ -312,19 +411,6 @@ homC.Ds["stroll"].addEventListener("click", homF.goStroll);
 // #endregion
 
 
-function findGeneric(list, type, name, extraCheck = null){
-    let data;
-    if(extraCheck) data = extraCheck(list, name);
-     else data = list.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    
-    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
-    return 0;
-}
-const findGomis = (name) => findGeneric(Gomis, "Gomis", name);
-const findRoaBuffs = (name) => findGeneric(RoaBuffs, "RoaBuffs", name);
-const findBuff = (name) => findGeneric(Buffs, "Buffs", name);
-const findRacer = (name) => findGeneric(Racers, "Racers", name);
 
 
 // #region farm
@@ -1905,6 +1991,7 @@ function start(){
 
     mainF.load();
     phoF.load();
+     phoC.uwubF.load();
     homF.load();
     dooF.load();
     dooC.forF.update();

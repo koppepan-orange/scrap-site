@@ -27,7 +27,7 @@ const Fonts = [
 
 const Images = {
     systems:['error', "loby", "cryo", "cave", "jump", "forage"],
-    apps:["map", "amonds", "error","nero"],
+    apps:["map", "amonds", "error","uwub"],
     forages:["mush"]
 }
 
@@ -138,15 +138,6 @@ const Foods = [
 		rimi:1,
 		desc:``,
 		flav:"",
-		/*
-		やりたいこと「接頭辞で上手いことやりたい」
-		行ったことを文字に接頭辞として記すの。idは大変なことになるんだけど、もし工程順序も全部正しいならば、、生まれるのはそのまま料理名となる。このFoodsのdataにそのバカのid名が全部あって、それら全部jpnmあるから、、まあ、いいよねって話。レシピ本も売店で買わせればいいしな
-		問題点は「組み合わせ」をどうするか、って話だけど。サラダ作りたいだけなのに「あぁ、それキャベツを先に入れてにんじんを後にするとキャベツとにんじんのサラダ、逆だとにんじんとキャベツのサラダで？回復量とか違うから気付けてね」とか！！そういうのはやだ！！ユーザー目線的にも！data地獄が見え見えってこと的にも！！
-		
-		"スイートポテト": baked sweet_potato
-　　　　　パン: baked wet grinded wheat
-		チョコケーキ: choco_creamed strawberry_rided kiwi_rided sugered milked grinded wheat //←馬鹿 あといちごとキーウィー逆の場合失敗になるのカスすぎる
-		*/
 	},
 	{
 		name:"carrot",
@@ -189,7 +180,13 @@ const Recipes = [
     {
         name:"pancake",
         jpnm:"パンケーキ",
-        from:["egg", "flour", "milk"], // 複数材料
+        from:["egg", "flour", "milk"],
+        act: "bake",
+    },
+    {
+        name:"hotcake",
+        jpnm:"ホットケーキ",
+        from:["egg", "flour", "milk", "suger"],
         act: "bake",
     }
 ];
