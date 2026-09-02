@@ -308,7 +308,7 @@ phoC.uwubF.came = () => {
 }
 
 phoC.uwubF.btSet = (id, name) => {
-    if(2 < id) return 0;
+    if(3 < id) return 0;
     let div = phoC.uwubC.Ds.bts[id];
      div.classList.remove("mars");
     Array.from(div.classList).filter(a => a != "mars" && !a.startsWith("bt"))
