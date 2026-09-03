@@ -27,7 +27,7 @@ const Fonts = [
 
 const Images = {
     systems:['error', "loby", "cryo", "cave", "jump", "forage"],
-    apps:["map", "amonds", "error","uwub"],
+    apps:["map", "amon", "error","uwub"],
     forages:["mush"]
 }
 

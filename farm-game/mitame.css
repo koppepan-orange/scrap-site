@@ -911,8 +911,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         &:active img{filter: brightness(0.5)}
 
         & .label{
+            width: 100%;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
             color: #fefefe;
-            font-size: 12px;
+            /* font-size: 12px; */
         }
         
     }
@@ -984,6 +988,13 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 #phone .app.uwub{
     content: "BJ。初期体力は♡3つで、尽きるとゲームオーバー......全体の色が変わって二ラウンド目。1敗ごとに3から1選択型でレリックを獲得。shop機能をつけてもいいかもしれない";
     background: #c6c6c6;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 40px;
+    padding: 25px 10px 5px;
 
     & .area{
         display: flex;
@@ -1012,7 +1023,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
             }
         }
 
-        &.dealer{
+        &.area{
 
         }
     }
@@ -1022,16 +1033,25 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         flex-direction: row;
         justify-content: center;
         align-items: center;
+        gap: 15px;
 
         & .bt{
-            display: flex;
+            display: none;
             justify-content: center;
             align-items: center;
             border-radius: 8px;
             width: 60px;
             height: 75px;
+            transition: transform 0.1s, scale 0.1s;
+            &.acti{
+                display: flex;
+            }
+            &:hover{
+                scale: 1.10;
+            }
             &:active{
-                scale: 0.90;
+                transform: translate(0, -15px);
+                scale: 1.00;
             }
 
             &.bt0{background: #f980ff}
@@ -1040,6 +1060,11 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
             &.bt3{background: #84ff80}
         }
     }
+}
+
+#phone .app.amon{
+    content: "ポイ活アプリ。UIから何まで全部頑張ろうぜ。...あ。アプリ名はエイモンズです。amonds。エイモンさんが作ったゲーム...とかではなくdiamondsのdiaの部分はもらっていくよ、つまりお前らに入らない部分しか上げないよ、的なひどい思想のポイ活アプリ。dia自体に「2倍の」って意味があった気がする...フランスかなんかで";
+    background: #ffffc7;
 }
 /* #endregion */
 

@@ -167,9 +167,9 @@ phoC.apps = [
     },
     {name:"error", jpnm:"error"},
     {
-        name:"amonds",
+        name:"amon",
         jpnm:"Amonds!",
-        D: phoD.querySelector(".app.amonds")
+        D: phoD.querySelector(".app.amon")
     },
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
@@ -221,6 +221,10 @@ phoF.load = () => {
 
         phoC.Ds["apps"].appendChild(div);
         
+        // let wid = label.offsetWidth;
+        let wid = 72; //magic
+        let siz = (wid)/ ap.jpnm.length;
+         label.style.fontSize = `${Math.min(siz, 12)}px`;
     }
 }
 phoF.activate = (name) => {
@@ -268,30 +272,44 @@ phoC.uwubC = {
         
     },
 
-    kaishi:0, //ingではない
-    waiting:0,
     
     h:{
         dealer:{
             name:"dealer",
+            cards:[],
             buffs:[],
+            D: phoC.uwubD.querySelector(".area.dealer"),
         },
         player:{
             name:"player",
-            buffs:[]
+            cards:[],
+            buffs:[],
+            D: phoC.uwubD.querySelector(".area.player"),
         }
-    }
+    },
+
+    ing:0,
+    waiting:0,
 }
 phoC.uwubF = {};
 
 phoC.uwubF.load = () => {
+    for(let cam of ["dealer", "player"]){
+        phoC.uwubC.h[cam].Ds = {
+            name: phoC.uwubC.h[cam].D.querySelector(".name"),
+            hp:   phoC.uwubC.h[cam].D.querySelector(".hp"),
+            num:  phoC.uwubC.h[cam].D.querySelector(".num"),
+            place:phoC.uwubC.h[cam].D.querySelector(".place"),
+        }
+    }
+
     let labelD = El("div", "label")
      labelD.textContent = "";
     for(let i=0; i<4; i++){
         let div = El("div", `bt bt${i}`, [labelD.cloneNode()]);
         div.addEventListener("click", () => {
-            let cla = Array.from(div.classList).find(c => c != "mars" && !c.startsWith("bt"));
-            phoC.uwubF.execute(cla);
+            let code = div.dataset.code;
+            phoC.uwubF.execute(code);
         })
         phoC.uwubC.Ds.btsD.appendChild(div);
     }
@@ -303,24 +321,35 @@ phoC.uwubF.load = () => {
     ]
 }
 phoC.uwubF.came = () => {
-    phoC.uwubF.btSet(0, "hit");
-    phoC.uwubF.btSet(1, "start");
+    phoC.uwubF.btSet(0, "start");
+    phoC.uwubF.btDel(1);
+    phoC.uwubF.btDel(2);
+    phoC.uwubF.btDel(3);
 }
 
 phoC.uwubF.btSet = (id, name) => {
     if(3 < id) return 0;
     let div = phoC.uwubC.Ds.bts[id];
-     div.classList.remove("mars");
-    Array.from(div.classList).filter(a => a != "mars" && !a.startsWith("bt"))
-     .forEach(a => div.classList.remove(a));
-    
-    div.classList.add(name);
-    div.querySelector(".label").textContent = name;
+     div.classList.add("acti");
+     div.dataset.code = name;
+     
+    let labelD = div.querySelector(".label"); 
+     labelD.textContent = name;
 }
 phoC.uwubF.btDel = (id) => {
-    if(2 < id) return 0;
+    if(3 < id) return 0;
     let div = phoC.uwubC.Ds.bts[id];
      div.classList.remove("mars");
+     div.dataset.code = "";
+}
+
+phoC.uwubF.tekiou = () => {
+    for(let h of Object.values(phoC.uwubC.h)){
+        let cards = h.cards;
+        let sum = cardCalc(cards, "bj");
+        
+
+    }
 }
 
 phoC.uwubF.execute = (code) => {
@@ -336,6 +365,29 @@ phoC.uwubF.execute = (code) => {
             phoC.uwubF.stand();
             break;
     }
+}
+
+phoC.uwubF.start = () => {
+    if(phoC.uwubC.ing) return 1;
+    phoC.uwubC.ing = 1;
+    console.log(`[暇つぶジャック] ===開始===`);
+    
+    phoC.uwubF.btSet(0, "hit");
+    phoC.uwubF.btSet(1, "stand");
+}
+phoC.uwubF.hit = async() => {
+    
+}
+
+phoC.uwubF.cardDraw = async(cam) => {
+    let card = cardDraw(0, 0, "bj");
+    phoC.uwubC.h[cam].cards.push(card);
+     phoC.uwubF.tekiou();
+    phoC.uwubF.cardDrawn(cam);
+}
+phoC.uwubF.cardDrawn = async(cam) => {
+    let sum = cardCalc(phoC.uwubC.h[cam].cards);
+    console.log(sum);
 }
 // #endregion
 
