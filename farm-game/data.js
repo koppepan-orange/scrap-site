@@ -26,8 +26,8 @@ const Fonts = [
 ];
 
 const Images = {
-    systems:['error', "loby", "cryo", "cave", "jump", "forage"],
-    apps:["map", "amon", "error","uwub"],
+    systems:['error', "loby", "cryo", "cave", "jump", "forage", "heart", "heart_blank"],
+    apps:["map", "amon", "error", "uwub"],
     forages:["mush"]
 }
 
@@ -124,68 +124,125 @@ const Spaces = [
 // #region farm-cool
 
 /*
-畑の様子を見にいく
-キッチンに向かう /キッキンチキンに向かう
+農作業から料理場まで（意味がわからなさすぎるイギリス）
+rimi: それをそのまま売った時の値段
 
-小麦、にんじん、じゃがいも
+(typeによって若干データが異なる。)
+#type:1
+一次産業による産出。appe
+fromについては、材料名_nとすることで、n個必要になる
 */
 
 const Foods = [
 	{
 		name:"wheat",
 		jpnm:"小麦",
+        type:1,
 		appe:0.5,
-		rimi:1,
+		rimi:0,
 		desc:``,
 		flav:"",
 	},
+    {
+        name:"flour",
+        jpnm:"小麦粉",
+        san:10, //産出量。1の場合は無記入
+        type:2,
+        from:["wheat"], //材料。複数可
+        act:"grind" //調理法（原則1つ）
+    },
+    {
+        name:"dough_flour",
+        jpnm:"薄ベージュ色の生地",
+        type:2,
+        from:["flour"],
+        act:"knead"
+    },
+    {
+        name:"bread",
+        jpnm:"パァン",
+        type:2,
+        from:["flour"],
+        act: "bake",
+        //need:"oven" //必要ならばの調理器具
+    },
+    {
+        name:"egg",
+        jpnm:"卵",
+        rimi:[200, 10],
+        type:1,
+        kind:"動物",
+        //appe...?
+        of:"chicken",
+    },
+    {
+        name:"dough_flouregg",
+        jpnm:"薄黄土色の生地",
+        type:2,
+        from:["flour", "egg"],
+        act:"knead"
+    },
 	{
 		name:"carrot",
 		jpnm:"にんじん",
+        rimi:[98, 3],
+        type:1,
 		appe:0.5,
-		rimi:1,
 		desc:``,
 		flav:"",
 	},
 	{
 		name:"potato",
 		jpnm:"ばれいしょ",
+        rimi:[126, 5],
+        type:1,
 		appe:1.0,
-		rimi:1,
 		desc:``,
 		flav:"",
 	},
 	{
 		name:"sweet_potato",
-		jpnm:"",
+		jpnm:"さつまいも",
+        rimi:126,
+        type:1,
 		appe:1.0,
-		rimi:2,
 		desc:``,
 		flav:"",
 	},
+    {
+        name:"baked_sweet_potato",
+        jpnm:"スイートポテト",
+        type:2,
+        from:["sweet_potato"],
+        act:"bake", //steamか...?
+        
+        
+    }
 ];
 
+const Animals = [
+    {
+        name:"chicken",
+        jpnm:"にわとり",
+        pet:["egg", "feather"], //撫でられた際に落とす素材
+         cool:40, //撫でられてから次のアイテムを出すまでのクール
+    }
+]
+
 const Recipes = [
+    
     {
-        name:"flour",
-        jpnm:"小麦粉",
-    },
-    {
-        name:"bread",
-        jpnm:"パン",
-        from:["flour"], // 必要な材料（ソートして判定）
-        act: "bake",          // 調理法
-        need:"oven"  // 必要なら調理器具など
+
     },
     {
         name:"pancake",
-        jpnm:"パンケーキ",
-        from:["egg", "flour", "milk"],
+        type:2,
+        from:["dough_flouregg", "milk"],
         act: "bake",
     },
     {
         name:"hotcake",
-        jpnm:"ホットケーキ",
+        type:2,
         from:["egg", "flour", "milk", "suger"],
         act: "bake",
     }

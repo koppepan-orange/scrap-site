@@ -130,7 +130,12 @@ let homF = {};
 homF.start = async() => {
     if(homC.started) return 1;
     homC.started = 1;
-    let charas = Charas.map(a => [a.name, `assets/images/charas/${a.name}.png`]);
+    let charas = Charas.map(a => {
+        return {
+            name: a.name,
+            img: `assets/images/charas/${a.name}.png`
+        };
+    });
     // let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
     let charaSen = new TakushiSen(charas, 'tate');
     let name = await charaSen.select(homD); //文字列が来るヨ
@@ -335,48 +340,37 @@ function findEquips(type, name){
     if(data) return data;
     return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
 }
-function findChara(name){
-	let data = Charad.find(a => a.name == name || a.jpnm == name);
+
+function findGeneric(list, type, name, extraCheck = null){
+    let data;
+    if(extraCheck) data = extraCheck(list, name);
+     else data = list.find(a => a.name == name || a.jpnm == name);
     if(data) return data;
-    return console.log(`[find] Charaに、「${name}」っていう人はいないらしいです`), 0;
+    
+    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
+    return 0;
 }
-function findFriend(name){
-	let data = Friends.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Friendに、「${name}」っていう人はいないらしいです`), 0;
-}
-function findEnemie(name){
-	let data = Enemies.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Enemieで、「${name}」っていう人はいないらしいです`), 0;
-}
-function findActs(name){
-    let data = Acts.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Actsで、「${name}」っていうものはないらしいです`), 0;
-}
-function findMags(name){
-    let data = Mags.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Magsで、「${name}」っていうものはないらしいです`), 0;
-}
-function findTool(name){
-    let data = Tools.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Toolで、「${name}」っていうものはないらしいです`), 0;
-}
+const findChara = (name) => findGeneric(Charas, "Chara", name);
+const findFriend = (name) => findGeneric(Friends, "Friend", name);
+const findEnemie = (name) => findGeneric(Enemies, "Enemie", name);
+const findActs = (name) => findGeneric(Acts, "Acts", name);
+const findMags = (name) => findGeneric(Mags, "Mags", name);
+const findTool = (name) => findGeneric(Tools, "Tool", name);
+const findBuff = (name) => findGeneric(Buffs, "Buff", name);
 // #endregion
 
 // #region 人体工場
-function makeUnit(cam, code, name){
+function makeUnit(cam, code = 0, name = 0){
+    console.log(cam, code, name)
     let data = {};
     if(cam == 'player'){
         let data0 = Charas;
         if(code) Friends;
         data = data0.find(a => a.name == name);
     }
-    if(cam == "enemie"){
+    if(cam == "enemie" && !name){
         data = arraySelect(Enemies.filter(a => !a.no));
+        name = data?.name ?? 0;
     }
     if(!data) return console.log(`codeが[${code}]の${name}はいないらしい`);
     // console.log(data);
@@ -389,6 +383,8 @@ function makeUnit(cam, code, name){
             let name = data0.name;
             unit[name] = data.stat[name] ??data0.bas;
         }
+
+        
     }
     if(cam == "enemie"){
         // enemieはベース値から補正値で加工
@@ -434,7 +430,7 @@ function makeUnit(cam, code, name){
         unit.mags = unit.mags ?? batC.shokey.mags;
         unit.tool  = unit.tool ?? batC.shokey.tool;
 
-        if(!code){
+        if(code == 0){
             unit.ex = data.ex;
             unit.ns = data.ns;
             unit.ps = data.ps;
@@ -444,7 +440,8 @@ function makeUnit(cam, code, name){
             Style.batSt.back = data.buttonback;
             Style.batSt.aima = irohaMix(data.buttonsolid, data.buttonback);
             Style.tekiou();
-        }else{
+        }
+        if(code == 1){
             unit.e = data.e;
             unit.s = data.s;
             unit.n = data.p;
@@ -785,6 +782,8 @@ async function damage(who, are, dmg, tri, props = []){
     return 0;
 }
 
+// リンク
+// sm45970682 | sm43363556
 
 async function dead(who, are, props = 0){
     are.joutie = 0;
@@ -800,31 +799,30 @@ async function dead(who, are, props = 0){
 }
 async function win(cam){
     await logText(`${cam}陣営の勝ち！`)
-    await logText("それではまた、今度"); //demo版だから、ここで再起動される（？？）
+    encount();
 
     location.reload();
 }
 // #endregion
 
 // #region buffとか
-function buffGet(who, name){
-    let buff = who.buffs.find(a => a.name == name);
+function buffHas(who, name){
+    let data = buffFind(name);
+    let buff = who.buffs.find(a => 
+        a.name == name || 
+        a.jpnm == name || 
+        a.jpnm == data.jpnm || 
+        a.startsWith(name)
+    );
     if(!buff) return 0;
 
     return buff;
 }
-function buffData(name){
-    let data = Buffs.find(a => a.name == name);
-    if(!data) return 0;
-
-    return data;
-}
-
 function buffHeraso(who, name, becauseof){
-    let buff = buffGet(who, name);
+    let buff = buffHas(who, name);
     if(!buff) return 0;
 
-    let data = buffData(name);
+    let data = findBuff(name);
     if(!data) return 0;
 
     if(data.stack == becauseof){
@@ -837,7 +835,7 @@ function buffHeraso(who, name, becauseof){
 
 function buffAdd(who, are, name, num, lv){
     console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
-    let data = buffData(name);
+    let data = findBuff(name);
     if(!data) return console.error(`buff[${name}] は存在しないらしい`);
 
     let buff = {
@@ -847,21 +845,37 @@ function buffAdd(who, are, name, num, lv){
         data
     }
 
+    are.buffs.push(buff);
 
+    return 0;
 }
-
 function buffDec(who, name, num){
-    if(num == "=0") return buffRem(who, name);
+    if(num == "=0") return buffRem(who, name); //基本は数字
+    if(typeof num == "string") num = +num.slice(1); //先頭の=を消す
+     if(!num) return 0;
     console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
-
+    
+    let buff = buffHas(who, name);
+     if(!buff) return 0;
+    buff.stack -= num;
+     if(buff.stack <= 0) return buffRem(who, name);
+    tekiou();
     
     return 1;
 }
-
 function buffRem(who, name){
     console.log(`[buffRem] ${who.name}のbuff[${name}]を解消します`);
 
     return 1;
+}
+function buffCalc(who, arr){
+    for(let buff of who.buffs){
+        let data = buffFind(buff.name);
+        
+        for(let [k, v] of Object.entries(buff.value)){
+            if(arr.includes(k)) who[k] += v;
+        }
+    }
 }
 
 
@@ -1120,7 +1134,6 @@ batF.mags = async(who, i) => {
     if(!data) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
     if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
     
-    // Jammo ja
     selects(0);
     let ares = await selectSyudou(1);
     
@@ -1137,7 +1150,6 @@ batF.tool = async(who, i) => {
     if(!data) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
     if(!has.includes(name)) return tobiText(who.div, `${name} not enough`);
     
-    // Jammo ja
     selects(0);
     let ares = await selectSyudou(1);
     if(await data.func(who, ares)) return 1;
@@ -1204,8 +1216,7 @@ async function turnEnemy(who){
     let data = findEnemie(who.name);
 
     let are;
-    // if(data){
-	if(false){
+    if(data){
         let act = enemySelectAction(who);
 		let res = await act.func(who);
          if(res.code) return 1; //こいつは特殊、というか切り札。return {code:0, are:ares}をつかいます
@@ -1269,13 +1280,14 @@ async function turnNext(who){
     
     // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
     for(let buff of who.buffs){
-        let data = buffData(buff.name);
+        let data = findBuff(buff.name);
 
         if(buff.name == 'onslime'){
             if(isCrit(buff.value)){
                 buffremove(who, 'onslime');
                 await logText('なんとかスライムを取り払った!!');
-            } else {
+            }
+            else{
                 await logText('スライムが邪魔して動けない!!');
                 turnBye(who);
                  // 動けないから次の人へパス
@@ -1334,7 +1346,7 @@ async function turnEnd(who, ares){
 
     let extraTurn = false;
     for(let buff of who.buffs){
-        let data = buffData(buff.name);
+        let data = findBuff(buff.name);
         if(data && hask(data, 'luck')){
             if(isCrit(data.luck)){
                 await logText('当たりが出たらもう一本！');

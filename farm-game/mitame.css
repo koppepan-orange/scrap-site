@@ -993,7 +993,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    gap: 40px;
+    gap: 30px;
     padding: 25px 10px 5px;
 
     & .area{
@@ -1007,24 +1007,107 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 80px;
-            aspect-ratio: 3/2;
+            height: 45px;
+            aspect-ratio: 2/3;
             background: #ffffff;
             border: 2px solid #43269a;
              border-radius: 5px;
             position: relative;
             color: #2b2b2b;
-            font-size: 26px;
+            font-size: 24px;
             font-family: hangyaku;
-
+            box-sizing: border-box;
             &.ura{
                 color: #43269a;
                 background-color: #43269a;
             }
+
+            & .suu{
+                content: "中央配置"
+            }
+            & .suit{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                font-size: 8px;
+            }
         }
 
         &.area{
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            width: 90%;
+            height: 60px;
+            padding: 0 5px 10px;
+            border-bottom: 2px solid #2b2b2b;
+            &.player{
+                flex-direction: row-reverse;
+                justify-content: flex-end;
+            }
 
+            & .column{
+                justify-content: center;
+                align-items: flex-start;
+                gap: 3px;
+                width: 70px;
+                height: 100%;
+                flex-shrink: 0;
+
+                & .hp{
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 5px;
+
+                    & img{
+                        width: 20px;
+                        aspect-ratio: 1/1;
+                        object-fit: contain;
+                    }
+                }
+            }
+
+            & .num{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 35px;
+                /* height: 90%; */
+                aspect-ratio: 1/1;
+                flex-shrink: 0;
+                background: #b2b2b2;
+                border-radius: 5px;
+                text-align: center;
+                line-height: 35px;
+                font-family: hangyaku;
+                font-size: 24px;
+            }
+
+            & .place{
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 5px;
+                /* flex: 1; */
+                width: 100%;
+                 max-width: 100%;
+                height: 100%;
+                overflow: scroll;
+                background: #dedede;
+                padding: 5px 10px;
+                border-radius: 10px;
+                box-sizing: border-box;
+            }
+        }
+        &.area.bj .num{
+            background-color: #eca2e0;
         }
     }
 
@@ -1042,6 +1125,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
             border-radius: 8px;
             width: 60px;
             height: 75px;
+            font-family: craft;
             transition: transform 0.1s, scale 0.1s;
             &.acti{
                 display: flex;

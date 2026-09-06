@@ -275,14 +275,18 @@ phoC.uwubC = {
     
     h:{
         dealer:{
-            name:"dealer",
+            name:"Dealer",
             cards:[],
+            hp: 1,
+            maxhp: 1,
             buffs:[],
             D: phoC.uwubD.querySelector(".area.dealer"),
         },
         player:{
-            name:"player",
+            name:"Player",
             cards:[],
+            hp: 3,
+            maxhp: 3,
             buffs:[],
             D: phoC.uwubD.querySelector(".area.player"),
         }
@@ -345,9 +349,21 @@ phoC.uwubF.btDel = (id) => {
 
 phoC.uwubF.tekiou = () => {
     for(let h of Object.values(phoC.uwubC.h)){
+        // hp
+        h.Ds.hp.innerHTML = "";
+        for(let i=1; i<h.maxhp+1; i++){
+            let src = "heart";
+            if(h.hp < i) src += "_blank";
+            let img = images["systems"][src].cloneNode();
+            h.Ds.hp.appendChild(img);
+        }
+
         let cards = h.cards;
         let sum = cardCalc(cards, "bj");
-        
+         h.Ds.num.textContent = sum;
+         h.sum = sum;
+        if(sum == 21) h.D.classList.add("bj");
+        else h.D.classList.remove("bj");
 
     }
 }
@@ -374,20 +390,135 @@ phoC.uwubF.start = () => {
     
     phoC.uwubF.btSet(0, "hit");
     phoC.uwubF.btSet(1, "stand");
+
+    phoC.uwubF.tekiou();
 }
 phoC.uwubF.hit = async() => {
+    if(phoC.uwubC.waiting) return 0;
+    await phoC.uwubF.cardDraw("player")
+}
+phoC.uwubF.stand = async() => {
+    if(phoC.uwubC.waiting) return 0;
+    phoC.uwubC.waiting = 1;
     
+    // ここからDealer
+    let dh = phoC.uwubC.h["dealer"];
+    do{
+        let card = cardDraw(0, 0, "bj");
+        dh.cards.push(card);
+        let div = phoC.uwubF.cardMake(card);
+        dh.Ds.place.appendChild(div);
+         phoC.uwubF.tekiou();
+        // phoC.uwubF.cardDrawn(cam);
+        await delay(800);
+    } while(dh.sum < 17);
+
+    if(21 < dh.sum) return phoC.uwubF.burst("dealer");
+    phoC.uwubF.judge();
 }
 
+phoC.uwubF.cardMake = (card) => {
+    let num = El("div", "suu");
+     num.textContent = card.num;
+    let sui = El("div", "suit");
+     sui.textContent = card.suit;
+    let div = El("div", `card ${card.suit}`, [num, sui]);
+     if(card.suit == "♤" || card.suit == "♧") div.classList.add("black");
+     if(card.suit == "♡" || card.suit == "♢") div.classList.add("red");
+
+    return div;
+}
 phoC.uwubF.cardDraw = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
     let card = cardDraw(0, 0, "bj");
-    phoC.uwubC.h[cam].cards.push(card);
+    h.cards.push(card);
+    let div = phoC.uwubF.cardMake(card);
+    h.Ds.place.appendChild(div);
      phoC.uwubF.tekiou();
     phoC.uwubF.cardDrawn(cam);
 }
 phoC.uwubF.cardDrawn = async(cam) => {
-    let sum = cardCalc(phoC.uwubC.h[cam].cards);
-    console.log(sum);
+    let sum = cardCalc(phoC.uwubC.h[cam].cards, "bj");
+     if(21 < sum) return phoC.uwubF.burst(cam);
+    
+}
+
+phoC.uwubF.judge = () => {
+    let ph = phoC.uwubC.h["player"];
+    let dh = phoC.uwubC.h["dealer"];
+
+    console.error(`[暇つぶジャック] p:${ph.sum} d:${dh.sum}`);
+    // burstでここにきてたらお菓子
+    let num = 1, win;
+    if(ph.sum == 21) win = "player", num = 2.0;
+    else if(dh.sum == 21) win = "dealer", num = 2.0;
+    else if(dh.sum < ph.sum) win = "player";
+    else if(ph.sum < dh.sum) win = "dealer";
+
+    let lose = fl(win, ["player", "dealer"]);
+    phoC.uwubF.win(win, lose, num);
+}
+phoC.uwubF.win = async(from, to, vai) => {
+    if(!from || !to) return 0;
+    console.log(`[暇つぶジャック] ${from}の勝利！ 基礎ダメージx${vai}ダメージ`);
+    if(await phoC.uwubF.damage(from, to, 1, "判定", [`倍率_${vai}`])) return 1;
+     phoC.uwubF.reset();
+}
+phoC.uwubF.burst = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
+    nicoText(`${h.name}がバーストした！`);
+    if(await phoC.uwubF.damage("player", "player", 1, "バースト")) return 1;
+     phoC.uwubF.reset();
+}
+
+phoC.uwubF.reset = () => {
+    for(let cam of Object.keys(phoC.uwubC.h)){
+        phoC.uwubC.h[cam].cards = [];
+        phoC.uwubC.h[cam].Ds.place.innerHTML = "";
+        phoC.waiting = 0;
+    }
+}
+
+phoC.uwubF.damage = async(from, to, num, reason = "reason whyは後ろが完全文の時しか使えないんだぜ", props = []) => {
+    let hasp = (name) => {
+        for(let p of props){
+            if(p == name) return name;
+            if(p.startsWith(name)) return p; //最初のを
+        }
+    }
+    if(!from || !to) return 0;
+    let who = phoC.uwubC.h[from];
+    let are = phoC.uwubC.h[to];
+
+    console.log(who.name, are.name, num, reason);
+    
+    let atk = num;
+    if(hasp("倍率_")) atk *= +(hasp("倍率_").slice(3));
+    // whoのbuffによる攻撃力加算はここ
+
+    let def = 0;
+    // areのbuffによる防御力加算はここ
+
+    let dmg = Math.max(0, atk - def);
+     dmg = Math.floor(dmg);
+    tobiText(are.Ds.name, dmg, {mode: "kiki"});
+    are.hp -= dmg;
+    if(are.hp < 0) are.hp = 0;
+     phoC.uwubF.tekiou();
+    if(are.hp <= 0) if(await phoC.uwubF.dead(to)) return 1;
+
+    //はいっ
+    return 0;
+}
+phoC.uwubF.dead = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
+    nicoText(`${h.name}は死んだ！`);
+    return 1;
+
+    // その後の展開は知りません
 }
 // #endregion
 

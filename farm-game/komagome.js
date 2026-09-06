@@ -408,8 +408,9 @@ function cardDraw(val0 = 0, suit0 = 0, code = 0){
     
     let hyou = val;
     if(val == 1)  hyou = 'A';
-    if(val == 10) hyou = 'X';
+    // if(val == 10) hyou = 'X';
     if(val == 11) hyou = 'J';
+    if(val == 12) hyou = 'Q';
     if(val == 13) hyou = 'K';
 
     if(10 < val && code == "bj") val = 10;

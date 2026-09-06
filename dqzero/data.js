@@ -352,7 +352,7 @@ let Charas = [
         desc:'スライム。...まだできてないから使わない方が吉',
         ex:'null',
         ns:'null',
-        ps:'null',
+        ps:'sthree',
         stat:{
             atk:20,
             def:0,
@@ -1158,17 +1158,18 @@ const Acts = [
         desc:'対象に攻撃力の60%のダメージを与える。', //そのうち武士作ってこれ作りたい
         flav:"別に必中ではないが、必中みたいな扱いで使いがち（作者談）",
         aim:100,
+        voi:60,
         mp:0,
         lv:1,
         tcam:'players',
         func:async function(who, are){
-            if(await attack(who, are, 60, 'ph', this.aim)) return 1;
+            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
 
             //elseesに移行よろ
             if(who.ps == 'sthree' && hit(25)){
                 await logText(`${who.name}は頑張った!`);
-                if(await attack(who, are, 60, 'ph', this.aim)) return 1;
-                if(await attack(who, are, 60, 'ph', this.aim)) return 1;
+                if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
+                if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
             }
             
             return 0;
@@ -1177,14 +1178,15 @@ const Acts = [
     {
         name:'double slash',
         jpnm:'つばめ返し',
-        desc:'対象に攻撃力の90%のダメージを2回与える。',
+        desc:'対象に攻撃力の70%のダメージを2回与える。',
         flav:"命中判定は毎回ある。そのうち「ねずみざん」作りたいねぇ",
         aim: 85,
+        voi:70,
         mp:0,
         lv:1,
         func:async function(who, are){
-            if(await attack(who, are, 90, 'ph', this.aim)) return 1;
-            if(await attack(who, are, 90, 'ph', this.aim)) return 1;
+            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
+            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
 
             return 0;
         }
@@ -1193,18 +1195,19 @@ const Acts = [
         name:'slash of light',
         jpnm:'踏み込み斬り',//まじん斬り も作りたいね 霹靂一閃も
         desc:'対象に攻撃力の300%のダメージを与える。',
+        voi: 300,
         aim: 40,
         mp:0,
         lv:1,
         func:async function(who, are){
             let aim = this.aim;
-            let voi = 300;
+            let voi = this.voi;
             if(who.ps == 'highsol'){
-                this.aim -= 20;
-                voi += 600; //←←？？？？？
+                aim -= 20;
+                voi *= 3;
             }
 
-            if(await attack(who, are, voi, 'ph', this.aim)) return 1;
+            if(await attack(who, are, voi, 'ph', aim)) return 1;
 
             // }else{
                 //let result = letsHappen(tcam, target, cam, me, 'missed', 'sl', 'slashoflight');
@@ -1244,7 +1247,7 @@ const Mags = [
         mp:5,
         lv:1,
         func:async function(who, are){
-            await buffadd(who, are,'power', 3,1);
+            await buffAdd(who, are,'power', 3,1);
             //soldatoのシステム応用しつつで
             return 0;
         }
@@ -1256,7 +1259,7 @@ const Mags = [
         mp:5,
         lv:1,
         func:async function(who, are){
-            await buffadd(who, are,'shell', 3,1);
+            await buffAdd(who, are,'shell', 3,1);
             return 0;
         }
     },
@@ -1267,7 +1270,7 @@ const Mags = [
         mp:7,
         lv:3,
         func:async function(who, are){
-            await buffadd(who, are,'poison', 4,1);
+            await buffAdd(who, are,'poison', 4,1);
             return 0;
         }
     },
@@ -1278,8 +1281,8 @@ const Mags = [
         mp:3,
         lv:4,
         func:async function(who, are){
-            if(await damage(who, are, 30, 'mg')) return 1;
-            if(hit(2)) buffadd(who, are, 'hirumi' , 1)
+            if(await attack(who, are, 30, 'mg', 100, ["属性_雷"])) return 1;
+            if(hit(2)) buffAdd(who, are, 'hirumi' , 1)
             return 0;
         }
     },
@@ -1290,9 +1293,8 @@ const Mags = [
         mp:4,
         lv:4,
         func:async function(who, are){
-            let result = await damage(who, are,110,'mg',2);//火
-            if(result) return 1;
-            if(hit(10)) await buffadd(who, are,'burn', 2,1);
+            if(await attack(who, are, 110, 'mg', 100, ["属性_炎"])) return 1;//火
+            if(hit(10)) await buffAdd(who, are,'burn', 2, 1);
             return 0;
         }
     },
@@ -1314,7 +1316,7 @@ const Mags = [
         mp:4,
         lv:7,
         func:async function(who, are){
-            await buffadd(who, are, 'luck', 4, 1);
+            await buffAdd(who, are, 'luck', 4, 1);
             return 0;
         }
     },
@@ -1325,8 +1327,8 @@ const Mags = [
         mp:8,
         lv:8,
         func:async function(who, are){
-            damage(who, are,120,'mg',4);//雷
-            if(hit(5)) buffadd(who, are,'hirumi',1)
+            if(await attack(who, are, 120, 'mg', 93, ["属性_雷"])) return 1;
+            if(hit(10)) await buffAdd(who, are, 'hirumi',1)
             return 0
         }
     },
@@ -1337,7 +1339,7 @@ const Mags = [
         mp:8,
         lv:9,
         func:async function(who, are){
-            await buffadd(who, are,'power',3,2)
+            await buffAdd(who, are,'power',3,2)
             return 0
         }
     },
@@ -1348,7 +1350,7 @@ const Mags = [
         mp:8,
         lv:9,
         func:async function(who, are){
-            await buffadd(who, are, 'shellup',3,2)
+            await buffAdd(who, are, 'shellup', 3, 2)
             return 0
         }
     },
@@ -1359,7 +1361,7 @@ const Mags = [
         mp:12,
         lv:10,
         func:async function(who, are){
-            await buffadd(who, are,'poison', 5,2);
+            await buffAdd(who, are,'poison', 5,2);
             return 0;
         }
     },
@@ -1370,8 +1372,8 @@ const Mags = [
         mp:10,
         lv:11,
         func:async function(who, are){
-            let result = await damage(who, are,230,'mg',2);//火
-            await buffadd(who, are,'burn', 2,2);
+            let result = await attack(who, are, 230, 'mg', 90, ["属性_炎"]);//火
+            await buffAdd(who, are,'burn', 2,2);
             return result
         }
     },
@@ -1393,7 +1395,7 @@ const Mags = [
         mp:12,
         lv:14,
         func:async function(who, are){
-            await buffadd(who, are,'luck', 5,2);
+            await buffAdd(who, are,'luck', 5,2);
             return 0
         }
     },
@@ -1404,8 +1406,8 @@ const Mags = [
         mp:12,
         lv:12,
         func:async function(who, are){
-            let result = await damage(who, are, 3.5, 'mg',4);//雷
-            await buffadd(who, are, 'burn', 3,2);
+            let result = await attack(who, are, 3.5, 'mg',4);//雷
+            await buffAdd(who, are, 'burn', 3,2);
             return result
         }
     },
@@ -1416,7 +1418,7 @@ const Mags = [
         mp:20,
         lv:15,
         func:async function(who, are){
-            let result = await damage(who, are,6,'mg',4);//雷
+            let result = await attack(who, are,6,'mg',4);//雷
             return result
         }
     },
@@ -1592,7 +1594,7 @@ const Equips = [
         desc:'紅き鮮血に染まりし剣..\n攻撃時相手の体力を吸い回復する\n変換効率は80%..水力発電とだいたい同じ',
         ap:1,
         aFunc:async function(who,are){
-            if(await damage(who, are, ))
+            if(await attack(who, are, ))
             logText('血を吸った！');
             tekiou();
             logText(`体力が${x}回復した!`);
@@ -1611,9 +1613,9 @@ const Equips = [
         ap:1,
         aFunc:async function(who,are,rate,kind,prop,dmg){
             logText(arraySelect(['トリニティの砲撃術は優秀ですから。','お口に合うと良いのですが..']));
-            let result = await damage(who,are,0.4,kind,['unpursuit']);
+            let result = await attack(who,are,0.4,kind,['unpursuit']);
             if(result) return 1;
-            await buffadd(who, are, 'shelldown', 3, 1);
+            await buffAdd(who, are, 'shelldown', 3, 1);
             return 0;
         },
         ce:0,
@@ -1791,15 +1793,6 @@ const Equips = [
     }
 ]
 
-function buffCalc(who, arr){
-    for(let buff of who.buffs){
-        let data = buffFind(buff.name);
-        
-        for(let [k, v] of Object.entries(buff.value)){
-            if(arr.includes(k)) who[k] += v;
-        }
-    }
-}
 
 const Tools = [
     {
@@ -1821,7 +1814,7 @@ const Tools = [
         flav:'これで少しは頑張れそう',
         func:async function(who,are){
             if(await heal(who, are, "15%")) return 1;
-            await buffadd(who, are, 'power', 1, 1);
+            await buffAdd(who, are, 'power', 1, 1);
             return 0;
         }
     },
@@ -1872,7 +1865,7 @@ const Tools = [
         desc:'指定した人単体の現在体力の5%分のダメージを与える',
         flav:'では、ナイフの錆にしてあげましょう',
         func:async function(who,are){
-            if(await damage(who,are,"10%",'cn',["%!maxhp",'固定'])) return 1;
+            if(await attack(who,are,"10%",'cn',["%!maxhp",'固定'])) return 1;
             return 0;
         }
     },
@@ -1884,10 +1877,10 @@ const Tools = [
         flav:'なんだかんだ初期からずっと好きな人/nレッドウィンターの問題児にしては上出来すぎる',
         func:async function(who,are){
             await logText('これはちょっと、スパイシーなやつだよ');
-            if(await damage(who, are, 20, 'cn', [])) return 1;
+            if(await attack(who, are, 20, 'cn', [])) return 1;
             
             let are2 = selectJodou(who, 'are', 0, 0, 0); //敵 全体
-            await buffadd(who, are2, 'burn', 3, 2);
+            await buffAdd(who, are2, 'burn', 3, 2);
             return 0;
         }
     },
@@ -1899,7 +1892,7 @@ const Tools = [
         flav:'エクスプローージョン！！！\n敵を確殺します。嬉しいね',
         func:async function(who,are){
             await logText('爆発オチなんてサイテー！！');
-            if(await damage(who, are, "100%", 'cn', ['%!maxhp','追撃無し',"固定","貫通"])) return 1;
+            if(await attack(who, are, "100%", 'cn', ['%!maxhp','追撃無し',"固定","貫通"])) return 1;
             
             return 0; //生きることもあります たぶん
         }
@@ -1911,7 +1904,7 @@ const Tools = [
         desc:'この次の人のターンを強制的にスキップさせます。',
         flav:'特にファールとかをしていなくても、これを見せるだけで合法的に人を減らすことができます。うれしいね',
         func:async function(who,are){
-            await buffadd(who, are,'skip',1,1);
+            await buffAdd(who, are,'skip',1,1);
             await logText('ピピッ、レッドカードが出ました');
             return 0;
         }
@@ -1940,7 +1933,7 @@ const Tools = [
         flav: "海に隣接した森で産出される赤色の葉っぱ。なぜか葉の表皮の一部が硬化している。",
         price: 40,
         func: async function(who, are){
-            buffadd(who, are, "crabhalve", 3, 1);
+            buffAdd(who, are, "crabhalve", 3, 1);
         }
     },
     {
@@ -2020,12 +2013,12 @@ const Skills = [
                 };
                 case 3:{
                     await logText('爆弾は毒ガス入りだった!!');
-                    await buffadd(who, are,'poison', 3,1);
+                    await buffAdd(who, are,'poison', 3,1);
                     break; //毒ガス入りだった場合
                 };
                 case 2:{
                     await logText('爆弾はスライム入りだった!!');
-                    await buffadd(who, are,'onslime', 2,1);
+                    await buffAdd(who, are,'onslime', 2,1);
                     break;//スライム入りだった場合
                 };
                 case 1:{
@@ -2033,7 +2026,7 @@ const Skills = [
                     break;
                 };
             }
-            let result = await damage(who,are,x,'ph',4);
+            let result = await attack(who,are,x,'ph',4);
             if(result == 'end'){return 1;}
             return 0;
         }
@@ -2056,9 +2049,9 @@ const Skills = [
                     ]
                 )
             );
-            let result = await damage(who,are,1.5,'ph',4);
+            let result = await attack(who,are,1.5,'ph',4);
             if(result == 'end'){return 1;}
-            if(Math.floor(Math.random()*2)) await buffadd(who, are,'freeze', 4,1)
+            if(Math.floor(Math.random()*2)) await buffAdd(who, are,'freeze', 4,1)
             return 0;
         }
     },
@@ -2071,9 +2064,9 @@ const Skills = [
         
         func:async function(who){
             let [target, tcam] = await selectSyudou(3);
-            let result = await damage(who,are,1.5,'ph',4);
+            let result = await attack(who,are,1.5,'ph',4);
             if(result == 'end'){return 1;}
-            await buffadd(who, are,'elec', 2,1);
+            await buffAdd(who, are,'elec', 2,1);
             return 0;
         }
     },
@@ -2089,7 +2082,7 @@ const Skills = [
             let target = await selectSyudou();
             x = 2;
             if(humans[target[1]][target].hp > humans[target[1]][target].maxhp * 0.7) x = 4;
-            let result = await damage(who,target[1],target,x,'ph',4);
+            let result = await attack(who,target[1],target,x,'ph',4);
             if(result == 'end'){return 1;}
             return 0;
         }
@@ -2104,8 +2097,8 @@ const Skills = [
         func:async function(who){
             phase = 0; disappear();
             let target = await selectSyudou();
-            if(await damage(who,target[1],target,0.75,'ph',4)) return;
-            await buffadd(target[1],target,'stun', 1,1);
+            if(await attack(who,target[1],target,0.75,'ph',4)) return;
+            await buffAdd(target[1],target,'stun', 1,1);
             return 0;
         }
     },
@@ -2119,10 +2112,10 @@ const Skills = [
         func:async function(who){
             phase = 0; disappear();
             let [tcam, tme] = await selectSyudou();
-            let result = await damage(who,are,0.2,'ph',4);
+            let result = await attack(who, are ,0.2, 'ph', 95);
             if(result == 'end'){return 1;}
-            await buffadd(who, are,'shell',3,1);
-            await buffadd(who, are,'power', 3,2);
+            await buffAdd(who, are,'shell',3,1);
+            await buffAdd(who, are,'power', 3,2);
             return 0;
         }
     },
@@ -2137,7 +2130,7 @@ const Skills = [
             phase = 0; disappear();
             let [tcam, tme] = await selectSyudou();
             await logText(arraySelect(['わたしはその辺の小石...','わたしのことなんて、気にしないでください...','すみません、一人にさせてください......']));
-            await buffadd(who, are,'weaknessgrasp', 1,1);//弱点把握状態
+            await buffAdd(who, are,'weaknessgrasp', 1,1);//弱点把握状態
             return 0;
         },
     },
@@ -2163,7 +2156,7 @@ const Skills = [
         cool:3,
         func:async function(who){
             let are = selectJodou(who, 'are', 0, 'random');
-            await buffadd(who, are,'onslime', 1,1);
+            await buffAdd(who, are,'onslime', 1,1);
             await logText(`${are.name}にスライムが覆い被さった!`);
             return 0;
         }
@@ -2177,7 +2170,7 @@ const Skills = [
         
         cool:4,
         func:async function(who){
-            await buffadd(who, who,'letsthrow', 2,1);
+            await buffAdd(who, who,'letsthrow', 2,1);
             await logText('wrenchを投げる準備ができた!');
             return 0;
         }
@@ -2191,7 +2184,7 @@ const Skills = [
         
         cool:3,
         func:async function(who){
-            await buffadd(who, who,'gambling', 1,1);
+            await buffAdd(who, who,'gambling', 1,1);
             logText('さあ、ギャンブルの時間だ!!');
             return 0;
         }
@@ -2205,7 +2198,7 @@ const Skills = [
         
         cool:5,
         func:async function(who){
-            await buffadd(who, who,'improve', 4,1);
+            await buffAdd(who, who,'improve', 4,1);
             await logText('パーツアップグレード。');
             return 0;
         }
@@ -2220,7 +2213,7 @@ const Skills = [
         cool:3,
         func:async function(who){
             let are = selectJodou(who, 'who', 'hp', 'low');
-            await buffadd(who, are,'elecshield', 2,1);
+            await buffAdd(who, are,'elecshield', 2,1);
             await logText('帯電バリアを付与しました！');
             return 0;
         }
@@ -2604,7 +2597,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は粘液を飛ばしてきた！`);
                     let are = selectJodou(who, 'are', 'hp', 'high');
-                    let res = await damage(who, are, 100, 'ph');
+                    let res = await attack(who, are, 100, 'ph', 100);
                     if(res) return 1;
                     
                     return 0;
@@ -2616,8 +2609,8 @@ const Enemies = [
                 num:3,
                 func:async function(who){
                     await logText(`${who.name}は粘液を絡ませてきた！`);
-                    let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffadd(who, are, 'stickyslime', 2, 1);
+                    let are = await selectJodou(who, "are", 'hp', 'high');
+                    await buffAdd(who, are, 'stickyslime', 2, 1);
                     return 0;
                 }
             }
@@ -2635,29 +2628,35 @@ const Enemies = [
         crla:'+30',
         crdm:'+0.5',
         crrs:'+0',
-        spd:'75',
+        spd:'85',
         acts:[
             {
-                name:'体当たり',
+                name:"体当たり",
+                des:"攻撃力の70%のダメージを敵単体に与える。",
+                flav:"速攻アタッカーらしい一撃。",
                 p:70,
+                aim:80,
+                voi:70,
                 num:1,
                 func:async function(who){
                     await logText(`${who.name}は体当たりを仕掛けてきた！`);
                     let are = selectJodou(who, 'are', 'hp', 'low');
-                    let result = await damage(who, are, 100, 'ph');
-                    if(result) return 1;
+                    if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
                     return 0;
                 }
             },
             {
                 name:'体当たり・改',
+                desc:"攻撃力の130%のダメージを敵単体に与える。",
+                flav:"体当たりの強化版。当たりやすくなっただけでなく、遠心力により威力も上がった。",
                 p:30,
+                aim:95,
+                voi:130,
                 num:3,
                 func:async function(who){
                     await logText(`${who.name}は回転しながら突進してきた！`);
                     let are = selectJodou(who, 'are', 'hp', 'low');
-                    let result = await damage(who,are,150,'ph');
-                    if(result) return 1;
+                    if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
                     return 0;
                 }
             }
@@ -2686,7 +2685,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は姿を消..あれどこ行った？`);
                     let are = selectJodou(who, 'who', 0, 'cen');
-                    await buffadd(who, are,'disappear', 2,1);
+                    await buffAdd(who, are,'disappear', 2,1);
                     return 0;
                 }
             },
@@ -2700,7 +2699,7 @@ const Enemies = [
                     let x = buffhas(who, 'disappear') ? (buffclear(who, 'disappear'), 200) : 100;
                     await logText(`${who.name}は突進してきた！`);
                     let are = selectJodou(who, 'are', 0, 'random');
-                    let result = await damage(who, are, x, 'ph');
+                    let result = await attack(who, are, x, 'ph');
                     return result;
                 }
             },
@@ -2712,8 +2711,8 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}はローキックしてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'low');
-                    let result = await damage(who, are, 70, 'ph');
-                    await buffadd(who, are, 'spddown', 2, 1);
+                    let result = await attack(who, are, 70, 'ph');
+                    await buffAdd(who, are, 'spddown', 2, 1);
                     return result;
                 }
             }
@@ -2741,7 +2740,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は痺れ粉を振りかけてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffadd(who, are, 'palsy', 2, 1);
+                    await buffAdd(who, are, 'palsy', 2, 1);
                     return 0;
                 }
             },
@@ -2753,7 +2752,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は毒の粉を振りかけてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffadd(who, are, 'poison', 2, 1);
+                    await buffAdd(who, are, 'poison', 2, 1);
                     return 0;
                 }
             },
@@ -2765,7 +2764,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は眠り粉を振りかけてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffadd(who, are, 'sleeping', 1, 1);
+                    await buffAdd(who, are, 'sleeping', 1, 1);
                     return 0;
                 }
             }
