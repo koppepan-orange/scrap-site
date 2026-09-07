@@ -833,33 +833,39 @@ function buffHeraso(who, name, becauseof){
     return 0;
 }
 
-function buffAdd(who, are, name, num, lv){
-    console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
-    let data = findBuff(name);
-    if(!data) return console.error(`buff[${name}] は存在しないらしい`);
+function buffAdd(who, ares, name, num, lv){
+    if(!Array.isArray(ares)) ares = [ares];
+    for(let are of ares){
+        console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
+        let data = findBuff(name);
+        if(!data) return console.error(`buff[${name}] は存在しないらしい`);
 
-    let buff = {
-        name,
-        value: {},
-        lv,
-        data
+        let buff = {
+            name,
+            value: {},
+            lv,
+            data
+        }
+
+        are.buffs.push(buff);
     }
-
-    are.buffs.push(buff);
 
     return 0;
 }
-function buffDec(who, name, num){
-    if(num == "=0") return buffRem(who, name); //基本は数字
-    if(typeof num == "string") num = +num.slice(1); //先頭の=を消す
-     if(!num) return 0;
-    console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
-    
-    let buff = buffHas(who, name);
-     if(!buff) return 0;
-    buff.stack -= num;
-     if(buff.stack <= 0) return buffRem(who, name);
-    tekiou();
+function buffDec(who, ares, name, num){
+    if(!Array.isArray(ares)) ares = [ares];
+    for(let are of ares){
+        if(num == "=0") return buffRem(who, name); //基本は数字
+        if(typeof num == "string") num = +num.slice(1); //先頭の=を消す
+        if(!num) return 0;
+        console.log(`[buffDec] ${who.name}のbuff[${name}]を${num}stack減らす`);
+        
+        let buff = buffHas(who, name);
+        if(!buff) return 0;
+        buff.stack -= num;
+        if(buff.stack <= 0) return buffRem(who, name);
+        tekiou();
+    }
     
     return 1;
 }

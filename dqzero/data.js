@@ -2610,6 +2610,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は粘液を絡ませてきた！`);
                     let are = await selectJodou(who, "are", 'hp', 'high');
+                    console.log(are)
                     await buffAdd(who, are, 'stickyslime', 2, 1);
                     return 0;
                 }
@@ -2685,6 +2686,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}は姿を消..あれどこ行った？`);
                     let are = selectJodou(who, 'who', 0, 'cen');
+                    console.log(are)
                     await buffAdd(who, are,'disappear', 2,1);
                     return 0;
                 }
