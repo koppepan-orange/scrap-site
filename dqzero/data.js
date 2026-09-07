@@ -1155,7 +1155,7 @@ const Acts = [
     {
         name:'slash',
         jpnm:'斬る',
-        desc:'対象に攻撃力の60%のダメージを与える。', //そのうち武士作ってこれ作りたい
+        desc:`対象に攻撃力の${this.voi}%のダメージを与える。`,
         flav:"別に必中ではないが、必中みたいな扱いで使いがち（作者談）",
         aim:100,
         voi:60,
@@ -1178,8 +1178,8 @@ const Acts = [
     {
         name:'double slash',
         jpnm:'つばめ返し',
-        desc:'対象に攻撃力の70%のダメージを2回与える。',
-        flav:"命中判定は毎回ある。そのうち「ねずみざん」作りたいねぇ",
+        desc:`対象に攻撃力の${this.voi}%のダメージを2回与える。`,
+        flav:"命中判定は毎回です。そのうち「ねずみざん」作りたいねぇ",
         aim: 85,
         voi:70,
         mp:0,
@@ -2270,6 +2270,23 @@ const Skills = [
     }
 ]
 
+async function wuzzat(code, when, who = 0, ares = 0, data = {}){
+    /*
+    code デカ関数名
+    when mae chu ato
+    */
+    if(!Array.isArray(ares)) ares = [ares];
+    if(!code || !when) return 0;
+
+    let pss = Skills.filter(a => a.type == "ps" && a.when == when);
+
+    // console.log(code);
+    switch(code){
+        case "slash":
+            
+    }
+}
+
 const Stages = [
     {
         name:'草原',
@@ -2853,8 +2870,8 @@ let Prefixes = [
         rare:3,
         effects:{
             crla: '=100',
-            crdm: '=120',
-            atk: '=30%',
+            crdm: '=90',
+            atk: '-70%',
         }
     },
 ]
