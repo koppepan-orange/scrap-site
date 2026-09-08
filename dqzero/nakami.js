@@ -334,13 +334,6 @@ function whatdo(who, are, shu, name){
 //#endregion どちらかと言うと youは何しに日本へ
 
 // #region サーチ系
-function findEquips(type, name){
-    let arr = Equips.filter(a => a.type == type);
-    let data = arr.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
-}
-
 function findGeneric(list, type, name, extraCheck = null){
     let data;
     if(extraCheck) data = extraCheck(list, name);
@@ -357,12 +350,32 @@ const findActs = (name) => findGeneric(Acts, "Acts", name);
 const findMags = (name) => findGeneric(Mags, "Mags", name);
 const findTool = (name) => findGeneric(Tools, "Tool", name);
 const findBuff = (name) => findGeneric(Buffs, "Buff", name);
+
+function findPlayers(name){
+    let chara = findChara(name);
+     if(chara) return chara;
+    let friend = findFriend(name);
+     if(friend) return friend;
+    
+     return 0;
+}
+function findEquips(name, type = 0){
+    let arr;
+    if(type) arr = Equips.filter(a => a.type == type);
+    else Equips;
+
+    let data = arr.find(a => a.name == name || a.jpnm == name);
+     if(data) return data;
+    return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
+}
 // #endregion
 
 // #region 人体工場
 function makeUnit(cam, code = 0, name = 0){
     console.log(cam, code, name)
     let data = {};
+    data.id = humans.length;
+
     if(cam == 'player'){
         let data0 = Charas;
         if(code) Friends;

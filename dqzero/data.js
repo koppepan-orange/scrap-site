@@ -2277,14 +2277,103 @@ async function wuzzat(code, when, who = 0, ares = 0, data = {}){
     */
     if(!Array.isArray(ares)) ares = [ares];
     if(!code || !when) return 0;
-
-    let pss = Skills.filter(a => a.type == "ps" && a.when == when);
-
-    // console.log(code);
-    switch(code){
-        case "slash":
-            
+    
+    let ske = (who, arr) => {
+        // [{...}, {...}]
+        let id;
+        if(typeof who == "object") id = who.id;
+        else id = who;
+        return arr.map(a => {
+            a.kariId = id
+            return a;
+        });
     }
+    let pss = Skills.filter(a => a.type == "ps" && a.when == when);
+    let eqs0 = [...ske(who, who.equips), ...ares.flatMap(a2 => ske(a2, a2.equips))];
+    let eqs = eqs0
+        .flatMap(a => ske(a.kariId, findEquips(a.name).funks))
+        .filter(a => a.type == "ps" && a.when == when);
+
+    let cat0 = [...pss, ...eqs];
+
+    let submit = (yorn) => {
+        console.log(`=> ${yorn}`);
+        return yorn;
+    }
+    //p: 条件。aaa/b,ss/c,a,r,dのような形式。
+    // console.log(code);
+    let cat = cat0.filter(a => {
+        console.error(a.p);
+        let res = a.p.split("/").every(li0 => {
+            let li = li0.split(",");
+            console.log(li);
+            
+            if(li[0] == "ターン数指定"){
+                switch(li[1]){
+                    case "<":
+                        return submit(batC.turn < +li[2]);
+                    case "=":
+                        return submit(batC.turn == +li[2]);
+                    case ">":
+                        return submit(batC.turn > +li[2]);
+                    default:
+                        return submit(0);
+                }
+            }
+
+            if(li[0].startsWith("who_")){
+                if(!who) return submit(0);
+                let part = li[0].slice(3); //who_をなくす算段
+                let data = findPlayers(who.name);
+                if(who[part] == li[1] || data[part] == li[1]) return submit(1);
+                else return submit(0);
+            }
+
+            // areの場合はどうするの？ 解:どうしようね。eqsも同じ理由で詰んでる。このデカfilterをlet are of aresの中に入れる....? いいのかな、だいじょうぶかな.....
+            // 一旦kariIdで堪えるわ
+            
+            //以下あまりもの。"name,SlashofLight"想定
+            if(data[li[0]] == li[1]) return submit(1);
+            else{
+                if(li[0].startsWith("are_")) return submit(1);
+                return submit(0);
+            }
+            
+            //これ以下はバグだよ
+            console.warn(`${li[0]}（${li.slice(1).join(",")}） 👈これ、未定義みたいですよ〜？ 一旦通しておきますね〜♪`);
+            return submit(1);
+        });
+
+        return res;
+    });
+    
+    //さあやろうか
+    for(let act of cat){
+        for(let are of ares){
+            // are依存のやつを
+            if(act.kariId && act.kariId != are.id) continue;
+                
+            let res = act.p.split("/").ebery(li0 => {
+                let li = li0.split(",");
+                if(li[0].startsWith("are_")){
+                    if(!are) return submit(0);
+                    let part = li[0].slice(4);
+                    let data = findPlayers(are.name);
+                    if(are[part] == li[1] || data[part] == li[1]) return submit(1);
+                    else return submit(0);
+                }
+
+                // 基本は
+                return submit(1);
+            });
+            if(!res){continue};
+
+            console.log(`[wuzzat] ${act.name}、実行`);
+            await act.func(who, are, data);
+            if(are == 0) continue; //←いらんかも
+        }
+    }
+    //nyaa.si
 }
 
 const Stages = [
