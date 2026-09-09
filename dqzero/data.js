@@ -1164,14 +1164,6 @@ const Acts = [
         tcam:'players',
         func:async function(who, are){
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
-
-            //elseesに移行よろ
-            if(who.ps == 'sthree' && hit(25)){
-                await logText(`${who.name}は頑張った!`);
-                if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
-                if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
-            }
-            
             return 0;
         }
     },
@@ -1983,7 +1975,7 @@ const Skills = [
         price:95,
         
         func:async function(who){
-            turretPlace(cam);
+            turretPlace(who.cam);
             return 0;
         }
     },
@@ -2219,6 +2211,7 @@ const Skills = [
         }
     },
 
+
     // ps
     {
         no:1,
@@ -2231,17 +2224,37 @@ const Skills = [
     {
         type:'ps',
         name:'sthree',
-        jpnm:'DoYourBest!!',
-        desc:'slash時、たまに3回攻撃する',
+        jpnm:'ベストを尽くすよ！',
+        desc:`slash時、${this.h}%の確率でさらに2回攻撃する`,
+        flav:"しゅいーん？べんっべんっ",
+        when:"ato",
+        p:"name,slash",
+        h:25,
         price:90,
-        
+        func:async function(who, are, data){
+            if(!hit(this.h)) return 0;
+            
+            await logText(`${who.jpnm}は頑張った！`);
+            let slash = findActs("slash");
+             if(!slash) console.error("じゃあなんでこれは実行されてんだよ");
+            if(await slash.func()) return 1;
+            if(await slash.func()) return 1;
+            return 0;
+        }
     },
     {
         type:'ps',
         name:'solplaceturret',
         jpnm:'雷ちゃん、もうちょっと',
-        desc:'slash of light命中時、タレットを1つ配置する',
+        desc:'slash of light命中時、味方陣営にタレットを1つ配置する',
+        when:"ato",
+        p:"name,slash_of_light",
+        h:"-",
         price:90,
+        func:async function(who, are, data){
+            if(data.dmg??0 <= 0) return 0;
+            turretPlace(who.cam);
+        }
         
     },
     {
@@ -2288,11 +2301,11 @@ async function wuzzat(code, when, who = 0, ares = 0, data = {}){
             return a;
         });
     }
-    let pss = Skills.filter(a => a.type == "ps" && a.when == when);
+    let pss = Skills.filter(a => a.type == "ps" && a.when??"chu" == when);
     let eqs0 = [...ske(who, who.equips), ...ares.flatMap(a2 => ske(a2, a2.equips))];
     let eqs = eqs0
         .flatMap(a => ske(a.kariId, findEquips(a.name).funks))
-        .filter(a => a.type == "ps" && a.when == when);
+        .filter(a => a.type == "ps" && a.when??"chu" == when);
 
     let cat0 = [...pss, ...eqs];
 

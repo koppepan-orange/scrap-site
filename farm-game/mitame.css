@@ -136,6 +136,65 @@ img{
 /* #endregion */
 
 /* #region logとtext */
+#logOutput{
+    display: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 2px;
+    position: fixed;
+    z-index: 2147483647;
+    &.on{
+        display: flex;
+    }
+
+    & .logs{
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        gap: 2px;
+        width: 300px;
+        height: 75px;
+        max-height: 75px;
+        overflow: scroll;
+        padding: 3px;
+        background: #2b2b2ba0;
+        font-size: 10px;
+
+        & .log{color: #dedede}
+        & .warn{color: #f0d992}
+        & .error{color: #f09292}
+    }
+
+    & .row{
+        width: 100%;
+        height: fit-content;
+        gap: 2px;
+
+        & textarea{
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex: 1;
+             min-height: 22px;
+            background: #2b2b2ba0;
+            color: #dedede;
+            resize: none;
+            field-sizing: content;
+            box-sizing: border-box;
+        }
+        & .bt{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 22px;
+            aspect-ratio: 2/1;
+            background: #6f6f9d;
+            font-size: 11px;
+        }
+    }
+}
 #log{
     display: flex;
     flex-direction: row;
