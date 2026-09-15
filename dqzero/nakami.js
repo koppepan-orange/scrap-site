@@ -566,7 +566,7 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
     let pss = Skills.filter(a => a.type == "ps" && (a.when??"chu" == when));
     let eqs0 = [...ske(who, who.equips), ...ares.flatMap(a2 => ske(a2, a2.equips))];
     let eqs = eqs0
-        .flatMap(a => ske(a.kariId, findEquips(a.name).funks))
+        .flatMap(a => ske(a.kariId, findEquips(a.name, a.type).funks))
         .filter(a => a.type == "ps" && (a.when??"chu" == when));
 
     let cat0 = [...pss, ...eqs];
@@ -722,20 +722,20 @@ async function attack(who, ares, voi, tri, aim, props = []){
         let nisha = { //二者択一 似せたクイズ ダイバーシティに大抜擢 文学的なブーバキキ
             atker, defer
         };
-        let accessment = ["ear", "neck", "tank"];
+        let eqlist = ["ear", "neck", "tank"];
         for(let whi0 of Object.keys(nisha)){
             let whi = nisha[whi0];
-            for(let access0 of accessment){
-                let access = whi[access0] ?? "none";
-                 let accessD = findEquips(access0, access);
+            for(let type of eqlist){
+                let name = whi[type] ?? "none";
+                 let data = findEquips(name, type);
                 
-                if(matchTri(tri, accessD.tri)){
-                    wepatk += accessD.atk;
-                    // console.log(`${accessD.atk}増加`);
+                if(matchTri(tri, data.tri)){
+                    wepatk += data.atk;
+                    // console.log(`${data.atk}増加`);
                 }
-                if(matchTri(tri, accessD.tri)){
-                    shldef += accessD.def;
-                    // console.log(`${accessD.def}増加`);
+                if(matchTri(tri, data.tri)){
+                    shldef += data.def;
+                    // console.log(`${data.def}増加`);
                 }
             } 
         }
