@@ -10,5 +10,8 @@ const Drinks = [
         jpnm:"牛乳",
         from:["milk"],
         price:198
+    },
+    {
+        name:""
     }
 ]
