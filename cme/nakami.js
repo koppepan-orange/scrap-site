@@ -16,6 +16,13 @@ mainF.move = (to) => {
     document.getElementById(to).classList.add('show');
     mainC.spa = to;
 
+    switch(to){
+        case "bato":
+            batF.prepare();
+            break;
+        
+    }
+
     history.replaceState(null, "", `?${to}`);
 }
 
@@ -66,6 +73,60 @@ function findGeneric(list, type, name, extraCheck = null){
 }
 // const findKaris = (name) => findGeneric(Karis, "Karis", name);
 
+let lobD = document.getElementById("loby");
+let lobC = {
+    //やりたいこと: 戦闘遷移、パーティ編成、ガチャ...だけかな。育成はなし、カジノもなし
+    Ds:{
+        bat: lobD.querySelector(".bat"),
+        party: lobD.querySelector(".party"),
+    },
+
+    party:[],
+}
+let lobF = {};
+
+lobF.load = () => {
+    //初期セットアップ
+    for(let i=0; i<4; i++){
+        let chara = Charas.filter(a => !a.no)[i];
+        lobC.party.push(chara.name);
+    }
+}
+
+lobF.bat = () => {
+    //if(lobC.party.length <= 0) return 
+    mainF.move("bato");
+}
+
+
+let batD = document.getElementById("bato");
+let batC = {
+
+}
+let batF = {};
+class batA_human{
+    constructor(cam, data = {}){
+        if(!cam) return 0;
+        this.id = batC.hs.length;
+        this.cam = cam;
+
+        for(let stat of Stats){
+            let name = stat.name;
+            this[name] = data[name] ?? stat.bas; //??なら0は0として通すはず
+        }
+        //this.maxhp = data.maxhp || Stats["maxhp"].bas;
+
+        this.buffs = [];
+        this.equips = [];
+        
+    }
+}
+batF.prepare = () => {
+    let list = copy(lobC.party);
+
+}
+
+
 //#region start
 function start(){
     Style.tekiou();
@@ -73,7 +134,7 @@ function start(){
 
     mainF.load();
 
-    let hash = location.hash.replace("?", "");
+    let hash = location.search.replace("?", "");
     let space = Spaces.find(a => a.name == hash);
     if(!space) space = Spaces.find(a => a.sho);
     mainF.move(space.name);
