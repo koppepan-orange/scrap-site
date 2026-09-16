@@ -114,11 +114,28 @@ class batA_human{
             let name = stat.name;
             this[name] = data[name] ?? stat.bas; //??なら0は0として通すはず
         }
-        //this.maxhp = data.maxhp || Stats["maxhp"].bas;
 
         this.buffs = [];
         this.equips = [];
         
+        if(cam == "player" && !data.name) return 0;
+        if(cam == "enemie" && !data.name){
+            let arr = Enemies.filter(a => a.live.include("all") || a.live.include(batC.stage));
+            data.name = arraySelect(arr);
+        }
+        this.name = data.name;
+        if(cam == "player") this.data = findChara(this.name);
+        if(cam == "enemie") this.data = findEnemie(this.name);
+
+
+        this.add();
+    }
+    add(){
+        batC.hs.push(this); //thisにまたdiv追加したり編集したらちゃんとhsの方にも伝わるよな.....?   
+    }
+
+    make(){
+
     }
 }
 batF.prepare = () => {
