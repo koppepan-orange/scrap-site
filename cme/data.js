@@ -775,8 +775,6 @@ const Buffs = [
             "attack_pre":{
                 func:async(atker, defer, data = {}) => {
                     this.O = batC.field["O"];
-                    //記録。これがこのBuffsデータに保存されるのか、unitのbuffs（[{...}, {...}]）の方のデータに保存されるのか...まあどっちでもいいか、edで参照できるなら
-                    //...あーでももしこのデータの方に保存できないなら、efsは{{func}, {func}}じゃなくて{func, func}でいいのではという説はある
                 },
             },
             "attack_ed":{
