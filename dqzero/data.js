@@ -1,6 +1,77 @@
+(function(){
+    let ooD = document.getElementById('logOutput');
+    if(ooD.classList.contains("off")) return 0;
+    ooD.addEventListener("dblclick", () => ooD.classList.remove("on"));
+
+    let div0 = ooD.querySelector(".logs")
+    function hookConsole(type){
+        let oldFunc = console[type];
+        console[type] = function(){
+            oldFunc.apply(console, arguments);
+
+            let text = Array.from(arguments)
+            .map(a => {
+                if(typeof a == "object") return JSON.stringify(a);
+                else return a;
+            }).join(" ");
+
+            let div = document.createElement("div");
+             div.className = type
+             div.innerText = text;
+             div0.appendChild(div);
+            div0.scrollTop = div0.scrollHeight;
+
+            let arr = div0.children;
+            while(40 < arr.length){
+                div0.firstElementChild.remove();
+            }
+        };
+    }
+    hookConsole("log");
+    hookConsole("error");
+    hookConsole("warn");
+
+    let codeInput = ooD.querySelector("textarea")
+    let runBtn = ooD.querySelector(".bt")
+
+    function executeCode(){
+        let code = codeInput.value;
+         if(!code) return;
+
+        console.log("> " + code);
+
+        try {
+            let result = eval(code);
+            console.log(result);
+        }
+        catch(err){
+            // 文法エラーや実行時エラーのキャッチ
+            console.error(err);
+        }
+
+        codeInput.value = "";
+    }
+
+    runBtn.addEventListener('click', executeCode);
+    codeInput.addEventListener('keydown', function(e){
+        if(e.key == "Enter" && !(e.ctrlKey || e.metaKey || e.shiftKey)){
+            e.preventDefault();
+            executeCode();
+        }
+    })
+    codeInput.addEventListener("resize", () => {
+        runBtn.style.height = codeInput.offsetWidth;
+    })
+})();
+
 let Style = {
     iPhone:{ //16
         "width": "393px",
+    },
+    ki:{
+        "back": "#000000",
+        "bor":  "#ffffff",
+        "aima": "#808080"
     },
     "batSt":{
         solid:"#2b2b2b",
@@ -169,401 +240,113 @@ function SpeciusLight(){
     }
 }
 
-let Status = [
-    // [whi] atkerはatker専用、逆はそれ専用、ないやつは汎用
-    // [tri] ph:物理、mg:魔法、cn:間接、ないやつは汎用
-
+const Stats = [
     {
         name:"maxhp",
-        jpnm:"最大体力",
-        desc:"キャラクターの最大体力を示します",
         bas:100,
     },
+    
     {
         name:"atk",
-        jpnm:"攻撃力",
-        desc:"攻撃！",
-        whi:"atker",
-        tri:"ph",
         bas:20,
     },
     {
         name:"def",
-        jpnm:"防御力",
-        desc:"守り力です",
-        whi:"defer",
-        tri:["ph", "cn"],
-        bas:0,
+        bas:10,
     },
-
     {
         name:"matk",
-        jpnm:"魔攻力",
-        desc:"魔力とも言う",
-        whi:"atker",
-        tri:"mg",
         bas:10,
     },
     {
         name:"mdef",
-        jpnm:"魔防力",
-        desc:"魔力（防）とも言う ださっ",
-        whi:"defer",
-        tri:"mg",
-        bas:0,
-    },
-
-    {
-        name:"catk",
-        jpnm:"銃力..?",
-        desc:"しらねぇよ",
-        whi:"atker",
-        tri:"cn",
         bas:10,
     },
 
     {
-        name:"power",
-        jpnm:"攻撃倍率",
-        desc:"そのまま。すべてに適用",
-        whi:"atker",
-        tri:"all",
-        bas:1.0,
+        name:"crla",
+        bas:3,
     },
     {
-        name:"shell",
-        jpnm:"防御倍率",
-        desc:"そのまま。すべてに適用",
-        whi:"defer",
-        tri:"all",
-        bas:1.0,
+        name:"crdm",
+        bas:150,
     },
-    
+    {
+        name:"crrs",
+        bas:0,
+    },
+
+    {
+        name:"pow",
+        bas:100, //%
+    },
+    {
+        name:"she",
+        bas:100,
+    },
+
     {
         name:"add",
-        jpnm:"追加攻撃力",
-        desc:"攻撃倍率に左右されない攻撃力を",
-        whi:"atker",
-        tri:"all",
+        desc:"atk-defの計算をしたのち、最後にdmgに足される値です",
         bas:0,
     },
     {
         name:"cut",
-        jpnm:"追加防御力？",
-        desc:"左右されないやつだけど、、これと80%カットは違うにした方がいいか？ん、、そんな気がする。てか追加攻撃力って何？いやそれは必要るか、ぅぅ....じゃあ追加防御力の名称考えないと",
-        whi:"atker",
-        tri:"all",
+        desc:"atk-defの計算をしたのち、最後にdmgから引かれる値です",
         bas:0,
     },
 
     {
-        name:"maxmp",
-        jpnm:"最大魔力",
-        desc:"所持可能な最大魔素量。",
-        bas:50,
-    },
-    
-    {
-        name:"maxep",
-        jpnm:"ep最大",
-        desc:"epっていう...まあスキルゲージだね、スキルのためのポイント",
-        bas:100
-    },
-
-    {
-        name:"crla",
-        jpnm:"会心率",
-        desc:"",
-        whi:"atker",
-        bas:3
+        name:"aim",
+        desc:"命中率。判定時はhit(aim-dod)をする",
+        bas:95,
     },
     {
-        name:"crdm",
-        jpnm:"会心倍率",
-        desc:"",
-        whi:"atker",
-        bas:150
-    },
-    {
-        name:"crrs",
-        jpnm:"会心抵抗",
-        desc:"",
-        whi:"defer",
-        bas:0
+        name:"dod",
+        desc:"回避率。判定時はhit(aim-dod)をする",
+        bas:5,
     },
 
     {
         name:"spd",
-        jpnm:"速度",
-        desc:"行動速度のあれ。計算がむずい",
-        bas:50
+        desc:"行動順。ターン開始時、spdの高い順に行動する",
+        bas:50,
     },
 
     {
-        name:"dodge",
-        jpnm:"回避率",
-        desc:'攻撃を回避しやすくなる確率。基本0',
-        whi:"defer",
-        bas:0
-    },
-    {
-        name:"targe",
-        jpnm:"命中率",
-        desc:'攻撃が"命中しやすい"確率。基本0',
-        whi:"atker",
-        bas:0
+        name:"maxmp",
+        desc:"魔素タンクの残量。え、ずっと最大値の人がいる？？それは...な、なんだろねー......", //魔人間です。希少だし[王都]アトモスフィアでは迫害対象
+        bas:0, //ふつうは持ってないので
     }
 ]
 
-let Charas = [
-    {
-        name:'wretch',
-        jpnm:'持たざる者',
-        img:'wretch',
-        desc:'持たざる者。何もないが、何でもあるとも言える。\n平均的で普遍的。普通の凡才でただの人間。',
-        ex:'null',
-        ns:'null',
-        ps:'null',
-        stat:{
-            atk:20,
-            def:0,
-            matk:10,
-            mdef:0,
-            maxhp:100,
-            maxmp:50,
-            crla:5,
-            crdm:150,
-            crrs:0,
-            spd:50,   
-        },
-        buttonsolid:'#000000',
-        buttonback:'#999999',
-    },
 
-    {
-        name:'color_slime',
-        jpnm:'ファン・ボイ・チャウ',
-        img:'color_slime_green',
-        data:{
-            colorp:"color_slime_", //original
-            color0:"green",
-            colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
-        },
-        desc:'スライム。...まだできてないから使わない方が吉',
-        ex:'null',
-        ns:'null',
-        ps:'sthree',
-        stat:{
-            atk:20,
-            def:0,
-            matk:10,
-            mdef:0,
-            maxhp:100,
-            maxmp:50,
-            crla:0,
-            crdm:150,
-            crrs:'absolute',
-            spd:35,
-        },
-        buttonsolid:'#000000',
-        buttonback:'#999999',
-    },
 
-    {
-        name:'mechanic',
-        jpnm:'なんとか・アミー',
-        img:'mechanic',
-        desc:'メカニック。工具を用いて割となんでも作れる。\nそのせいか助手には大きく慕われている。\n打たれ弱いので繊細にね',
-        ex:'placeturret',
-        ns:'throwwrench',
-        ps:'solplaceturret',
-        stat:{
-            atk:25,
-            def:0,
-            matk:20,
-            mdef:20,
-            maxhp:25,
-            maxmp:30,
-            crla:7,
-            crdm:200,
-            crrs:0,
-            spd:65,
-        },
-        buttonsolid:'#ff7373',
-        buttonback:'#fcffc0',
-    },
-    
-    {
-        name:'clown',
-        jpnm:'週末の道化師',
-        img:'clown',
-        desc:'ピエロさん。ランダム要素多め。\n',
-        ex:'trickyvaiavles',
-        ns:'gambler',
-        ps:'highsol',
-        stat:{
-            atk:20,
-            def:0,
-            matk:10,
-            mdef:20,
-            maxhp:100,
-            maxmp:50,
-            crla:9,
-            crdm:300,
-            crrs:10,
-            spd:40,
-        },
-        buttonsolid:'#ffacf9',
-        buttonback:'#acf8ff',
-    },
-    
-    {
-        name:'magodituono',
-        jpnm:'スオーノ・フルマイン',
-        img:'magodituono',
-        desc:'雷電魔術師。"帯電"を用いて戦う\n将軍ではない。誰だ将軍って言ったやつは',
-        ex:'lightningstorm',
-        ns:'elecbarrier',
-        ps:'elecshock',
-        stat:{
-            atk:10,
-            def:0,
-            matk:30,
-            mdef:20,
-            maxhp:40,
-            maxmp:100,
-            crla:5,
-            crdm:200,
-            crrs:5,
-            spd:60,
-        },
-        buttonsolid:'#7f1184',
-        buttonback:'#5f4894',
-    },
-]
-
+const Phenons = {
+    "発火":{
+        key:"発火",
+        desc:`火が起こる現象のこと。うちでは爆発として取り扱う。\n
+P属性やS属性などで起こすことができ、その時の効果は引き起こした属性によって異なる。\n
+対象は発端者の攻撃力の{60%}の爆発ダメージを受け、「火傷」を{2t}付与される。このダメージやターン数は、この現象で消費したOの量によって増加する。ダメージ量は消費したOの量が0から2を超えるたびに10%増加し、ターン数は消費したOの量は0から3を超えるたびに1t増加する。/n
+また、この現象が発生した際にフィールド上にNH3があるならば、2度目の爆発が発生し、NH3は全て消滅する。この2度目の爆発は対象グループ全体に影響し、ダメージ量は1度目の爆発ダメージの50%x消費したNH3量となる。`,
+        occur:["P", "S", "Mg", "C"],
+        occurs:{
+            "P":{
+                key:"P",
+                desc:""
+            }
+        }
+    }
+}
 
 /*
-
-function processDots(who){
-    let dots = {};
-    for(let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
-        if(data && hask(data, 'dot')){
-            let dot = data.dot;
-            let val = buff.value[dot];
-            if(typeof val == 'string' && val.endsWith('%')){
-                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
-            }
-            if(!dots[dot]) dots[dot] = 0;
-            dots[dot] += val;
-        }
-    }
-    Object.keys(dots).forEach(key => {
-        let val = dots[key];
-        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
-        who.hp -= val;
-        if(who.hp <= 0) return dead(0, who);
-    });
-
-    return 0;
-}
-
-async function turnNext(who){
-    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
-    
-    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
-
-        if(buff.name == 'onslime'){
-            if(isCrit(buff.value)){
-                buffremove(who, 'onslime');
-                addtext('なんとかスライムを取り払った!!');
-            } else {
-                addtext('スライムが邪魔して動けない!!');
-                turnBye(who);
-                 // 動けないから次の人へパス
-                return;
-            }
-        }
-        if(buffhas(who, 'skip')){
-            await logText(`>> はい${who.name}、お前スキップ〜〜`);
-            turnBye(who);
-            return;
-        }
-        if(hask(buff.value, 'palsy')){
-            if(isCrit(buff.value.palsy)){
-                data.name != 'stan'
-                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
-                    : addtext(`${who.cam}${who.me}はスタンしている....`);
-                turnBye(who);
-                return;
-            }
-        }
-        if(hask(buff.value, 'freeze')){
-            if(!isCrit(buff.value.freeze)){
-                addtext(`${who.name}は凍っている...`);
-                turnBye(who);
-                return;
-            }
-            await logText(`氷が溶けた！`);
-            buffremove(who, 'freeze');
-        }
-    }
-
-    // 前半のdotダメージ処理
-    processDots(who);
-    if(who.hp <= 0) return dead(0, who);
-
-    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
-
-    switch (who.cam){
-        case 'player':
-            playerturn(who);
-            break;
-        case 'enemie':
-            enemyturn(who);
-            break;
-    }
-}
-
-async function turnEnd(who, ares){
-    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
-    
-    for(let i = who.buffs.length - 1; i >= 0; i--){
-        who.buffs[i].time -= 1;
-        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
-    }
-    tekiou();
-
-    let extraTurn = false;
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
-        if(data && hask(data, 'luck')){
-            if(isCrit(data.luck)){
-                addtext('当たりが出たらもう一本！');
-                extraTurn = true;
-                break;
-            }
-        }
-    }
-
-    if(extraTurn){
-        if(who.cam == 'player') playerturn(who);
-        else enemyturn(who);
-        return;
-    }
-
-    processDots(who);
-    if(who.hp <= 0) return;
-
-    turnBye(who);
-}
+type: 
+　stackは自然消滅しない。代わりに、アイコン右下に必ず"x1"というような表記が出る。
+　turnはstackにturn_ed:decl(1)を付けただけ。代わりに、右下には表示はなく、左下に必ず"1t"というような表記が出る。
 
 */
+const Buffs = [
 
-let Buffs = [
     {
         name:'luck',
         jpnm:'幸運',
@@ -615,21 +398,22 @@ let Buffs = [
     },
     {
         name:'poison',
-        jpnm:'毒',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'poison',
-        desc:'ターン開始時、HP割合で防御貫通ダメージを受ける。',
+        type:"stack",
+        gb:"b",
+        desc:"ターン開始時、最大HPの*2*%分、シールドを貫通したダメージを受ける。",
         flav:"？？？「毒の苦しみもお好きなんですね」",
-        lvs:[
-            {poison:'3%'},
-            {poison:'5%'},
-            {poison:'7%'},
-            {poison:'10%'},
-        ],
-        max:4
+        efs:{
+            "turn_end":{
+                func:async(who, ares, data = {}) => {
+                    let maxhp = who.maxhp;
+                    let val = Math.max(Math.floor(maxhp * 0.02), 1);
+                    
+                    data["攻撃者"] = "病原体";
+                    data["ダメージ"] = "効果";
+                    if(await damage(who, who, val, "mg", ["無視:シールド"], data)) return 1;
+                }
+            }
+        }
     },
     {
         name:'poison_deadly',
@@ -936,56 +720,366 @@ let Buffs = [
         kiju:'stack',
         desc:'すごいイラつかせてくる敵..?\nいやまあ普通にパクリですけれども\nで避けられてさらに煽られるみたいな',
     },
-    {
-        name:'onslime',
-        type:'unique',
-        becauseof:'none',
-        hera:1,
-        kiju:'stack',
-        desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
-        kaijo:"行動開始",
-        kaijov:"",
-        kaijoF:() => {
-            if(hit(30)){
-                logText('纏わりついたスライムが邪魔をして動けなかった！');
-                return 1;
-            }
 
-            logText("スライムを何とか引きはがした！");
-            return 0;
+    {
+        name:""
+    },
+    {
+        name:"傷口",
+        type:"stack",
+        gb:"b", //good|umm|bad
+        desc:"行動時に5ダメージを受ける",
+        efs:{
+            "attack_ed":{
+                func:async(who, are, data = {}) => {
+                    data["攻撃者"] = "傷口";
+                    data["ダメージ"] = "効果";
+                    if(await damage(who, who, 5, data)) return 1;
+                    
+                    return 0;
+                }
+            }
         }
     },
     {
-        name:'stickyslime',
-        type:'unique',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'スライムがくっついているおかげで行動するとダメージを受けます',
-        flav:'連続行動ビルドに大打撃 part2',
-        lvs:[
-            {mg:10},
-            {mg:20}
-        ],
-        max:2
-    },
-    {
-        name:'letsthrow',
-        type:'unique',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
-    },
-    {
-        name:'gambling',
-        type:'unique',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？',
+        name:"自然の循環",
+        type:"turn",
+        gb:"g",
+        desc:"Oを消費する時、50%の確率で消費しない。",
+        efs:{
+            "attack_pre":{
+                func:async(atker, defer, data = {}) => {
+                    this.O = batC.field["O"];
+                },
+            },
+            "attack_ed":{
+                func:async(who, are, data = {}) => {
+                    let now = batC.field["O"];
+                    let diff = now - this.O;
+                    if(0 < diff) return 0;
+
+                    if(hit(50)) await elemenAdd("O", diff);
+                }
+            }
+        }
     }
 ]
+
+
+
+
+
+let Charas = [
+    {
+        name:'wretch',
+        jpnm:'持たざる者',
+        img:'wretch',
+        desc:'持たざる者。何もないが、何でもあるとも言える。\n平均的で普遍的。普通の凡才でただの人間。',
+        ex:'null',
+        ns:'null',
+        ps:'null',
+        stat:{
+            atk:20,
+            def:0,
+            matk:10,
+            mdef:0,
+            maxhp:100,
+            maxmp:50,
+            crla:5,
+            crdm:150,
+            crrs:0,
+            spd:50,   
+        },
+        buttonsolid:'#000000',
+        buttonback:'#999999',
+    },
+
+    {
+        name:'color_slime',
+        jpnm:'ファン・ボイ・チャウ',
+        img:'color_slime_green',
+        data:{
+            colorp:"color_slime_", //original
+            color0:"green",
+            colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
+        },
+        desc:'スライム。...まだできてないから使わない方が吉',
+        ex:'null',
+        ns:'null',
+        ps:'sthree',
+        stat:{
+            atk:20,
+            def:0,
+            matk:10,
+            mdef:0,
+            maxhp:100,
+            maxmp:50,
+            crla:0,
+            crdm:150,
+            crrs:'absolute',
+            spd:35,
+        },
+        buffs:[
+            {
+                name:'onslime',
+                type:'unique',
+                becauseof:'none',
+                hera:1,
+                kiju:'stack',
+                desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
+                kaijo:"行動開始",
+                kaijov:"",
+                kaijoF:() => {
+                    if(hit(30)){
+                        logText('纏わりついたスライムが邪魔をして動けなかった！');
+                        return 1;
+                    }
+
+                    logText("スライムを何とか引きはがした！");
+                    return 0;
+                }
+            },
+            {
+                name:'stickyslime',
+                type:'unique',
+                becauseof:'turn_start',
+                hera:1,
+                kiju:'lv',
+                desc:'スライムがくっついているおかげで行動するとダメージを受けます',
+                flav:'連続行動ビルドに大打撃 part2',
+                lvs:[
+                    {mg:10},
+                    {mg:20}
+                ],
+                max:2
+            },
+        ],
+        buttonsolid:'#000000',
+        buttonback:'#999999',
+    },
+
+    {
+        name:'mechanic',
+        jpnm:'なんとか・アミー',
+        img:'mechanic',
+        desc:'メカニック。工具を用いて割となんでも作れる。\nそのせいか助手には大きく慕われている。\n打たれ弱いので繊細にね',
+        ex:'placeturret',
+        ns:'throwwrench',
+        ps:'solplaceturret',
+        stat:{
+            atk:25,
+            def:0,
+            matk:20,
+            mdef:20,
+            maxhp:25,
+            maxmp:30,
+            crla:7,
+            crdm:200,
+            crrs:0,
+            spd:65,
+        },
+        buffs:[
+
+            {
+                name:'letsthrow',
+                type:'unique',
+                becauseof:'turn_start',
+                hera:1,
+                kiju:'lv',
+                desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
+            }
+        ],
+        buttonsolid:'#ff7373',
+        buttonback:'#fcffc0',
+    },
+    
+    {
+        name:'clown',
+        jpnm:'週末の道化師',
+        img:'clown',
+        desc:'ピエロさん。ランダム要素多め。\n',
+        ex:'trickyvaiavles',
+        ns:'gambler',
+        ps:'highsol',
+        stat:{
+            atk:20,
+            def:0,
+            matk:10,
+            mdef:20,
+            maxhp:100,
+            maxmp:50,
+            crla:9,
+            crdm:300,
+            crrs:10,
+            spd:40,
+        },
+        buffs:[
+            {
+                name:'gambling',
+                type:"turn",
+                desc:"次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？",
+                efs:{
+                    "attack_ing":{
+                        func:async(atker, defer, data = {}) => {
+                            let rate = arrayGacha([0, 2, 4], [20, 70, 10]);
+                            data["dmg"] = `*${rate}`;
+                        }
+                    }
+                }
+            }
+        ],
+        color:{
+            bor:"#ffacf9",
+            back:"#acf8ff",
+        }
+    },
+    
+    {
+        name:'magodituono',
+        jpnm:'スオーノ・フルマイン',
+        img:'magodituono',
+        desc:'雷電魔術師。"帯電"を用いて戦う\n将軍ではない。誰だ将軍って言ったやつは',
+        ex:'lightningstorm',
+        ns:'elecbarrier',
+        ps:'elecshock',
+        stat:{
+            atk:10,
+            def:0,
+            matk:30,
+            mdef:20,
+            maxhp:40,
+            maxmp:100,
+            crla:5,
+            crdm:200,
+            crrs:5,
+            spd:60,
+        },
+        buttonsolid:'#7f1184',
+        buttonback:'#5f4894',
+    },
+]
+
+
+/*
+
+function processDots(who){
+    let dots = {};
+    for(let buff of who.buffs){
+        let data = Buffs.find(a => a.name == buff.name);
+        if(data && hask(data, 'dot')){
+            let dot = data.dot;
+            let val = buff.value[dot];
+            if(typeof val == 'string' && val.endsWith('%')){
+                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
+            }
+            if(!dots[dot]) dots[dot] = 0;
+            dots[dot] += val;
+        }
+    }
+    Object.keys(dots).forEach(key => {
+        let val = dots[key];
+        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
+        who.hp -= val;
+        if(who.hp <= 0) return dead(0, who);
+    });
+
+    return 0;
+}
+
+async function turnNext(who){
+    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
+    
+    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
+
+        if(buff.name == 'onslime'){
+            if(isCrit(buff.value)){
+                buffremove(who, 'onslime');
+                addtext('なんとかスライムを取り払った!!');
+            } else {
+                addtext('スライムが邪魔して動けない!!');
+                turnBye(who);
+                 // 動けないから次の人へパス
+                return;
+            }
+        }
+        if(buffHas(who, 'skip')){
+            await logText(`>> はい${who.name}、お前スキップ〜〜`);
+            turnBye(who);
+            return;
+        }
+        if(hask(buff.value, 'palsy')){
+            if(isCrit(buff.value.palsy)){
+                data.name != 'stan'
+                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
+                    : addtext(`${who.cam}${who.me}はスタンしている....`);
+                turnBye(who);
+                return;
+            }
+        }
+        if(hask(buff.value, 'freeze')){
+            if(!isCrit(buff.value.freeze)){
+                addtext(`${who.name}は凍っている...`);
+                turnBye(who);
+                return;
+            }
+            await logText(`氷が溶けた！`);
+            buffremove(who, 'freeze');
+        }
+    }
+
+    // 前半のdotダメージ処理
+    processDots(who);
+    if(who.hp <= 0) return dead(0, who);
+
+    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
+
+    switch (who.cam){
+        case 'player':
+            playerturn(who);
+            break;
+        case 'enemie':
+            enemyturn(who);
+            break;
+    }
+}
+
+async function turnEnd(who, ares){
+    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
+    
+    for(let i = who.buffs.length - 1; i >= 0; i--){
+        who.buffs[i].time -= 1;
+        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
+    }
+    tekiou();
+
+    let extraTurn = false;
+    for(let buff of who.buffs){
+        let data = buffData(buff.name);
+        if(data && hask(data, 'luck')){
+            if(isCrit(data.luck)){
+                addtext('当たりが出たらもう一本！');
+                extraTurn = true;
+                break;
+            }
+        }
+    }
+
+    if(extraTurn){
+        if(who.cam == 'player') playerturn(who);
+        else enemyturn(who);
+        return;
+    }
+
+    processDots(who);
+    if(who.hp <= 0) return;
+
+    turnBye(who);
+}
+
+*/
+
 
 const Elements = [
     {
@@ -2713,24 +2807,24 @@ const Enemies = [
                 prop:['abInvisi'],
                 num:2,
                 func:async function(who){
-                    let x = buffhas(who, 'disappear') ? (buffclear(who, 'disappear'), 200) : 100;
+                    let x = buffHas(who, 'disappear') ? (buffclear(who, 'disappear'), 200) : 100;
                     await logText(`${who.name}は突進してきた！`);
                     let are = selectJodou(who, 'are', 0, 'random');
-                    let result = await attack(who, are, x, 'ph');
-                    return result;
+                    if(await attack(who, are, x, 'ph')) return 1;
+                    return 0;
                 }
             },
             {
-                name:'ローキック',//ロストワンの号哭の号哭使いたいけど意味が泣くことらしい
+                name:'ローキック',//ロストワンの号哭の号哭使いたいけど意味が"泣くこと"らしい むりすぎ
                 p:20,
                 type:'none',
                 num:3,
                 func:async function(who){
                     await logText(`${who.name}はローキックしてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'low');
-                    let result = await attack(who, are, 70, 'ph');
+                    if(await attack(who, are, 70, 'ph')) return 1;
                     await buffAdd(who, are, 'spddown', 2, 1);
-                    return result;
+                    return 0;
                 }
             }
         ]

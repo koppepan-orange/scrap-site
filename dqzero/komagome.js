@@ -23,7 +23,7 @@ async function nicoText(mes){
 function tobiText(youso, mes, config = {}) {
     let {
         mode = "booba", //booba(楕円)かkiki(トゲトゲ)
-        back = "#2b2b2b",
+        back = Style.ki["bor"],
     } = config;
 
     let el = youso;
@@ -43,7 +43,7 @@ function tobiText(youso, mes, config = {}) {
     div.style.top = `${top}px`;
     div.style.left = `${left}px`;
     div.style.setProperty('---back', back);
-    div.style.color = "#2b2b2b";
+    div.style.color = Style.ki["bor"];
     if(irohaDark(back)) div.style.color = "#ffffff";
 
     if(mode == 'kiki'){
@@ -1174,6 +1174,36 @@ class alertD{
         setTimeout(() => div.remove(), 1000);
     };
 };
+
+class DBdesc{
+    constructor(text, data){
+        let txt = text.endsWith(".txt");
+
+        let div;
+        if(!txt){
+            div = El("div", "DBdesc");
+            div.innerText = text;
+        }
+        else{
+            div = El("iframe", "DBdesc");
+            div.src = text;
+        }
+
+        div.classList.add("draggable");
+
+        div.addEventListener("dblclick", () => {
+            div.remove();
+        });
+
+        this.div = div;
+    }
+
+    append(div0 = 0){
+        if(!div0) div0 = mainD;
+        console.log(this.div);
+        div0.appendChild(this.div);
+    }
+}
 //#endregion
 //#region CheckBox feat.Slider
 class Checkbox {
@@ -1188,8 +1218,8 @@ class Checkbox {
         this.func = func;
 
         if(!data) data = {
-            back: '#b2b2b2',
-            backed: '#2b2b2b'
+            back: Style.ki["back"],
+            backed: Style.ki["bor"]
         }
         this.data = data; //固有。func用だったりするのかも
 
@@ -1241,8 +1271,8 @@ class Slider {
         this.func = func;
 
         if(!data) data = {
-            back: '#b2b2b2',
-            backed: '#2b2b2b'
+            back: Style.ki["back"],
+            backed: Style.ki["bor"]
         }
         this.data = data;
 
@@ -1311,8 +1341,8 @@ class TakushiSen {
         this.mode = mode;
 
         if(!data) data = {
-            back: '#b2b2b2',
-            backed: '#2b2b2b'
+            back: Style.ki["back"],
+            backed: Style.ki["bor"]
         };
         this.data = data;
 
@@ -1451,7 +1481,7 @@ tensheeD.querySelectorAll('.bt').forEach(bt => {
 })
 
 //#endregion
-// #region provide
+//#region provide
 class fuyoNagaOSU{
     constructor(div, func, nagasa = 1000){
         if(!div || !nagasa) return console.error(`せんぱ〜い？ ${div} ${func} ${nagasa} なんていうよくわからないものは使わないでくださ〜い笑`);
@@ -1476,6 +1506,10 @@ class fuyoNagaOSU{
         this.div.addEventListener('pointerup', () => this.destroy());
         this.div.addEventListener('pointercancel', () => this.destroy());
         this.div.addEventListener('mouseleave', () => this.destroy());
+    }
+
+    timeMachine(nagasa){
+        this.nagasa = nagasa;
     }
 
     destroy(){
@@ -1942,4 +1976,3 @@ document.addEventListener('keydown', async function(e){
     secratesP(key);
 })
 //#endregion
-

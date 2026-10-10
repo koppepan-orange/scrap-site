@@ -142,7 +142,7 @@ homF.start = async() => {
     console.log(name) //"color_slime"
     console.log(`選ばれたのは、[${name}]でした`); //"選ばれたのは、[undefined]でした"
 
-    makeUnit("player", 0, name);
+    makePlayer(name);
     batF.hasSet([
         ["aspirin", 3],
         ["throw_knife", 3],
@@ -266,7 +266,7 @@ function tekiou(){
         // console.log(hd)
 
         // 小数やら
-        let shos = ["hp", "maxhp", "atk", "def", "matk", "mdef", "catk"];
+        let shos = ["hp", "maxhp", "atk", "def", "matk", "mdef"];
         human.hp = Math.round(human.hp);
 
         div.querySelector('.name').textContent = human.name;
@@ -304,7 +304,7 @@ function tekiou(){
              buID.src = `assets/images/buffs/${name}.png`;
              buD.appendChild(buID);
             
-            buffD.appendChild('buD')
+            buffD.appendChild(buD)
         }
     }   
 }
@@ -344,21 +344,11 @@ function findGeneric(list, type, name, extraCheck = null){
     return 0;
 }
 const findChara = (name) => findGeneric(Charas, "Chara", name);
-const findFriend = (name) => findGeneric(Friends, "Friend", name);
 const findEnemie = (name) => findGeneric(Enemies, "Enemie", name);
 const findActs = (name) => findGeneric(Acts, "Acts", name);
 const findMags = (name) => findGeneric(Mags, "Mags", name);
 const findTool = (name) => findGeneric(Tools, "Tool", name);
 const findBuff = (name) => findGeneric(Buffs, "Buff", name);
-
-function findPlayers(name){
-    let chara = findChara(name);
-     if(chara) return chara;
-    let friend = findFriend(name);
-     if(friend) return friend;
-    
-     return 0;
-}
 function findEquips(name, type = 0){
     let arr;
     if(type) arr = Equips.filter(a => a.type == type);
@@ -368,31 +358,210 @@ function findEquips(name, type = 0){
      if(data) return data;
     return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
 }
+
+function calclation(gen, code){
+    if(typeof gen == "string") gen = +gen;
+    if(typeof gen != "number" || isNaN(gen)) return console.error(`[calclation] ${gen}は数値ではないので計算できません`);
+    // let sym = code.slice(0, 1);
+    // let num = +code.slice(1);
+    let sum = eval(`${gen}${code}`);
+    return sum;
+}
 // #endregion
 
 // #region 人体工場
-function makeUnit(cam, code = 0, name = 0){
-    console.log(cam, code, name)
-    let data = {};
+// #region 人体工場
+class Human {
+    constructor(cam, name = 0, data = {}) {
+        if (!cam) return 0;
+        this.cam = cam;
+        this.name = name;
+        this.id = typeof humans !== 'undefined' ? humans.length : 0;
+
+        // 1. キャラクター/エネミーデータの取得
+        if (cam == 'player') {
+            let data0 = Charas;
+            this.data = copy(data0.find(a => a.name == this.name));
+            if (!this.data) return console.log(`player に ${this.name} はいないらしい`), 0;
+        } else if (cam == "enemie") {
+            if (!this.name) {
+                let arr = Enemies.filter(a => !a.no);
+                let selected = arraySelect(arr);
+                this.name = selected?.name ?? 0;
+                this.data = copy(selected);
+            } else {
+                this.data = copy(findEnemie(this.name));
+            }
+            if (!this.data) return console.log(`enemie に ${this.name} はいないらしい`), 0;
+        }
+
+        // ステータスの初期化と計算
+        for (let stat of Stats) {
+            let sName = stat.name;
+            if(cam == 'player') this[sName] = this.data.stat?.[sName] ?? stat.bas;
+            else if(cam == "enemie"){
+                let base = stat.bas;
+                let v = this.data[sName];
+                if (!v || typeof v != 'string') v = "+0";
+                if (v.startsWith('+') || v.startsWith('-')) {
+                    let num = +v.slice(1);
+                    if (v.startsWith('-')) num *= -1;
+                    base += num;
+                }
+                if (v.startsWith('=')) {
+                    base = +v.slice(1);
+                }
+                this[sName] = base;
+            }
+            else return "なんで何も重い処理起動してないのにファン回っとんねん殺すぞ";
+        }
+
+        // 3. 共通の初期化
+        this.hp = this.maxhp;
+        this.mp = this.maxmp;
+        this.ep = 0;
+        this.joutie = 1;
+        this.buffs = [];
+        this.me = typeof humans !== 'undefined' ? humans.filter(a => a.cam == cam).length : 0;
+
+        // 個別の初期化（プレイヤー / エネミー）
+        if (cam == 'player') {
+            this.lv = 1;
+            this.exp = 0;
+            this.sp = 0;
+            this.attr = [];
+            this.equips = {};
+            
+            this.acts = this.data.acts ?? batC.shokey.acts;
+            this.mags = this.data.mags ?? batC.shokey.mags;
+            this.tool = this.data.tool ?? batC.shokey.tool;
+
+            this.ex = this.data.ex;
+            this.ns = this.data.ns;
+            this.ps = this.data.ps;
+            this.ts = this.data.ts;
+
+            if (this.data.buttonsolid) {
+                Style.batSt.solid = this.data.buttonsolid;
+                Style.batSt.back = this.data.buttonback;
+                Style.batSt.aima = irohaMix(this.data.buttonsolid, this.data.buttonback);
+                Style.tekiou();
+            }
+        } else if (cam == "enemie") {
+            this.lv = random(1, 3);
+            this.attr = this.data.attr ?? [];
+            this.lasts = [];
+            this.equips = {};
+        }
+
+        this.makeDOM();
+
+        this.tuikker();
+    }
+
+    makeDOM() {
+        let sd = Stages.find(a => a.name == batC.stage) || { color: '#ffffff' };
+
+        let nameD = El('div', 'name');
+        nameD.style.color = irohaMix('#b2b2b2', sd.color);
+        nameD.textContent = this.name;
+        
+        let imgD = images["systems"].error.cloneNode(true);
+        imgD.classList.add("img");
+
+        let backD = El('div', "naka");
+        let skillD = El('div', 'skill', [backD]);
+        skillD.style.borderColor = irohaMix('#2b2b2b', sd.color);
+        
+        let baa = (code) => {
+            return El('div', `${code} bar0`, [
+                El('div', 'text'),
+                El('div', 'bar', [El('div', 'inner')])
+            ]);
+        }
+
+        let div = El('div', `human ${this.cam}${this.me}`, [
+            imgD,
+            skillD,
+            El('div', 'lv'),
+            nameD,
+            El('div', 'bars', [
+                baa('hp'),
+                baa('mp')
+            ]),
+            El('div', 'buffs')
+        ]);
+
+        this.div = div;
+
+        let belong = batC.sesD[this.cam];
+        if (belong) {
+            belong.appendChild(div);
+        }
+    }
+
+    tuikker(){
+        humans.push(this);
+    }
+}
+
+
+/*
+class Human{
+    constructor(cam, data = {}){
+        if(!cam) return 0;
+        this.id = batC.length;
+        this.cam = cam;
+
+        for(let stat of Stats){
+            let name = stat.name;
+            this[name] = data[name] ?? stat.bas; //??なら0は0として通すはず
+        }
+
+        this.buffs = [];
+        this.equips = [];
+        
+        if(cam == "player" && !data.name) return 0;
+        if(cam == "enemie" && !data.name){
+            let arr = Enemies.filter(a => a.live.include("all") || a.live.include(batC.stage));
+            data.name = arraySelect(arr);
+        }
+        this.name = data.name;
+        if(cam == "player") this.data = copy(findChara(this.name));
+        if(cam == "enemie") this.data = copy(findEnemie(this.name));
+
+
+        this.add();
+    }
+    add(){
+        batC.hs.push(this); //thisにまたdiv追加したり編集したらちゃんとhsの方にも伝わるよな.....?   
+    }
+
+    make(){
+
+    }
+}
+function makeUnit(cam, name = 0, data){
+    console.log(cam, name)
+     if(!data) let data = {};
     data.id = humans.length;
 
     if(cam == 'player'){
         let data0 = Charas;
-        if(code) Friends;
         data = data0.find(a => a.name == name);
     }
     if(cam == "enemie" && !name){
         data = arraySelect(Enemies.filter(a => !a.no));
         name = data?.name ?? 0;
     }
-    if(!data) return console.log(`codeが[${code}]の${name}はいないらしい`);
+    if(!data) return console.log(`${cam} に ${name} はいないらしい`);
     // console.log(data);
 
     let unit = {};
     if(cam == 'player'){
         // pleyerはデータをそのままコピー
-        // Status.map(a => a.name).forEach(s => unit[s] = data[s]);
-        for(let data0 of Status){
+        // Stats.map(a => a.name).forEach(s => unit[s] = data[s]);
+        for(let data0 of Stats){
             let name = data0.name;
             unit[name] = data.stat[name] ??data0.bas;
         }
@@ -401,8 +570,8 @@ function makeUnit(cam, code = 0, name = 0){
     }
     if(cam == "enemie"){
         // enemieはベース値から補正値で加工
-        Status.map(a => a.name).forEach(s => {
-            let vd = Status.find(a => a.name == s);
+        Stats.map(a => a.name).forEach(s => {
+            let vd = Stats.find(a => a.name == s);
             unit[s] = vd.bas;
 
             let v = data[s];
@@ -443,24 +612,15 @@ function makeUnit(cam, code = 0, name = 0){
         unit.mags = unit.mags ?? batC.shokey.mags;
         unit.tool  = unit.tool ?? batC.shokey.tool;
 
-        if(code == 0){
-            unit.ex = data.ex;
-            unit.ns = data.ns;
-            unit.ps = data.ps;
-            unit.ts = data.ts;
+        unit.ex = data.ex;
+        unit.ns = data.ns;
+        unit.ps = data.ps;
+        unit.ts = data.ts;
 
-            Style.batSt.solid = data.buttonsolid;
-            Style.batSt.back = data.buttonback;
-            Style.batSt.aima = irohaMix(data.buttonsolid, data.buttonback);
-            Style.tekiou();
-        }
-        if(code == 1){
-            unit.e = data.e;
-            unit.s = data.s;
-            unit.n = data.p;
-            unit.p = data.p;
-            unit.t = data.t;
-        }
+        Style.batSt.solid = data.buttonsolid;
+        Style.batSt.back = data.buttonback;
+        Style.batSt.aima = irohaMix(data.buttonsolid, data.buttonback);
+        Style.tekiou();
     }
     if(cam == "enemie"){
         unit.name = data.name;
@@ -511,9 +671,13 @@ function makeUnit(cam, code = 0, name = 0){
 
     // return unit;
 }
+*/
 
-let makePlayer = (code, name) => makeUnit('player', code, name); //code: 0 == chara, 1 == friend
-let makeEnemy  = () => makeUnit('enemy');
+// let makePlayer = (name) => makeUnit('player', name);
+// let makeEnemy  = () => makeUnit('enemy');
+
+const makePlayer = (name) => new Human('player', name);
+const makeEnemy  = (name = 0) => new Human('enemie', name);
 // #endregion
 
 // #region 道との遭遇
@@ -527,7 +691,7 @@ function encount(){
     let max = 1;
     let num = random(1, max);
     for(let i=0; i<num; i++){
-        makeUnit("enemie");
+        makeEnemy();
     }
 
     let players = humans.filter(a => a.cam == "player");
@@ -600,7 +764,7 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
             if(li[0].startsWith("who_")){
                 if(!who) return submit(0);
                 let part = li[0].slice(3); //who_をなくす算段
-                let data = findPlayers(who.name);
+                let data = findChara(who.name);
                 if(who[part] == li[1] || data[part] == li[1]) return submit(1);
                 else return submit(0);
             }
@@ -634,7 +798,7 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
                 if(li[0].startsWith("are_")){
                     if(!are) return submit(0);
                     let part = li[0].slice(4);
-                    let data = findPlayers(are.name);
+                    let data = findChara(are.name);
                     if(are[part] == li[1] || data[part] == li[1]) return submit(1);
                     else return submit(0);
                 }
@@ -661,29 +825,11 @@ async function attack(who, ares, voi, tri, aim, props = []){
     }
 
     // console.log(ares);
-    console.log(`[attack] ${who.name}の攻撃！ ${voi} [${tri}] (${props.join(", ")})`)
+    console.log(`[attack] ${who.name}の攻撃！ ${voi}%[${tri}] (命中率:${aim}%) (${props.join(", ")})`)
      if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
     if(!Array.isArray(ares)) ares = [ares];
 
 
-    let triA, triD;
-    switch(tri){
-     case "ph":
-        //物理
-        triA = "atk";
-        triD = "def";
-        break;
-     case "mg":
-        //魔法
-        triA = "matk";
-        triD = "mdef";
-        break;
-     case "cn":
-        //間接
-        triA = "catk";
-        triD = "def"; //貫通するけどネ
-        break;
-    }
     let matchTri = (a, b) => {
         let [arrA, arrB] = [a, b];
         if(!Array.isArray(a)) arrA = [a];
@@ -699,8 +845,8 @@ async function attack(who, ares, voi, tri, aim, props = []){
         console.log(`[attack] ${who.name} => ${are.name}`)
 
 
-        // 攻撃側の targe と 防御側の dodge を加味して最終命中率をだす
-        let atare = (aim+who.targe) - are.dodge;
+        // 攻撃側の aim と 防御側の dod を加味して最終命中率をだす
+        let atare = (aim+who.aim) - are.dod;
         if(!hit(atare)){
             console.log(`[attack] ${who.name}の攻撃は外れた！(最終命中率: ${atare}%)`);
             tobiText(are.div, "miss", {back: "#b2b2b2"});
@@ -713,11 +859,12 @@ async function attack(who, ares, voi, tri, aim, props = []){
         
         let wepatk = 0, shldef = 0;
         let weapon = atker.weapon?.name ?? "none";
-         let weaponD = findEquips("weapon", weapon);
+         let weaponD = findEquips(weapon, "weapon");
         let shield = defer.shield?.name ?? "none";
-         let shieldD = findEquips("shield", shield);
+         let shieldD = findEquips(shield, "shield");
         if(matchTri(tri, weaponD.tri)) wepatk = weaponD.atk;
         if(matchTri(tri, shieldD.tri)) shldef = shieldD.def;
+        console.log(wepatk, shldef)
 
         let nisha = { //二者択一 似せたクイズ ダイバーシティに大抜擢 文学的なブーバキキ
             atker, defer
@@ -731,22 +878,39 @@ async function attack(who, ares, voi, tri, aim, props = []){
                 
                 if(matchTri(tri, data.tri)){
                     wepatk += data.atk;
-                    // console.log(`${data.atk}増加`);
+                    if(data.atk != 0) console.log(`${data.atk}増加`);
                 }
                 if(matchTri(tri, data.tri)){
                     shldef += data.def;
-                    // console.log(`${data.def}増加`);
+                    if(data.def != 0) console.log(`${data.def}増加`);
                 }
             } 
         }
 
-        // console.log(atker), context["atker"] = atker;
-        // console.log(defer), context["defer"] = defer;
-        // console.log(wepatk, shldef), context["wepatk"] = wepatk, context["shldef"] = shldef;
-        let atk = ((atker[triA]) * atker.power +atker.add + wepatk);
+            
+        let triA, triD;
+        switch(tri){
+        case "ph":
+            //物理
+            triA = atker["atk"];
+            triD = atker["def"];
+            break;
+        case "mg":
+            //魔法
+            triA = atker["matk"];
+            triD = atker["mdef"];
+            break;
+        case "cn":
+            //間接
+            triA = 0; //...武器依存すぎないか？という理由での0
+            triD = atker["def"];
+            break;
+        }
+        
+        let atk = ((atker[triA]) * atker.pow/100 +atker.add + wepatk);
          atk *= (voi*0.01);
          if(atk < 0) atk = 0; //流石に回復は意味わからん
-        let def = ((defer[triD]) * defer.shell +defer.cut + shldef);
+        let def = ((defer[triD]) * defer.she/100 +defer.cut + shldef);
          if(def < 0) def = 0; //流石に攻撃力強化は意味わからん
 
         // crit | atker.crla -defer.crrs +propのなんか（会心:）（会心固:） | hitで判定
@@ -776,12 +940,14 @@ async function attack(who, ares, voi, tri, aim, props = []){
             console.log(`[attack] 会心の一撃発生！dmgが${atker.crdm}%になりました！ (最終会心率: ${cranus})`);
             props.push("発生:会心");
             atk *= (atker.crdm/100);
+            // 防御無視はなくしました。
         }
 
         // さあ
+        console.log(atk, def)
         let dmg = Math.max(atk - def, 1);
 
-        console.log(`[attack] {${voi}%} ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
+        console.log(`[attack] ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
         
         if(await damage(who, are, dmg, tri, props)) return 1;
 
@@ -822,9 +988,9 @@ async function heal(who, ares, val0, props=[]){
         let defer = copy(are);
         
         //atker
-        let stats = Status.map(a => a.name);
+        let stats = Stats.map(a => a.name);
         for(let buff of atker.buffs){
-            let data = buffFind(buff.name);
+            let data = findBuff(buff.name);
             
             for(let [k, v] of Object.entries(buff.value)){
                 if(stats.includes(k)) atker[k] += v;
@@ -844,6 +1010,21 @@ async function damage(who, are, dmg, tri, props = []){
         let prop = props.find(a => a.startsWith(name));
          if(prop) return prop;
         return "";
+    }
+    let naguru = (dmg) => {
+        if(dmg < 0) return dmg; //回復はそのまま返す
+        if(0 < are.barrier){
+            let bar = are.barrier;
+            if(dmg <= bar){
+                are.barrier -= dmg;
+                return 0;
+            }
+            else{
+                are.barrier = 0;
+                return dmg - bar;
+            }
+        }
+        return dmg;
     }
 
     let back = "#2b2b2b", mode = "kiki";
@@ -869,8 +1050,8 @@ async function damage(who, are, dmg, tri, props = []){
     tobiText(are.div, dmg, {back, mode});
     
     let atae = dmg;
-    if(are.hp < dmg) atae = are.hp;
-    are.hp -= atae;
+    are.hp -= naguru(atae);
+     if(are.hp < 0) are.hp = 0;
     tekiou();
 
     await delay(500); //死を表してからの
@@ -926,13 +1107,45 @@ async function win(cam){
 // #endregion
 
 // #region buffとか
+class Buff{
+    constructor(name, num, data = {}){
+        if(!name || !num || typeof num != "number") return null;
+        
+        let data0 = findBuffs(name);
+        
+        this.name = name;
+        this.time = num;
+        this.data = copy(data0);
+    }
+    add(who, are){
+        if(!who || !are) return 0;
+        this.who = are.id;
+        this.from = who.id;
+        are.buffs.push(this);
+    }
+    
+    delc(num = 1, data = {}){
+        this.time -= num;
+        if(this.time <= 0) this.vanish();
+    }
+    
+    vanish(data = {}){
+        let who = batF.id(this.who);
+        if(!who || !who.buffs) return;
+
+        let index = who.buffs.indexOf(this);
+        if(index != -1){
+            who.buffs.splice(index, 1);
+        }
+    }
+}
 function buffHas(who, name){
-    let data = buffFind(name);
+    let data = findBuff(name);
     let buff = who.buffs.find(a => 
         a.name == name || 
         a.jpnm == name || 
         a.jpnm == data.jpnm || 
-        a.startsWith(name)
+        a.name == data.name
     );
     if(!buff) return 0;
 
@@ -996,7 +1209,7 @@ function buffRem(who, name){
 }
 function buffCalc(who, arr){
     for(let buff of who.buffs){
-        let data = buffFind(buff.name);
+        let data = findBuff(buff.name);
         
         for(let [k, v] of Object.entries(buff.value)){
             if(arr.includes(k)) who[k] += v;
@@ -1005,29 +1218,6 @@ function buffCalc(who, arr){
 }
 
 
-function processDots(who){
-    let dots = {};
-    for(let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
-        if(data && hask(data, 'dot')){
-            let dot = data.dot;
-            let val = buff.value[dot];
-            if(typeof val == 'string' && val.endsWith('%')){
-                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
-            }
-            if(!dots[dot]) dots[dot] = 0;
-            dots[dot] += val;
-        }
-    }
-    Object.keys(dots).forEach(key => {
-        let val = dots[key];
-        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
-        who.hp -= val;
-        if(who.hp <= 0) return dead(0, who);
-    });
-
-    return 0;
-}
 // #endregion
 
 // #region ターゲティング
@@ -1345,7 +1535,7 @@ async function turnEnemy(who){
     if(data){
         let act = enemySelectAction(who);
 		let res = await act.func(who);
-         if(res.code) return 1; //こいつは特殊、というか切り札。return {code:0, are:ares}をつかいます
+         if(res == 1) return 1;
 		are = res.are;
     }
 	else{
@@ -1392,8 +1582,8 @@ function enemySelectAction(who){
     let props = act.prop ?? [];
     props.forEach(p => {
         if(p.startsWith('re')){ // reInvisi
-            console.log(`ノア「${item}を記録しました」`);
             let item = p.slice(2);
+            console.log(`ノア「${item}を記録しました」`);
             who.lasts.push(item);
         }
     })
@@ -1420,7 +1610,7 @@ async function turnNext(who){
                 return;
             }
         }
-        if(buffhas(who, 'skip')){
+        if(buffHas(who, 'skip')){
             await logText(`>> はい${who.name}、お前スキップ〜〜`);
             turnBye(who);
             return;
@@ -1445,8 +1635,6 @@ async function turnNext(who){
         }
     }
 
-    // 前半のdotダメージ処理
-    processDots(who);
     if(who.hp <= 0) return dead(0, who);
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
@@ -1461,7 +1649,7 @@ async function turnNext(who){
     }
 }
 
-async function turnEnd(who, ares){
+async function turnEnd(who, ares, data = {}){
     // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
     
     for(let i = who.buffs.length - 1; i >= 0; i--){
@@ -1488,7 +1676,13 @@ async function turnEnd(who, ares){
         return;
     }
 
-    processDots(who);
+    for(let buff of who.buffs){
+        if(!buff.data.efs) continue;
+        console.log(Object.keys(buff.data.efs));
+        if(hask(buff.data.efs, "turn_end")){
+            let res = await buff.data.efs["turn_end"].func(who, ares, data);
+        }
+    }
     if(who.hp <= 0) return;
 
     turnBye(who);
