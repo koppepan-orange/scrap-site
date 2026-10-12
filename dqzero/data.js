@@ -262,26 +262,32 @@ const Stats = [
         name:"mdef",
         bas:10,
     },
+    // 間接攻撃力も昔はあったけど、それは0にした。防御力のみ計算で、攻撃力は武器攻撃力に完全依存する形へ
 
     {
         name:"crla",
+        desc:"crit-rate",
         bas:3,
     },
     {
         name:"crdm",
+        desc:"crit-damage",
         bas:150,
     },
     {
         name:"crrs",
+        desc:"crit-resist",
         bas:0,
     },
 
     {
         name:"pow",
+        desc:"攻撃倍率。主にバフ用",
         bas:100, //%
     },
     {
         name:"she",
+        desc:"防御倍率。ガチ主にバフ用",
         bas:100,
     },
 
@@ -346,424 +352,756 @@ type:
 
 */
 const Buffs = [
-
     {
-        name:'luck',
-        jpnm:'幸運',
-        type:'buff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'ターン終了時、確率でもう一回行動できる。',
-        flav:"数々のゲーマーを狂わせてきたと噂されている。",
-        lvs:[
-            {luck:20},
-            {luck:33},
-            {luck:50},
-            {luck:100},
-        ],
-        max:4
-    },
-    {
-        name:'disappear',
-        jpnm:'消滅',
-        type:'buff',
-        becauseof:'turn_end',
-        hera:1,
-        kiju:'none',
-        desc:`姿を消し、攻撃を受けなくなる。\nもし範囲攻撃を受けたならば、そのダメージを受けたのちこの効果は解除される。`,
-    },
-    {
-        name:'cheerup',
-        jpnm:'応援！',
-        type:'buff',
-        becauseof:'turn_end',
-        hera:1,
-        kiju:'lv',
-        desc:'応援されている状態。攻撃力と速度が上がり会心率が下がる。',
-        flav:"嬉しいけどちょっと緊張しちゃうよね。わかるぞ",
-        lvs:[
-            {
-                power:'+1.0',
-                spd:'+20.0',
-                crla:'-5.0'
-            },
-            {
-                power: '+1.5',
-                spd: '+25.0',
-                crla: '-6.5'
-            }
-        ],
-        max:2
-    },
-    {
-        name:'poison',
-        type:"stack",
-        gb:"b",
-        desc:"ターン開始時、最大HPの*2*%分、シールドを貫通したダメージを受ける。",
-        flav:"？？？「毒の苦しみもお好きなんですね」",
+        name: "攻撃倍率20%上昇",
+        img:"攻撃",
+        type: "turn",
+        gb:" g",
         efs:{
-            "turn_end":{
-                func:async(who, ares, data = {}) => {
-                    let maxhp = who.maxhp;
-                    let val = Math.max(Math.floor(maxhp * 0.02), 1);
-                    
-                    data["攻撃者"] = "病原体";
-                    data["ダメージ"] = "効果";
-                    if(await damage(who, who, val, "mg", ["無視:シールド"], data)) return 1;
+            "attack_pre":{
+                func: async(buff, atker, defer, data = {}) => {
+                    atker.pow += 20;
                 }
             }
         }
     },
     {
-        name:'poison_deadly',
-        jpnm:'猛毒',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'poison',
-        desc:'ターン開始時、HP割合で防御貫通ダメージを受けたあと、ランダムで他のバフ(良)の持続時間を1減少される。',
-        lvs:[
-            {poison:'7%'},
-            {poison:'15%'},
-        ],
-        max:2
+        name: "攻撃倍率40%上昇",
+        img:"攻撃",
+        type: "turn",
+        gb:" g",
+        efs:{
+            "attack_pre":{
+                func: async(buff, atker, defer, data = {}) => {
+                    atker.pow += 40;
+                }
+            }
+        }
     },
     {
-        name:'blood',
-        jpnm:'出血',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'blood',
-        desc:`ターン終了時、固定ダメージを受ける。\n
-        [1] 非攻撃時、この効果のダメージ量は現在の値のに1.5倍に増加する(ｷﾘｱｹﾞ)`,
-        flav:"傷口が広がる、ってイメージ。ターン経過は酷だしな",
-        lvs:[
-            {blood:2},
-            {blood:5},
-            {blood:7},
-            {blood:10},
-        ],
-        max:4
+        name: "防御倍率20%上昇",
+        img:"防御",
+        type: "turn",
+        gb:" g",
+        efs:{
+            "attack_pre":{
+                func: async(buff, atker, defer, data = {}) => {
+                    defer.she += 20;
+                }
+            }
+        }
     },
     {
-        name:'blood_born',
-        jpnm:'血の誕生',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'blood',
-        desc:`ターン終了時、固定ダメージを受ける。
-            [1] 非攻撃時、この効果のダメージ量は現在の値の2倍に増加する。`,
-        flav:"私がやりたがってるゲーム。でも最初の盗賊団ですでに無理ってるから相当無理かも",
-        lvs:[
-            {blood:5},
-            {blood:8},
-            {blood:14},
-        ],
-        max:3
-    },
-    {
-        name:'burn',
-        jpnm:'火傷',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'burn',
-        desc:`ターン終了時、この効果の重複数に比例した固定ダメージを受ける。また、攻撃力が4下がる。\n
-        [1] もし木製の装備を着ているならば、この効果で受けるダメージは2倍になる。`,
-        flav:"追加効果が多い気がする、、まあいいか。木製装備へのメタになってくれ、君は",
-        lvs:[
-            {burn:"5n", atk:-4}
-        ],
-    },
-    {
-        no:1,
-        name:'burn_out',
-        jpnm:'燃え尽き症候群',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'burn',
-        desc:`ターン終了時、この効果の重複数に比例した固定ダメージを受ける。また、攻撃力が7下がる。\n
-        [1] もし木製の装備を着ているならば、この効果で受けるダメージは2倍になる。\n
-        [2] もしこのダメージで最後のキャラが死んで負けたならば、所持金が元の半分になる`,
-        flav:"...だいじょぶかなぁ、、てあれ、これ死因も判定しないとなのでは？だ、だるくね、、？",
-        lvs:[
-            {burn:"5n", atk:-7}
-        ],
-        max:6
-    },
-    {
-        new:1,
-        name:"longrange",
-        jpnm:"延焼"
-    },
-    {
-        name:'elec',
-        jpnm:'帯電',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'elec',
-        desc:`ターン開始時、固定ダメージを受け、さらに60%の確率で他の味方にこれが伝染する(1t)。\n
-        [1] もし金属製の防具を着ているならばこの効果で受けるダメージは2倍になる。`,
-        lvs:[
-            {elec:4},
-            {elec:7},
-            {elec:12},
-            {elec:17},
-        ],
-        max:4
-    },
-    {
-        name:'elec_elec',
-        jpnm:'帯電・帯電',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'elec',
-        desc:'ターン開始時、固定ダメージを受ける\nターン終了時、確率で他の味方に伝染する\nあと確率で「麻痺」lv1を自身に1t付与します\n帯電・帯電ってなんだよ',
-        lvs:[
-            {elec:7, palsy:33},
-            {elec:11, palsy:50},
-            {elec:17, palsy:100},
-        ],
-        max:3
-    },
-    {
-        name:'injury',
-        jpnm:'傷口',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'injury',
-        desc:'攻撃毎に固定ダメージ。\n連続攻撃/行動ビルドに大打撃\n私はこのデバフが最も嫌いです。まぢ無理',
-        lvs:[
-            {injury:3},
-            {injury:5},
-            {injury:9},
-            {injury:15},
-        ],
-        max:4
-    },
-    {
-        name:'injury_gore',
-        jpnm:'裂痕',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        dot:'injury',
-        desc:'行動時固定ダメージ。\nあと被回復量が半減します。\n',
-        lvs:[
-            {injury:9},
-            {injury:14},
-            {injury:18},
-        ],
-        max:3
-    },
-    {
-        new:1,
-        name:"frostbite",
-        jpnm:"凍傷",
-        type:"debuff",
-        becauseof:"turn_start",
-        hera:1,
-        kiju:"stack",
-        desc:"spdが10低下する。さらに毎ターン開始時、1stackにつき5ダメージを受ける",
-        flav:"凍傷の英語カッコよすぎ問題、あります",
-        lvs:[
-            {spd:-10, frostbite:"5n"} //初登場、n！endsWithのnで、掛け算されます
-        ],
-        max:1
-    },
-    {
-        name:'freeze',
-        jpnm:'氷結',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'凍っている状態。\nターン開始時、n%の確率で解除されます\n炎属性の攻撃を受けても解除できます',
-        lvs:[
-            {freeze:75},
-            {freeze:50},
-            {freeze:33},
-            {freeze:20},
-        ],
-        max:4
-    },
-    {
-        name:'freeze_blue',
-        jpnm:'凍結',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'凍結されている状態。\nターン開始時、n%の確率で解除されます\n炎攻撃を受けても解除不可です',
-        lvs:[
-            {freeze:40},
-            {freeze:18}, //ブルアカの星2
-            {freeze:3}, //ブルアカの星3
-        ],
-        max:3
-    },
-    {
-        name:'freeze_eternal',
-        jpnm:'エターナルフリーズ',
-        type:'debuff',
-        becauseof:'turn_end',
-        hera:2,
-        kiju:'lv',
-        desc:'ターン開始時、0%の確率で解除されます',
-        lvs:[
-            {freeze:0}
-        ],
-        max:1
-    },
-    {
-        name:'palsy',
-        jpnm:'麻痺',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'麻痺ですね。これ好き',
-        lvs:[
-            {palsy:20},
-            {palsy:25},
-            {palsy:33},
-            {palsy:50},
-            {palsy:67},
-            {palsy:99},
-        ],
-        max:6
-    },
-    {
-        name:'stan',
-        jpnm:'スタン',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'スタンです。\n内部処理的には麻痺の延長',
-        lvs:[
-            {palsy:100}
-        ],
-        max:1
-    },
-    
-    {
-        name:'skip',
-        jpnm:'スキップカード',
-        type:'unique',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'none',
-        desc:"ターン開始時、手番をスキップされる",
-        flav:"ゲーム終了間際で相手がこれを出してきた時の絶望感たるや"
-    },
-    {
-        name:'sleepiness',
-        jpnm:'睡魔',
-        type:'debuff',
-        becauseof:'turn_start',
-        hera:1,
-        kiju:'lv',
-        desc:'ターン終了時、「sleepy」をnstack増加させる',
-        flav:"睡魔..微熱魔じゃないです。あと決して湖のほとりの人じゃないです",
-        lvs:[
-            {sleepy:10},
-            {sleepy:20},
-            {sleepy:25},
-        ],
-        max:3
-    },
-    {
-        name:'sleepy',
-        jpnm:'眠気',
-        type:'debuff',
-        becauseof:'act',
-        hera:10,
-        kiju:'none',
-        desc:`効果なし。\n
-        [1] 100stack到達でこの効果は消え、「睡眠」に変化する。
-        [2] 行動時、stackを10減らすことができる`,
-        flav:"いやほんと、最近ちょっと寝不足で、、すみません。なんだよ幼馴染に依存してる水魔導士って、、なんだよチェスの駒で戦う魔導士って、、、、"
-    },
-    {
-        name:'sleeping',
-        jpnm:'睡眠',
-        type:'debuff',
-        becauseof:'be_attack', //be_は受身の意
-        hera:10,
-        kiju:'stack',
-        desc:`ターン開始時\n
-        [1] 攻撃された時、この効果は10stack減少する。`,
-    },
-    {
-        name:'anger',
-        
-        type:'debuff',
-        becauseof:'none',
-        hera:1,
-        kiju:'stack',
-        desc:'すごいイラつかせてくる敵..?\nいやまあ普通にパクリですけれども\nで避けられてさらに煽られるみたいな',
+        name: "防御倍率40%上昇",
+        img:"防御",
+        type: "turn",
+        gb:" g",
+        efs:{
+            "attack_pre":{
+                func: async(buff, atker, defer, data = {}) => {
+                    defer.she += 40;
+                }
+            }
+        }
     },
 
     {
-        name:""
-    },
-    {
-        name:"傷口",
-        type:"stack",
-        gb:"b", //good|umm|bad
-        desc:"行動時に5ダメージを受ける",
-        efs:{
-            "attack_ed":{
-                func:async(who, are, data = {}) => {
+        name: "傷口",
+        type: "stack",
+        gb: "b",
+        desc: "行動時に5ダメージを受ける。連続攻撃や行動回数の多い相手に対して危険。",
+        flav: "私はこのデバフが最も嫌いです。まぢ無理",
+        efs: {
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
                     data["攻撃者"] = "傷口";
                     data["ダメージ"] = "効果";
                     if(await damage(who, who, 5, data)) return 1;
-                    
                     return 0;
                 }
             }
         }
     },
-    {
-        name:"自然の循環",
-        type:"turn",
-        gb:"g",
-        desc:"Oを消費する時、50%の確率で消費しない。",
-        efs:{
-            "attack_pre":{
-                func:async(atker, defer, data = {}) => {
-                    this.O = batC.field["O"];
-                },
-            },
-            "attack_ed":{
-                func:async(who, are, data = {}) => {
-                    let now = batC.field["O"];
-                    let diff = now - this.O;
-                    if(0 < diff) return 0;
 
+    {
+        name: "自然の循環",
+        type: "turn",
+        gb: "g",
+        desc: "Oを消費する時、50%の確率で消費しない。",
+        efs: {
+            "attack_pre": {
+                func: async(buff, atker, defer, data = {}) => {
+                    buff.saved["O"] = batC.field["O"];
+                }
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    let now = batC.field["O"];
+                    let diff = now - buff.saved["O"];
+
+                    if(0 < diff) return 0;
                     if(hit(50)) await elemenAdd("O", diff);
                 }
             }
         }
+    },
+
+    {
+        name: "幸運",
+        type: "turn",
+        desc: "ターン終了時、20%の確率でもう一回行動できる。",
+        flav: "数々のゲーマーを狂わせてきたと噂されている。",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    if(hask(data, "内定:もう1度だ")) return 0;
+                    if(!hit(20)) return 0;
+
+                    let arr = [
+                        "うーわ茶柱立ったわ/お茶飲んでないのに",
+                        "え、家に蜘蛛いるやん。今朝なのに/ここ家じゃないけど",
+                        "うわ綺麗な虹で草",
+                        "左の手のひらが痒いんですけど",
+                        "靴紐が解けたんですけど"
+                    ];
+
+                    let text = arraySelect(arr);
+                    for(let t of text.split("/")) {
+                        logText(t.trim());
+                    }
+
+                    return "もう1度だ";
+                }
+            }
+        }
+    },
+
+    {
+        name: "影化",
+        type: "turn",
+        desc: "姿を消し、選択の対象にならなくなる。範囲攻撃を受けた場合は、ダメージを受けた後に解除される。",
+        efs: {
+            "target_ing": {
+                no: 1
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    if(data["範囲攻撃"]) buff.vanish(data);
+                }
+            }
+        }
+    },
+
+    {
+        name: "光学迷彩",
+        type: "turn",
+        desc: "姿を消し、選択の対象にならなくなる。範囲攻撃を受けた場合は、ダメージを受けた後に解除される。",
+        efs: {
+            "target_ing": {
+                no: 1
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    if(data["範囲攻撃"]) buff.vanish(data);
+                }
+            }
+        }
+    },
+
+    {
+        name: "応援！",
+        type: "stack",
+        gb: "g",
+        desc: "応援されている状態。攻撃倍率と速度が上がり、会心率が下がる。",
+        flav: "嬉しいけどちょっと緊張しちゃうよね。わかるぞ",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    are.spd += 20;
+                }
+            },
+            "attack_pre": {
+                func: async(buff, atker, defer, data = {}) => {
+                    atker.pow += 100;
+                    atker.crla -= 5;
+                }
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.delc(1, data);
+                }
+            },
+            "lastword": {
+                func: async(buff, who, are, data = {}) => {
+                    are.spd -= 20;
+                }
+            }
+        }
+    },
+
+    {
+        name: "毒",
+        type: "turn",
+        gb: "b",
+        desc: "ターン開始時、最大HPの4%分、シールドを貫通したダメージを受ける。",
+        flav: "？？？「毒の苦しみもお好きなんですね」",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = Math.max(Math.floor(who.maxhp * 0.04), 1);
+
+                    data["攻撃者"] = "病原体";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "mg", ["無視:シールド"], data)) return 1;
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "猛毒",
+        type: "turn",
+        gb: "b",
+        desc: "ターン開始時、最大HPの7%分、シールドを貫通したダメージを受ける。その後、ランダムな自身の良いバフの持続時間が1減少する。",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = Math.max(Math.floor(who.maxhp * 0.07), 1);
+
+                    data["攻撃者"] = "病原体";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "mg", ["無視:シールド"], data)) return 1;
+
+                    let buffs = who.buffs.filter(a =>
+                        a.data.gb == "g" &&
+                        a.data.type == "turn"
+                    );
+
+                    if(0 < buffs.length) {
+                        let target = arraySelect(buffs);
+                        target.delc(1, data);
+                    }
+
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "もう毒",
+        type: "stack",
+        gb: "b",
+        desc: "ターン開始時、最大HPの1%分、シールドを貫通したダメージを受ける。その後、このバフのstack数が2倍になる。",
+        flav: "えぐ",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = Math.max(Math.floor(who.maxhp * 0.07), 1);
+
+                    data["攻撃者"] = "病原体";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "mg", ["無視:シールド"], data)) return 1;
+
+                    buff.time *= 2;
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "出血",
+        type: "turn",
+        gb: "b",
+        desc: `ターン終了時、固定ダメージ6を受ける。
+            [1] 被攻撃時、この効果の時間が1増加する。物理攻撃を受けた場合、ダメージ量が1.5倍になる(ｷﾘｱｹﾞ)`,
+        flav: "傷口が広がる、ってイメージ。ターン経過は酷だしな",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.saved["val"] = 6;
+                }
+            },
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = buff.saved["val"];
+
+                    data["攻撃者"] = "傷";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.time += 1;
+
+                    if(data["tri"] == "ph") {
+                        buff.saved["val"] = Math.ceil(buff.saved["val"] * 1.5);
+                    }
+                }
+            }
+        }
+    },
+
+    {
+        name: "血の誕生",
+        type: "turn",
+        desc: `ターン終了時、固定ダメージを受ける。
+            [1] 被攻撃時、この効果の時間が1増加する。物理攻撃を受けた場合、ダメージ量が2.5倍になる(ｷﾘｱｹﾞ)`,
+        flav: "私がやりたがってるゲーム。でも最初の盗賊団ですでに無理ってるから相当無理かも",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.saved["val"] = 6;
+                }
+            },
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = buff.saved["val"];
+
+                    data["攻撃者"] = "傷";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.time += 1;
+
+                    if(data["tri"] == "ph") {
+                        buff.saved["val"] = Math.ceil(buff.saved["val"] * 1.5);
+                    }
+                }
+            }
+        }
+    },
+
+    {
+        name: "火傷",
+        type: "stack",
+        desc: `ターン終了時、stack数に比例した固定ダメージを受ける。また、攻撃力が4下がる。
+            [1] 木製の装備を着ている場合、この効果のダメージは2倍になる。`,
+        flav: "追加効果が多い気がする、、まあいいか。木製装備へのメタになってくれ、君は",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.saved["atk"] = are.atk;
+                    are.atk -= 4;
+                }
+            },
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = 5 * buff.time;
+
+                    let hasWood = Array.isArray(who.equips) &&
+                        who.equips.some(e => {
+                            try {
+                                return /木|wood/i.test(JSON.stringify(e));
+                            } catch {
+                                return false;
+                            }
+                        });
+
+                    if(hasWood) val *= 2;
+
+                    data["攻撃者"] = "火傷";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "lastword": {
+                func: async(buff, who, are, data = {}) => {
+                    are.atk = buff.saved["atk"];
+                }
+            }
+        }
+    },
+
+    {
+        name: "燃え尽き症候群",
+        type: "stack",
+        desc: `ターン終了時、stack数に比例した固定ダメージを受ける。また、攻撃力が7下がる。
+            [1] 木製の装備を着ている場合、この効果のダメージは2倍になる。
+            [2] このダメージで最後のキャラクターが死亡して敗北した場合、所持金が半分になる。`,
+        flav: "...だいじょぶかなぁ、、てあれ、これ死因も判定しないとなのでは？だ、だるくね、、？",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.saved["atk"] = are.atk;
+                    are.atk -= 7;
+                }
+            },
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = 5 * buff.time;
+
+                    let hasWood = Array.isArray(who.equips) &&
+                        who.equips.some(e => {
+                            try {
+                                return /木|wood/i.test(JSON.stringify(e));
+                            } catch {
+                                return false;
+                            }
+                        });
+
+                    if(hasWood) val *= 2;
+
+                    data["攻撃者"] = "燃え尽き症候群";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "lastword": {
+                func: async(buff, who, are, data = {}) => {
+                    are.atk = buff.saved["atk"];
+                }
+            }
+        }
+    },
+
+    {
+        name: "延焼",
+        type: "turn",
+        desc: "火傷状態のキャラクターから、同じ陣営の別のキャラクターへ火傷を伝染させる。",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let burns = who.buffs.filter(a => a.data.name == "火傷");
+                    if(!burns.length) return 0;
+
+                    let targets = humans.filter(a =>
+                        a.cam == who.cam &&
+                        a.id != who.id &&
+                        a.hp > 0
+                    );
+
+                    if(!targets.length || !hit(30)) return 0;
+
+                    await buffAdd(who, arraySelect(targets), "火傷", 1);
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "帯電",
+        type: "turn",
+        desc: `ターン開始時、固定ダメージを受ける。
+            [1] 60%の確率で同じ陣営の別のキャラクターに1ターン伝染する。
+            [2] 金属製の防具を着ている場合、ダメージは2倍になる。`,
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = 4;
+
+                    let hasMetal = Array.isArray(who.equips) &&
+                        who.equips.some(e => {
+                            try {
+                                return /金属|metal/i.test(JSON.stringify(e));
+                            } catch {
+                                return false;
+                            }
+                        });
+
+                    if(hasMetal) val *= 2;
+
+                    data["攻撃者"] = "帯電";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "mg", [], data)) return 1;
+
+                    let targets = humans.filter(a =>
+                        a.cam == who.cam &&
+                        a.id != who.id &&
+                        a.hp > 0
+                    );
+
+                    if(targets.length && hit(60)) {
+                        await buffAdd(who, arraySelect(targets), "帯電", 1);
+                    }
+
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "帯電・帯電",
+        type: "turn",
+        desc: `ターン開始時、固定ダメージを受ける。
+            [1] ターン終了時、確率で同じ陣営の別のキャラクターに伝染する。
+            [2] さらに確率で自身に「麻痺」を付与する。`,
+        flav: "帯電・帯電ってなんだよ",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    data["攻撃者"] = "帯電・帯電";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, 7, "mg", [], data)) return 1;
+
+                    if(hit(33)) await buffAdd(who, who, "麻痺", 1);
+                    return 0;
+                }
+            },
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    let targets = humans.filter(a =>
+                        a.cam == who.cam &&
+                        a.id != who.id &&
+                        a.hp > 0
+                    );
+
+                    if(targets.length && hit(30)) {
+                        await buffAdd(who, arraySelect(targets), "帯電・帯電", 1);
+                    }
+
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "裂痕",
+        type: "stack",
+        desc: "行動時に固定ダメージを受ける。また、受ける回復量が半減する。",
+        efs: {
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    data["攻撃者"] = "裂痕";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, 9, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "heal_pre": {
+                func: async(buff, who, are, data = {}) => {
+                    if(typeof data["回復量"] == "number") {
+                        data["回復量"] = Math.floor(data["回復量"] / 2);
+                    }
+                }
+            }
+        }
+    },
+
+    {
+        name: "凍傷",
+        type: "stack",
+        desc: "速度が10低下する。さらにターン開始時、stack1つにつき5ダメージを受ける。",
+        flav: "凍傷の英語カッコよすぎ問題、あります",
+        efs: {
+            "fanfare": {
+                func: async(buff, who, are, data = {}) => {
+                    are.spd -= 10;
+                }
+            },
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    let val = Math.max(buff.time, 1) * 5;
+
+                    data["攻撃者"] = "凍傷";
+                    data["ダメージ"] = "効果";
+
+                    if(await damage(who, who, val, "ph", [], data)) return 1;
+                    return 0;
+                }
+            },
+            "lastword": {
+                func: async(buff, who, are, data = {}) => {
+                    are.spd += 10;
+                }
+            }
+        }
+    },
+
+    {
+        name: "氷結",
+        img:"凍結",
+        type: "turn",
+        desc: "凍っている状態。ターン開始時、75%の確率で解除される。炎属性の攻撃を受けても解除される。",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    if(hit(75)) {
+                        buff.vanish(data);
+                        return 0;
+                    }
+
+                    return 1;
+                }
+            },
+            "be_attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    if(data["tri"] == "fi" || data["属性"] == "炎") {
+                        buff.vanish(data);
+                    }
+                }
+            }
+        }
+    },
+
+    {
+        name: "凍結",
+        type: "turn",
+        desc: "凍結されている状態。ターン開始時、40%の確率で解除される。炎属性の攻撃を受けても解除されない。",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    if(hit(40)) {
+                        buff.vanish(data);
+                        return 0;
+                    }
+
+                    return 1;
+                }
+            }
+        }
+    },
+
+    {
+        name: "エターナルフリーズ",
+        img:"凍結",
+        type: "stack",
+        desc: "解除されない凍結状態。",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    return 1;
+                }
+            }
+        }
+    },
+
+    {
+        name: "麻痺",
+        type: "turn",
+        desc: "ターン開始時、確率で行動できなくなる。",
+        flav: "麻痺ですね。これ好き",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    if(hit(20)) return 1;
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "スタン",
+        type: "turn",
+        desc: "行動できなくなる。内部処理的には麻痺の延長。",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    return 1;
+                }
+            }
+        }
+    },
+
+    {
+        name: "スキップカード",
+        type: "turn",
+        desc: "ターン開始時、手番をスキップされる。",
+        flav: "ゲーム終了間際で相手がこれを出してきた時の絶望感たるや",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    return 1;
+                }
+            }
+        }
+    },
+
+    {
+        name: "睡魔",
+        type: "turn",
+        desc: "ターン終了時、「眠気」を10stack増加させる。",
+        flav: "睡魔..微熱魔じゃないです。あと決して湖のほとりの人じゃないです",
+        efs: {
+            "turn_end": {
+                func: async(buff, who, ares, data = {}) => {
+                    await buffAdd(who, who, "眠気", 10);
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name: "眠気",
+        type: "stack",
+        desc: `100stack到達でこの効果は消え、「睡眠」に変化する。
+            [1] 行動時、stackを10減らすことができる。`,
+        flav: "いやほんと、最近ちょっと寝不足で、、すみません。なんだよ幼馴染に依存してる水魔導士って、、なんだよチェスの駒で戦う魔導士って、、、、",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    if(buff.time < 100) return 0;
+
+                    buff.vanish(data);
+                    await buffAdd(who, who, "睡眠", 10);
+                    return 0;
+                }
+            },
+            "act_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.delc(10, data);
+                }
+            }
+        }
+    },
+
+    {
+        name: "睡眠",
+        type: "stack",
+        desc: "行動できなくなる。攻撃された時、この効果は10stack減少する。",
+        efs: {
+            "turn_start": {
+                func: async(buff, who, ares, data = {}) => {
+                    return 1;
+                }
+            },
+            "be_attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    buff.delc(10, data);
+                }
+            }
+        }
+    },
+
+    {
+        name: "怒り",
+        type: "stack",
+        desc: "怒り状態。攻撃を回避されると、さらに煽られたように感じる。",
+        flav: "すごいイラつかせてくる敵..? いやまあ普通にパクリですけれども。で避けられてさらに煽られるみたいな",
+        efs: {
+            "attack_ed": {
+                func: async(buff, who, are, data = {}) => {
+                    logText(`${who.name}は攻撃を避けられ、さらに怒った。`);
+                }
+            }
+        }
     }
-]
+];
 
 
 
@@ -821,7 +1159,7 @@ let Charas = [
         },
         buffs:[
             {
-                name:'onslime',
+                name:'頭にくっつくスライム',
                 type:'unique',
                 becauseof:'none',
                 hera:1,
@@ -840,7 +1178,7 @@ let Charas = [
                 }
             },
             {
-                name:'stickyslime',
+                name:"吸着質なスライム",
                 type:'unique',
                 becauseof:'turn_start',
                 hera:1,
@@ -879,9 +1217,8 @@ let Charas = [
             spd:65,
         },
         buffs:[
-
             {
-                name:'letsthrow',
+                name:"レンチ殴りモード、起動",
                 type:'unique',
                 becauseof:'turn_start',
                 hera:1,
@@ -1333,7 +1670,7 @@ const Mags = [
         mp:5,
         lv:1,
         func:async function(who, are){
-            await buffAdd(who, are,'power', 3,1);
+            await buffAdd(who, are, "攻撃倍率20%上昇", 3);
             //soldatoのシステム応用しつつで
             return 0;
         }
@@ -1345,18 +1682,18 @@ const Mags = [
         mp:5,
         lv:1,
         func:async function(who, are){
-            await buffAdd(who, are,'shell', 3,1);
+            await buffAdd(who, are, "防御倍率20%上昇", 3);
             return 0;
         }
     },
     {
         name:'poison',
-        jpnm:'poison',
+        jpnm:'ぽいぞね', //うーん日常組
         desc:'指定した人に_毒_(4t,1lv)を付与する',
         mp:7,
         lv:3,
         func:async function(who, are){
-            await buffAdd(who, are,'poison', 4,1);
+            await buffAdd(who, are,'毒', 4,1);
             return 0;
         }
     },
@@ -1391,7 +1728,7 @@ const Mags = [
         mp:8,
         lv:6,
         func:async function(who, are){
-            if(await heal(who, are, '40%')) return 1;
+            if(await heal(who, are, "40%")) return 1;
             return 0;
         }
     },
@@ -1402,7 +1739,7 @@ const Mags = [
         mp:4,
         lv:7,
         func:async function(who, are){
-            await buffAdd(who, are, 'luck', 4, 1);
+            await buffAdd(who, are, "幸運", 4);
             return 0;
         }
     },
@@ -1425,7 +1762,7 @@ const Mags = [
         mp:8,
         lv:9,
         func:async function(who, are){
-            await buffAdd(who, are,'power',3,2)
+            await buffAdd(who, are,'攻撃倍率40%増加',3,2)
             return 0
         }
     },
@@ -1447,7 +1784,7 @@ const Mags = [
         mp:12,
         lv:10,
         func:async function(who, are){
-            await buffAdd(who, are,'poison', 5,2);
+            await buffAdd(who, are,'猛毒', 5);
             return 0;
         }
     },
@@ -2099,12 +2436,12 @@ const Skills = [
                 };
                 case 3:{
                     await logText('爆弾は毒ガス入りだった!!');
-                    await buffAdd(who, are,'poison', 3,1);
+                    await buffAdd(who, are,'毒', 3);
                     break; //毒ガス入りだった場合
                 };
                 case 2:{
                     await logText('爆弾はスライム入りだった!!');
-                    await buffAdd(who, are,'onslime', 2,1);
+                    await buffAdd(who, are,'onslime', 2);
                     break;//スライム入りだった場合
                 };
                 case 1:{
@@ -2796,7 +3133,7 @@ const Enemies = [
                     await logText(`${who.name}は姿を消..あれどこ行った？`);
                     let are = selectJodou(who, 'who', 0, 'cen');
                     console.log(are)
-                    await buffAdd(who, are,'disappear', 2,1);
+                    await buffAdd(who, are,'影化', 2,1);
                     return 0;
                 }
             },
@@ -2807,10 +3144,10 @@ const Enemies = [
                 prop:['abInvisi'],
                 num:2,
                 func:async function(who){
-                    let x = buffHas(who, 'disappear') ? (buffclear(who, 'disappear'), 200) : 100;
+                    let x = buffHas(who, '影化') ? (buffclear(who, '影化'), 200) : 100;
                     await logText(`${who.name}は突進してきた！`);
                     let are = selectJodou(who, 'are', 0, 'random');
-                    if(await attack(who, are, x, 'ph')) return 1;
+                    if(await attack(who, are, x, 'ph', 100)) return 1;
                     return 0;
                 }
             },
@@ -2822,7 +3159,7 @@ const Enemies = [
                 func:async function(who){
                     await logText(`${who.name}はローキックしてきた！`)
                     let are = selectJodou(who, 'are', 'hp', 'low');
-                    if(await attack(who, are, 70, 'ph')) return 1;
+                    if(await attack(who, are, 70, "ph", 100)) return 1;
                     await buffAdd(who, are, 'spddown', 2, 1);
                     return 0;
                 }
@@ -2850,8 +3187,8 @@ const Enemies = [
                 num:1,
                 func:async function(who){
                     await logText(`${who.name}は痺れ粉を振りかけてきた！`)
-                    let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffAdd(who, are, 'palsy', 2, 1);
+                    let are = selectJodou(who, "are", "hp", "high");
+                    await buffAdd(who, are, "麻痺", 2);
                     return 0;
                 }
             },
@@ -2862,8 +3199,8 @@ const Enemies = [
                 num:2,
                 func:async function(who){
                     await logText(`${who.name}は毒の粉を振りかけてきた！`)
-                    let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffAdd(who, are, 'poison', 2, 1);
+                    let are = selectJodou(who, "are", "hp", "high");
+                    await buffAdd(who, are, "毒", 2);
                     return 0;
                 }
             },
@@ -2874,8 +3211,8 @@ const Enemies = [
                 num:3,
                 func:async function(who){
                     await logText(`${who.name}は眠り粉を振りかけてきた！`)
-                    let are = selectJodou(who, 'are', 'hp', 'high');
-                    await buffAdd(who, are, 'sleeping', 1, 1);
+                    let are = selectJodou(who, "are", "hp", "high");
+                    await buffAdd(who, are, '睡魔', 2);
                     return 0;
                 }
             }

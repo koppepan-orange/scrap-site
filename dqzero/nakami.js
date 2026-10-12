@@ -298,7 +298,7 @@ function tekiou(){
         let buffD = div.querySelector('.buffs');
         buffD.innerHTML = "";
         for(let buff of human.buffs){
-            let name = buff.name;
+            let name = buff.data.img ?? buff.name;
             let buD = El("div", "buff");
             let buID = El("img");
              buID.src = `assets/images/buffs/${name}.png`;
@@ -816,7 +816,7 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
 }
 
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
-async function attack(who, ares, voi, tri, aim, props = []){
+async function attack(who, ares, voi, tri, aim, props = [], data = {}){
     let hasp = (name) => {
         if(props.includes(name)) return name;
         let prop = props.find(a => a.startsWith(name));
@@ -829,7 +829,7 @@ async function attack(who, ares, voi, tri, aim, props = []){
      if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
     if(!Array.isArray(ares)) ares = [ares];
 
-
+    data["tri"] = tri; //そういえば
     let matchTri = (a, b) => {
         let [arrA, arrB] = [a, b];
         if(!Array.isArray(a)) arrA = [a];
@@ -840,6 +840,15 @@ async function attack(who, ares, voi, tri, aim, props = []){
         return arrA.some(element => arrB.includes(element)); //someです！everyの塩基対
     }
 
+    // attack_pre
+    for(let buff of who.buffs){
+        if(!buff.data.efs) continue;
+
+        if(hask(buff.data.efs, "attack_pre")){
+            let res = await buff.data.efs["attack_pre"].func(who, ares, data);
+            if(res == 1) return 1;
+        }
+    }
 
     for(let are of ares){
         console.log(`[attack] ${who.name} => ${are.name}`)
@@ -864,7 +873,7 @@ async function attack(who, ares, voi, tri, aim, props = []){
          let shieldD = findEquips(shield, "shield");
         if(matchTri(tri, weaponD.tri)) wepatk = weaponD.atk;
         if(matchTri(tri, shieldD.tri)) shldef = shieldD.def;
-        console.log(wepatk, shldef)
+        // console.log(wepatk, shldef)
 
         let nisha = { //二者択一 似せたクイズ ダイバーシティに大抜擢 文学的なブーバキキ
             atker, defer
@@ -888,30 +897,31 @@ async function attack(who, ares, voi, tri, aim, props = []){
         }
 
             
-        let triA, triD;
+        let atk0, def0;
         switch(tri){
         case "ph":
             //物理
-            triA = atker["atk"];
-            triD = atker["def"];
+            atk0 = atker["atk"];
+            def0 = atker["def"];
             break;
         case "mg":
             //魔法
-            triA = atker["matk"];
-            triD = atker["mdef"];
+            atk0 = atker["matk"];
+            def0 = atker["mdef"];
             break;
         case "cn":
             //間接
-            triA = 0; //...武器依存すぎないか？という理由での0
-            triD = atker["def"];
+            atk0 = 0; //...武器依存すぎないか？という理由での0
+            def0 = atker["def"];
             break;
         }
         
-        let atk = ((atker[triA]) * atker.pow/100 +atker.add + wepatk);
-         atk *= (voi*0.01);
+        let atk = (atk0 * atker.pow/100 + wepatk);
+         atk *= (voi/100);
          if(atk < 0) atk = 0; //流石に回復は意味わからん
-        let def = ((defer[triD]) * defer.she/100 +defer.cut + shldef);
+        let def = (def0 * defer.she/100 + shldef);
          if(def < 0) def = 0; //流石に攻撃力強化は意味わからん
+
 
         // crit | atker.crla -defer.crrs +propのなんか（会心:）（会心固:） | hitで判定
         let cranus = atker.crla -defer.crrs;
@@ -939,22 +949,50 @@ async function attack(who, ares, voi, tri, aim, props = []){
         if(hit(cranus)){
             console.log(`[attack] 会心の一撃発生！dmgが${atker.crdm}%になりました！ (最終会心率: ${cranus})`);
             props.push("発生:会心");
-            atk *= (atker.crdm/100);
+            atk *= (+atker.crdm/100);
             // 防御無視はなくしました。
         }
 
         // さあ
-        console.log(atk, def)
-        let dmg = Math.max(atk - def, 1);
+        // console.log(atk, def)
+        let dmg = Math.max(atk - def , 1);
+        
+        let add = atker["add"];
+        let cut = defer["cut"];
+         if(typeof cut == "string" && cut.endsWith("%")) cut = dmg*(cut/100);
 
-        console.log(`[attack] ${who.name}(${atk})[${triA}] => ${are.name}(${def})[${triD}] | dmg:${dmg}`);
+        data["dmg"] = dmg;
+        
+
+        console.log(`[attack] ${who.name}(${atk})[${atk0}] => ${are.name}(${def})[${def0}] | dmg:${dmg}`);
+
+        // attack_ing
+        for(let buff of who.buffs){
+            if(!buff.data.efs) continue;
+
+            if(hask(buff.data.efs, "attack_ing")){
+                let res = await buff.data.efs["attack_ing"].func(who, ares, data);
+                if(res == 1) return 1;
+                if(typeof res == "string" && res.startsWith("dmg変更:")) dmg = +res.slice(6);
+            }
+        }
         
         if(await damage(who, are, dmg, tri, props)) return 1;
+
+        // atatck_ed
+        for(let buff of who.buffs){
+            if(!buff.data.efs) continue;
+
+            if(hask(buff.data.efs, "attack_ed")){
+                let res = await buff.data.efs["attack_ed"].func(who, ares, data);
+                if(res == 1) return 1;
+            }
+        }
 
         // 大丈夫そうなら次の標的へ
     }
 }
-async function heal(who, ares, val0, props=[]){
+async function heal(who, ares, val0, props=[], data = {}){
     let hasp = (name) => {
         if(props.includes(name)) return name;
         let prop = props.find(a => a.startsWith(name));
@@ -987,24 +1025,12 @@ async function heal(who, ares, val0, props=[]){
         let atker = copy(who);
         let defer = copy(are);
         
-        //atker
-        let stats = Stats.map(a => a.name);
-        for(let buff of atker.buffs){
-            let data = findBuff(buff.name);
-            
-            for(let [k, v] of Object.entries(buff.value)){
-                if(stats.includes(k)) atker[k] += v;
-            }
-        }
-        
-        let dmg = val;
-        
-        if(hasp("腐乱")) dmg *= -1;
+        if(hasp("腐乱")) val *= -1;
 
-        if(await damage(who, are, -dmg, "hl", props)) return 1;
+        if(await damage(who, are, -val, "hl", props)) return 1;
     }
 }
-async function damage(who, are, dmg, tri, props = []){
+async function damage(who, are, dmg, tri, props = [], data={}){
     let hasp = (name) => {
         if(props.includes(name)) return name;
         let prop = props.find(a => a.startsWith(name));
@@ -1026,7 +1052,6 @@ async function damage(who, are, dmg, tri, props = []){
         }
         return dmg;
     }
-
     let back = "#2b2b2b", mode = "kiki";
     jump:{
         switch(tri){
@@ -1046,7 +1071,6 @@ async function damage(who, are, dmg, tri, props = []){
 
     // 一旦雑に
     dmg = Math.ceil(dmg);
-    console.log(back, mode)
     tobiText(are.div, dmg, {back, mode});
     
     let atae = dmg;
@@ -1107,15 +1131,39 @@ async function win(cam){
 // #endregion
 
 // #region buffとか
+
+/* 呼びだし例[turn_end]: 
+
+    let exTurn = 0;
+    for(let buff of who.buffs){
+        if(!buff.data.efs) continue;
+
+        if(exTurn && !hask(data, "内定:もう1度だ")) data["内定:もう1度だ"] = 1;
+
+        if(hask(buff.data.efs, "turn_end")){
+            let res = await buff.data.efs["turn_end"].func(who, ares, data);
+            if(res == 1) return 1;
+            if(res == "もう1度だ") exTurn = 1;
+        }
+    }
+    if(who.hp <= 0) return;
+    if(exTurn){
+        if(who.cam == 'player') turnPlayer(who);
+        else turnEnemy(who);
+        return;
+    }
+
+*/
 class Buff{
-    constructor(name, num, data = {}){
+    constructor(name, num){
         if(!name || !num || typeof num != "number") return null;
         
-        let data0 = findBuffs(name);
+        let data0 = findBuff(name);
         
         this.name = name;
         this.time = num;
         this.data = copy(data0);
+        this.saved = {}; //保存エリア
     }
     add(who, are){
         if(!who || !are) return 0;
@@ -1141,14 +1189,10 @@ class Buff{
 }
 function buffHas(who, name){
     let data = findBuff(name);
-    let buff = who.buffs.find(a => 
-        a.name == name || 
-        a.jpnm == name || 
-        a.jpnm == data.jpnm || 
-        a.name == data.name
-    );
+    let buff = who.buffs.find(a => a.name == name);
     if(!buff) return 0;
 
+    console.log("あったよ")
     return buff;
 }
 function buffHeraso(who, name, becauseof){
@@ -1166,21 +1210,16 @@ function buffHeraso(who, name, becauseof){
     return 0;
 }
 
-function buffAdd(who, ares, name, num, lv){
+function buffAdd(who, ares, name, num){
     if(!Array.isArray(ares)) ares = [ares];
     for(let are of ares){
-        console.log(`[buffAdd] ${who.name} => ${are.name} | ${name}[${lv}]を${num}stack`);
+        console.log(`[buffAdd] ${who.name} => ${are.name} | 「${name}」を ${num}`);
         let data = findBuff(name);
-        if(!data) return console.error(`buff[${name}] は存在しないらしい`);
+        if(!data) return;
 
-        let buff = {
-            name,
-            value: {},
-            lv,
-            data
-        }
+        let buff = new Buff(name, num);
 
-        are.buffs.push(buff);
+        buff.add(who, are);
     }
 
     return 0;
@@ -1556,7 +1595,7 @@ function enemySelectAction(who){
         //直前にreを実行していたならば、対応するabを確定実行するやつ
         who.lasts.forEach(last => {
             data.acts.forEach(a => {
-                let props = a.prop;
+                let props = a.prop ?? [];
                 props.filter(b => b.startsWith('ab') && b.endsWith(last)).forEach(b => {
                     console.log(`ノア「re${last}が記録されていますので、ab${last}である${a.name}を実行しますね♪」`)
                     acts.push(a);
@@ -1594,7 +1633,7 @@ function enemySelectAction(who){
 async function turnNext(who){
     // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
     
-    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
+    /*
     for(let buff of who.buffs){
         let data = findBuff(buff.name);
 
@@ -1634,6 +1673,7 @@ async function turnNext(who){
             buffremove(who, 'freeze');
         }
     }
+    */
 
     if(who.hp <= 0) return dead(0, who);
 
@@ -1670,20 +1710,25 @@ async function turnEnd(who, ares, data = {}){
         }
     }
 
-    if(extraTurn){
+    let exTurn = 0;
+    for(let buff of who.buffs){
+        if(!buff.data.efs) continue;
+
+        if(exTurn && !hask(data, "内定:もう1度だ")) data["内定:もう1度だ"] = 1;
+
+        if(hask(buff.data.efs, "turn_end")){
+            let res = await buff.data.efs["turn_end"].func(buff, who, ares, data);
+            if(res == 1) return 1;
+            if(res == "もう1度だ") exTurn = 1;
+        }
+    }
+    if(who.hp <= 0) return;
+    if(exTurn){
         if(who.cam == 'player') turnPlayer(who);
         else turnEnemy(who);
         return;
     }
 
-    for(let buff of who.buffs){
-        if(!buff.data.efs) continue;
-        console.log(Object.keys(buff.data.efs));
-        if(hask(buff.data.efs, "turn_end")){
-            let res = await buff.data.efs["turn_end"].func(who, ares, data);
-        }
-    }
-    if(who.hp <= 0) return;
 
     turnBye(who);
 }
