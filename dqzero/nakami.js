@@ -379,33 +379,36 @@ class Human {
         this.id = typeof humans !== 'undefined' ? humans.length : 0;
 
         // 1. キャラクター/エネミーデータの取得
-        if (cam == 'player') {
+        if(cam == 'player'){
             let data0 = Charas;
             this.data = copy(data0.find(a => a.name == this.name));
-            if (!this.data) return console.log(`player に ${this.name} はいないらしい`), 0;
-        } else if (cam == "enemie") {
-            if (!this.name) {
+            if(!this.data) return 0;
+        }
+        else if(cam == "enemie"){
+            if(!this.name){
                 let arr = Enemies.filter(a => !a.no);
-                let selected = arraySelect(arr);
-                this.name = selected?.name ?? 0;
-                this.data = copy(selected);
-            } else {
-                this.data = copy(findEnemie(this.name));
+                let data0 = arraySelect(arr);
+                this.name = data0.name;
+                this.data = copy(data0);
             }
-            if (!this.data) return console.log(`enemie に ${this.name} はいないらしい`), 0;
+            else this.data = copy(findEnemie(this.name));
+            
+            if(!this.data) return 0;
         }
 
         // ステータスの初期化と計算
-        for (let stat of Stats) {
+        for(let stat of Stats){
             let sName = stat.name;
             if(cam == 'player') this[sName] = this.data.stat?.[sName] ?? stat.bas;
+            
             else if(cam == "enemie"){
                 let base = stat.bas;
                 let v = this.data[sName];
-                if (!v || typeof v != 'string') v = "+0";
-                if (v.startsWith('+') || v.startsWith('-')) {
+                if(!v || typeof v != 'string') v = "+0";
+                
+                if(v.startsWith('+') || v.startsWith('-')){
                     let num = +v.slice(1);
-                    if (v.startsWith('-')) num *= -1;
+                    if(v.startsWith('-')) num *= -1;
                     base += num;
                 }
                 if (v.startsWith('=')) {
@@ -902,17 +905,17 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
         case "ph":
             //物理
             atk0 = atker["atk"];
-            def0 = atker["def"];
+            def0 = defer["def"];
             break;
         case "mg":
             //魔法
             atk0 = atker["matk"];
-            def0 = atker["mdef"];
+            def0 = defer["mdef"];
             break;
         case "cn":
             //間接
             atk0 = 0; //...武器依存すぎないか？という理由での0
-            def0 = atker["def"];
+            def0 = defer["def"];
             break;
         }
         
@@ -964,7 +967,7 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
         data["dmg"] = dmg;
         
 
-        console.log(`[attack] ${who.name}(${atk})[${atk0}] => ${are.name}(${def})[${def0}] | dmg:${dmg}`);
+        console.log(`[attack] ${who.name}(${atk}) => ${are.name}(${def}) | dmg:${dmg}`);
 
         // attack_ing
         for(let buff of who.buffs){
@@ -1165,26 +1168,30 @@ class Buff{
         this.data = copy(data0);
         this.saved = {}; //保存エリア
     }
-    add(who, are){
-        if(!who || !are) return 0;
+    push(who, are){
+        if(!are) return 0;
         this.who = are.id;
-        this.from = who.id;
+        this.from = who?.id ?? 0;
         are.buffs.push(this);
+        tekiou();
     }
     
-    delc(num = 1, data = {}){
-        this.time -= num;
+    add(num = 1, data = {}){
+        this.time += num;
         if(this.time <= 0) this.vanish();
+        tekiou();
     }
     
     vanish(data = {}){
-        let who = batF.id(this.who);
+        let who = cm(0, 0, this.who);
         if(!who || !who.buffs) return;
 
         let index = who.buffs.indexOf(this);
         if(index != -1){
             who.buffs.splice(index, 1);
         }
+
+        tekiou();
     }
 }
 function buffHas(who, name){
@@ -1213,13 +1220,18 @@ function buffHeraso(who, name, becauseof){
 function buffAdd(who, ares, name, num){
     if(!Array.isArray(ares)) ares = [ares];
     for(let are of ares){
-        console.log(`[buffAdd] ${who.name} => ${are.name} | 「${name}」を ${num}`);
+        console.log(`[buffAdd] ${who.name ?? "不明"} => ${are.name} | 「${name}」を ${num}`);
         let data = findBuff(name);
         if(!data) return;
 
-        let buff = new Buff(name, num);
+        let already = buffHas(are, name)
+        if(already && data.type == "stack"){
+            already.add(num);
+            continue;
+        }
 
-        buff.add(who, are);
+        let buff = new Buff(name, num);
+        buff.push(who, are);
     }
 
     return 0;
@@ -1261,17 +1273,16 @@ function buffCalc(who, arr){
 
 // #region ターゲティング
 
-function cm(cam = '指定なし', me = '指定なし'){
-    let who = 0;
+function cm(cam = '指定なし', me = '指定なし', id = "不明"){
+    // いのいちに
+    if(id != "不明") return humans.find(a => a.id == id);
+
     if(cam == '指定なし' && me == '指定なし') return humans.find(a => a.cam == 'player' && a.me == 0);
     
     if(me == '指定なし') return humans.filter(a => a.cam == cam);
-
-    who = humans.find(a => a.cam == cam && a.me == me);
-    if(Array.isArray(who)){
-        console.log('↓findなのにarrayになってるふぉーぜ')
-        console.log(who)
-    }
+    
+    let who = humans.find(a => a.cam == cam && a.me == me);
+    if(!who) return 0;
     
     return who;
 }
@@ -1632,6 +1643,8 @@ function enemySelectAction(who){
 
 async function turnNext(who){
     // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
+
+    let data = {};
     
     /*
     for(let buff of who.buffs){
@@ -1649,33 +1662,24 @@ async function turnNext(who){
                 return;
             }
         }
-        if(buffHas(who, 'skip')){
-            await logText(`>> はい${who.name}、お前スキップ〜〜`);
-            turnBye(who);
-            return;
-        }
-        if(hask(buff.value, 'palsy')){
-            if(isCrit(buff.value.palsy)){
-                data.name != 'stan'
-                    ? await logText(`${who.cam}${who.me}は麻痺している..`)
-                    : await logText(`${who.cam}${who.me}はスタンしている....`);
-                turnBye(who);
-                return;
-            }
-        }
-        if(hask(buff.value, 'freeze')){
-            if(!isCrit(buff.value.freeze)){
-                await logText(`${who.name}は凍っている...`);
-                turnBye(who);
-                return;
-            }
-            await logText(`氷が溶けた！`);
-            buffremove(who, 'freeze');
-        }
     }
     */
 
+    // turn_start
+    let canceled = 0;
+    for(let buff of who.buffs){
+        if(!buff.data.efs) continue;
+
+        if(canceled && !hask(data, "内定:行動不可")) data["内定:行動不可"] = 1;
+
+        if(hask(buff.data.efs, "turn_start")){
+            let res = await buff.data.efs["turn_start"].func(buff, who, data);
+            if(res == 1) return 1;
+            if(res == "行動不可") canceled = 1;
+        }
+    }
     if(who.hp <= 0) return dead(0, who);
+    if(canceled) return turnBye(who);
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
 
@@ -1691,13 +1695,6 @@ async function turnNext(who){
 
 async function turnEnd(who, ares, data = {}){
     // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
-    
-    for(let i = who.buffs.length - 1; i >= 0; i--){
-        who.buffs[i].time -= 1;
-        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
-    }
-    tekiou();
-
     let extraTurn = false;
     for(let buff of who.buffs){
         let data = findBuff(buff.name);
@@ -1712,6 +1709,10 @@ async function turnEnd(who, ares, data = {}){
 
     let exTurn = 0;
     for(let buff of who.buffs){
+        // turnのやつを1減らす処理
+        if(buff.data.type == "turn") buff.add(-1, data);
+
+        // 以下は効果。stack式減算も含む
         if(!buff.data.efs) continue;
 
         if(exTurn && !hask(data, "内定:もう1度だ")) data["内定:もう1度だ"] = 1;

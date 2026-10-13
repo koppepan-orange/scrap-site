@@ -248,11 +248,11 @@ const Stats = [
     
     {
         name:"atk",
-        bas:20,
+        bas:10,
     },
     {
         name:"def",
-        bas:10,
+        bas:0,
     },
     {
         name:"matk",
@@ -348,7 +348,7 @@ P属性やS属性などで起こすことができ、その時の効果は引き
 /*
 type: 
 　stackは自然消滅しない。代わりに、アイコン右下に必ず"x1"というような表記が出る。
-　turnはstackにturn_ed:decl(1)を付けただけ。代わりに、右下には表示はなく、左下に必ず"1t"というような表記が出る。
+　turnはstackにturn_end:decl(1)を付けただけ。代わりに、右下には表示はなく、左下に必ず"1t"というような表記が出る。
 
 */
 const Buffs = [
@@ -528,7 +528,7 @@ const Buffs = [
             },
             "attack_ed": {
                 func: async(buff, who, are, data = {}) => {
-                    buff.delc(1, data);
+                    buff.add(-1, data);
                 }
             },
             "lastword": {
@@ -582,7 +582,7 @@ const Buffs = [
 
                     if(0 < buffs.length) {
                         let target = arraySelect(buffs);
-                        target.delc(1, data);
+                        target.add(-1, data);
                     }
 
                     return 0;
@@ -805,7 +805,7 @@ const Buffs = [
             [2] 金属製の防具を着ている場合、ダメージは2倍になる。`,
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(buff, who, data = {}) => {
                     let val = 4;
 
                     let hasMetal = Array.isArray(who.equips) &&
@@ -849,7 +849,7 @@ const Buffs = [
         flav: "帯電・帯電ってなんだよ",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(buff, who, data = {}) => {
                     data["攻撃者"] = "帯電・帯電";
                     data["ダメージ"] = "効果";
 
@@ -913,7 +913,7 @@ const Buffs = [
                 }
             },
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(buff, who, data = {}) => {
                     let val = Math.max(buff.time, 1) * 5;
 
                     data["攻撃者"] = "凍傷";
@@ -938,13 +938,15 @@ const Buffs = [
         desc: "凍っている状態。ターン開始時、75%の確率で解除される。炎属性の攻撃を受けても解除される。",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(buff, who, data = {}) => {
                     if(hit(75)) {
                         buff.vanish(data);
                         return 0;
                     }
 
-                    return 1;
+                    if(data["内定:行動不可"]) return 0;
+
+                    return "行動不可";
                 }
             },
             "be_attack_ed": {
@@ -963,13 +965,15 @@ const Buffs = [
         desc: "凍結されている状態。ターン開始時、40%の確率で解除される。炎属性の攻撃を受けても解除されない。",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(buff, who, data = {}) => {
                     if(hit(40)) {
                         buff.vanish(data);
                         return 0;
                     }
 
-                    return 1;
+                    if(data["内定:行動不可"]) return 0;
+
+                    return "行動不可";
                 }
             }
         }
@@ -982,8 +986,9 @@ const Buffs = [
         desc: "解除されない凍結状態。",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
-                    return 1;
+                func: async(buff, who, data = {}) => {
+                    if(data["内定:行動不可"]) return 0;
+                    return "行動不可";
                 }
             }
         }
@@ -996,8 +1001,9 @@ const Buffs = [
         flav: "麻痺ですね。これ好き",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
-                    if(hit(20)) return 1;
+                func: async(buff, who, data = {}) => {
+                    if(data["内定:行動不可"]) return 0;
+                    if(hit(20)) return "行動不可";
                     return 0;
                 }
             }
@@ -1010,8 +1016,9 @@ const Buffs = [
         desc: "行動できなくなる。内部処理的には麻痺の延長。",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
-                    return 1;
+                func: async(buff, who, data = {}) => {
+                    if(data["内定:行動不可"]) return 0;
+                    return "行動不可";
                 }
             }
         }
@@ -1024,8 +1031,9 @@ const Buffs = [
         flav: "ゲーム終了間際で相手がこれを出してきた時の絶望感たるや",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
-                    return 1;
+                func: async(buff, who, data = {}) => {
+                    if(data["内定:行動不可"]) return 0;
+                    return "行動不可";
                 }
             }
         }
@@ -1034,12 +1042,12 @@ const Buffs = [
     {
         name: "睡魔",
         type: "turn",
-        desc: "ターン終了時、「眠気」を10stack増加させる。",
+        desc: "ターン終了時、「眠気」を50stack増加させる。",
         flav: "睡魔..微熱魔じゃないです。あと決して湖のほとりの人じゃないです",
         efs: {
             "turn_end": {
                 func: async(buff, who, ares, data = {}) => {
-                    await buffAdd(who, who, "眠気", 10);
+                    await buffAdd(who, who, "眠気", 50);
                     return 0;
                 }
             }
@@ -1049,22 +1057,27 @@ const Buffs = [
     {
         name: "眠気",
         type: "stack",
-        desc: `100stack到達でこの効果は消え、「睡眠」に変化する。
-            [1] 行動時、stackを10減らすことができる。`,
+        desc: `100stack到達でこの効果は100stack減少し、「睡眠」(3t)に変化する。
+            [1] 行動時、stackを7減らすことができる。`,
         flav: "いやほんと、最近ちょっと寝不足で、、すみません。なんだよ幼馴染に依存してる水魔導士って、、なんだよチェスの駒で戦う魔導士って、、、、",
         efs: {
-            "turn_start": {
+            "turn_end": {
+                defer: 1,
                 func: async(buff, who, ares, data = {}) => {
-                    if(buff.time < 100) return 0;
+                    console.log("あ、ども。俺お前の眠気の権化です");
+                    console.log(`現在私たちは${this.time}人います`)
+                    if(100 <= buff.time){
+                        console.log("うおお発動")
+                        buff.add(-100, data);
+                        await buffAdd(who, who, "睡眠", 3);
+                    }
 
-                    buff.vanish(data);
-                    await buffAdd(who, who, "睡眠", 10);
                     return 0;
                 }
             },
             "act_ed": {
                 func: async(buff, who, are, data = {}) => {
-                    buff.delc(10, data);
+                    buff.add(-7, data);
                 }
             }
         }
@@ -1072,17 +1085,18 @@ const Buffs = [
 
     {
         name: "睡眠",
-        type: "stack",
-        desc: "行動できなくなる。攻撃された時、この効果は10stack減少する。",
+        type: "turn",
+        desc: "行動できなくなる。攻撃された時、30%の確率でこのバフは解消される",
         efs: {
             "turn_start": {
-                func: async(buff, who, ares, data = {}) => {
-                    return 1;
+                func: async(buff, who, data = {}) => {
+                    if(data["内定:行動不可"]) return 0;
+                    return "行動不可";
                 }
             },
             "be_attack_ed": {
                 func: async(buff, who, are, data = {}) => {
-                    buff.delc(10, data);
+                    if(hit(30)) buff.vanish(data);
                 }
             }
         }
@@ -1206,7 +1220,7 @@ let Charas = [
         ps:'solplaceturret',
         stat:{
             atk:25,
-            def:0,
+            def:10,
             matk:20,
             mdef:20,
             maxhp:25,
@@ -3068,7 +3082,7 @@ const Enemies = [
         ins:['草原'],
         maxhp:'-20',
         atk:'+10',
-        def:'-20',
+        def:'-30',
         maxmp:'0',
         matk:'+0',
         mdef:'+0',
@@ -3144,10 +3158,16 @@ const Enemies = [
                 prop:['abInvisi'],
                 num:2,
                 func:async function(who){
-                    let x = buffHas(who, '影化') ? (buffclear(who, '影化'), 200) : 100;
+                    let x = 80;
+                    let buff = buffHas(who, '影化');
+                    if(buff){
+                        buff.vanish();
+                        x = 190;
+                    }
+
                     await logText(`${who.name}は突進してきた！`);
                     let are = selectJodou(who, 'are', 0, 'random');
-                    if(await attack(who, are, x, 'ph', 100)) return 1;
+                    if(await attack(who, are, x, "ph", 100)) return 1;
                     return 0;
                 }
             },
