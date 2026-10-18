@@ -272,7 +272,7 @@ function tekiou(){
         div.querySelector('.name').textContent = human.name;
         div.querySelector('.lv').textContent = `Lv.${human.lv}`;
         div.querySelector('.img').src = `assets/images/${srca}`;
-        div.querySelector('.skill .naka').style.height = `${human.ep/human.maxep*100}%`;
+        div.querySelector('.skill .naka').style.height = `${human.kp/human.maxkp*100}%`;
 
         let [half, pinch] = [2, 4]
 
@@ -422,7 +422,7 @@ class Human {
         // 3. 共通の初期化
         this.hp = this.maxhp;
         this.mp = this.maxmp;
-        this.ep = 0;
+        this.kp = 0;
         this.joutie = 1;
         this.buffs = [];
         this.me = typeof humans !== 'undefined' ? humans.filter(a => a.cam == cam).length : 0;
@@ -462,7 +462,7 @@ class Human {
         this.tuikker();
     }
 
-    makeDOM() {
+    makeDOM = () => {
         let sd = Stages.find(a => a.name == batC.stage) || { color: '#ffffff' };
 
         let nameD = El('div', 'name');
@@ -503,184 +503,19 @@ class Human {
         }
     }
 
-    tuikker(){
+    tuikker = () => {
         humans.push(this);
     }
-}
 
-
-/*
-class Human{
-    constructor(cam, data = {}){
-        if(!cam) return 0;
-        this.id = batC.length;
-        this.cam = cam;
-
-        for(let stat of Stats){
-            let name = stat.name;
-            this[name] = data[name] ?? stat.bas; //??なら0は0として通すはず
-        }
-
-        this.buffs = [];
-        this.equips = [];
-        
-        if(cam == "player" && !data.name) return 0;
-        if(cam == "enemie" && !data.name){
-            let arr = Enemies.filter(a => a.live.include("all") || a.live.include(batC.stage));
-            data.name = arraySelect(arr);
-        }
-        this.name = data.name;
-        if(cam == "player") this.data = copy(findChara(this.name));
-        if(cam == "enemie") this.data = copy(findEnemie(this.name));
-
-
-        this.add();
-    }
-    add(){
-        batC.hs.push(this); //thisにまたdiv追加したり編集したらちゃんとhsの方にも伝わるよな.....?   
-    }
-
-    make(){
-
+    death = () => {
+        this.hp = 0;
+        this.joutie = 0;
     }
 }
-function makeUnit(cam, name = 0, data){
-    console.log(cam, name)
-     if(!data) let data = {};
-    data.id = humans.length;
-
-    if(cam == 'player'){
-        let data0 = Charas;
-        data = data0.find(a => a.name == name);
-    }
-    if(cam == "enemie" && !name){
-        data = arraySelect(Enemies.filter(a => !a.no));
-        name = data?.name ?? 0;
-    }
-    if(!data) return console.log(`${cam} に ${name} はいないらしい`);
-    // console.log(data);
-
-    let unit = {};
-    if(cam == 'player'){
-        // pleyerはデータをそのままコピー
-        // Stats.map(a => a.name).forEach(s => unit[s] = data[s]);
-        for(let data0 of Stats){
-            let name = data0.name;
-            unit[name] = data.stat[name] ??data0.bas;
-        }
-
-        
-    }
-    if(cam == "enemie"){
-        // enemieはベース値から補正値で加工
-        Stats.map(a => a.name).forEach(s => {
-            let vd = Stats.find(a => a.name == s);
-            unit[s] = vd.bas;
-
-            let v = data[s];
-            if(!v || 
-               typeof v != 'string') v = "+0"
-            if(v.startsWith('+') || v.startsWith('-')){
-                let num = +v.slice(1);
-                if(v.startsWith('-')) num *= -1;
-                unit[s] += num;
-            }
-            if(v.startsWith('=')){
-                unit[s] = +v.slice(1);
-            }
-        });
-    }
-
-    let me = humans.filter(a => a.cam == cam).length;;
-
-    //commonの初期化
-    unit.hp = unit.maxhp;
-    unit.mp = unit.maxmp;
-    unit.ep = 0;
-    unit.joutie = 1;
-    unit.buffs = [];
-    unit.cam = cam;
-    unit.me = me;
-
-    //each otherの初期化
-    if(cam == 'player'){
-        unit.name = name;
-        unit.lv = 1;
-        unit.exp = 0;
-        unit.sp = 0;
-        unit.attr = [];
-        unit.equips = {}
-        
-        unit.acts = unit.acts ?? batC.shokey.acts;
-        unit.mags = unit.mags ?? batC.shokey.mags;
-        unit.tool  = unit.tool ?? batC.shokey.tool;
-
-        unit.ex = data.ex;
-        unit.ns = data.ns;
-        unit.ps = data.ps;
-        unit.ts = data.ts;
-
-        Style.batSt.solid = data.buttonsolid;
-        Style.batSt.back = data.buttonback;
-        Style.batSt.aima = irohaMix(data.buttonsolid, data.buttonback);
-        Style.tekiou();
-    }
-    if(cam == "enemie"){
-        unit.name = data.name;
-        unit.lv = random(1, 3);
-        unit.attr = data.attr ?? [];
-        unit.lasts = [];
-        unit.equips = {};
-    }
-
-
-    let sd = Stages.find(a => a.name == batC.stage);
-
-    let nameD = El('div', 'name');
-     nameD.style.color = irohaMix('#b2b2b2', sd.color);
-     
-    let imgD = images["systems"].error.cloneNode(true);
-     imgD.classList.add("img")
-    let backD = El('div', "naka");
-     let skillD = El('div', 'skill', [backD])
-      skillD.style.borderColor = irohaMix('#2b2b2b', sd.color);
-    
-    let baa = (code) => {
-        return El('div', `${code} bar0`, [
-            El('div', 'text'),
-            El('div', 'bar', [El('div', 'inner')])
-        ]);
-    }
-
-    let div = El('div', `human ${cam}${me}`, [
-        imgD,
-        skillD,
-        El('div', 'lv'),
-        nameD,
-        El('div', 'bars', [
-            baa('hp'),
-            baa('mp')
-        ]),
-        El('div', 'buffs')
-    ]);
-
-    unit.div = div;
-
-    // let container = (cam == 'player') ? batC.pD : batC.eD;
-    let belong = batC.sesD[cam];
-    belong.appendChild(div);
-
-    humans.push(unit)
-
-    // return unit;
-}
-*/
-
-// let makePlayer = (name) => makeUnit('player', name);
-// let makeEnemy  = () => makeUnit('enemy');
 
 const makePlayer = (name) => new Human('player', name);
 const makeEnemy  = (name = 0) => new Human('enemie', name);
+
 // #endregion
 
 // #region 道との遭遇
@@ -820,14 +655,6 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
 
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
 async function attack(who, ares, voi, tri, aim, props = [], data = {}){
-    let hasp = (name) => {
-        if(props.includes(name)) return name;
-        let prop = props.find(a => a.startsWith(name));
-         if(prop) return prop;
-        return "";
-    }
-
-    // console.log(ares);
     console.log(`[attack] ${who.name}の攻撃！ ${voi}%[${tri}] (命中率:${aim}%) (${props.join(", ")})`)
      if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
     if(!Array.isArray(ares)) ares = [ares];
@@ -929,20 +756,23 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
         // crit | atker.crla -defer.crrs +propのなんか（会心:）（会心固:） | hitで判定
         let cranus = atker.crla -defer.crrs;
         jump:{
-            if(!hasp("会心")) break jump;
-            
-            let prop = hasp("会心固").slice(4); //会心固:num
-            if(+prop){
-                console.log(`[attack] prop「会心固」発動！会心率が強制的に "${prop}" になりました！`);
-                cranus = +prop;
+            if(data["会心確定"]){
+                console.log(`[attack] 「会心確定」発動！どうあがいても！`);
+                cranus = 100;
                 break jump;
             }
-            else return console.error(`[attack] prop{会心固:${prop}}で問題発生: 数値でないものが用いられてます`);
-            
-            prop = hasp("会心").slice(3); //会心:num
-            if(+prop){
-                console.log(`[attack] prop「会心」発動！会心率に以下の値を追加: ${prop}`);
-                cranus += +prop;
+
+            if(data["会心固"]){
+                let atai = +data["会心固"];
+                console.log(`[attack] 「会心固」発動！会心率が強制的に "${atai}" になりました！`);
+                cranus = atai;
+                break jump;
+            }
+
+            if(data["会心"]){
+                let atai = +data["会心固"];
+                console.log(`[attack] 「会心」発動！会心率に以下の値を追加: ${atai}`);
+                cranus += +atai;
                 break jump;
             }
             else return console.error(`[attack] prop{会心:${prop}}で問題発生: 数値でないものが用いられてます`);
@@ -976,13 +806,19 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
             if(hask(buff.data.efs, "attack_ing")){
                 let res = await buff.data.efs["attack_ing"].func(who, ares, data);
                 if(res == 1) return 1;
-                if(typeof res == "string" && res.startsWith("dmg変更:")) dmg = +res.slice(6);
+                if(typeof res == "string" && res.startsWith("dmg変更:")){
+                    dmg = +res.slice(6);
+                    data["dmg"] = dmg;
+                }
             }
         }
         
         if(await damage(who, are, dmg, tri, props)) return 1;
 
         // atatck_ed
+        let kpadd = 5;
+        if(data[""])
+
         for(let buff of who.buffs){
             if(!buff.data.efs) continue;
 
@@ -990,7 +826,12 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
                 let res = await buff.data.efs["attack_ed"].func(who, ares, data);
                 if(res == 1) return 1;
             }
+
+            tekiou();
         }
+        
+        // kpの増加
+        who.ep += 1;
 
         // 大丈夫そうなら次の標的へ
     }
@@ -1168,7 +1009,7 @@ class Buff{
         this.data = copy(data0);
         this.saved = {}; //保存エリア
     }
-    push(who, are){
+    push = (who, are) => {
         if(!are) return 0;
         this.who = are.id;
         this.from = who?.id ?? 0;
@@ -1176,13 +1017,13 @@ class Buff{
         tekiou();
     }
     
-    add(num = 1, data = {}){
+    add = (num = 1, data = {}) => {
         this.time += num;
         if(this.time <= 0) this.vanish();
         tekiou();
     }
     
-    vanish(data = {}){
+    vanish = (data = {}) => {
         let who = cm(0, 0, this.who);
         if(!who || !who.buffs) return;
 

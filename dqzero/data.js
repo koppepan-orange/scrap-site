@@ -323,6 +323,13 @@ const Stats = [
         name:"maxmp",
         desc:"魔素タンクの残量。え、ずっと最大値の人がいる？？それは...な、なんだろねー......", //魔人間です。希少だし[王都]アトモスフィアでは迫害対象
         bas:0, //ふつうは持ってないので
+    },
+
+    {
+        name:"maxkp",
+        desc:"kpの最大値です",
+        bas:100,
+        // 「これを下げる」効果も作りたいねぇ...その場合「余剰分のkpはcutに変換される」とかもつけてあげんとか ...待てよ、それ効果切れたら上がるよな？その場合「溜まってない」ことになる...っし、maxを上げる処理をしたら、その分kpも上がるようにしちゃおうか ゆるゆるでいこう
     }
 ]
 
@@ -1114,6 +1121,86 @@ const Buffs = [
                 }
             }
         }
+    },
+
+    {
+        name:"満腹感",
+        type:"turn",
+        desc:"うわあ食べたなー！という状態。毎ターンhpが10ずつ回復する。",
+        efs:{
+            "turn_ed":{
+                func:(buff, who, ares, data = {}) => {
+                    if(await heal(who, who, 10, data)) return 1;
+
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
+        name:"共通因数",
+        type:"stack",
+        desc:`共通因数。100になるとよくないことが起こる。毎ターン2ずつ減少する。
+        [2] もし60以上になったならば、命中率が5下がる。
+        [3] もし90以上になったならば、命中率が20下がり、会心率が30下がる。
+        [4] もし100になったならば、これは0になる。それと同時に攻撃力・防御力が一時的に下がる。しかし、魔法攻撃力は上がる。`,
+        efs:{
+            "fanfare":{ //追加された時
+                func:async(buff, who, are, data = {})=>{
+                    // whoが付与した側, areが付与された側
+                    let num = buff.time;
+                    if(100 <= num){
+                        await logText("共通因数 が100に到達！");
+                        buff.vanish(data);
+                        buffAdd(are, are, "共通因数の存在しない解", 3, data);
+                    }
+                    else if(90 <= num){
+                        are.aim -= 20;
+                        are.crit -= 30;
+                    }
+                    else if(num >= 60){
+                        are.aim -= 5;
+                    }
+                }
+            },
+            "turn_ed":{
+                func:async(buff, who, ares, data = {})=>{
+                    buff.add(-2, data); //calm_down
+                    return 0;
+                }
+            }
+        }
+    },
+    {
+        name:"共通因数の存在しない解",
+        type:2,
+        desc:"攻撃倍率と防御倍率が下がり、魔法攻撃力が上がる。また、「共通因数」が付与されなくなる",
+        efs:{
+            "fanfare":{
+                func:async(buff, who, are, data = {})=>{
+                    are.pow -= 30;
+                    are.she -= 50;
+                    are.matk += 60;
+                }
+            },
+            "add_pre":{
+                func:async(buff, who, are, name, time, data = {}) => {
+                    // こっちが「自分でないものが追加される時」
+
+                    if(data["内定:だめ"]) return 0;
+
+                    if(name == "共通因数") return "だめ";
+                }
+            },
+            "lastword":{
+                func:async(buff, who, are, data = {})=>{
+                    are.pow += 30;
+                    are.she += 50;
+                    are.matk -= 60;
+                }
+            }
+        }
     }
 ];
 
@@ -1150,12 +1237,13 @@ let Charas = [
         name:'color_slime',
         jpnm:'ファン・ボイ・チャウ',
         img:'color_slime_green',
+        desc:'スライム。...まだできてないから使わない方が吉',
+        key:"l",
         data:{
             colorp:"color_slime_", //original
             color0:"green",
             colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
         },
-        desc:'スライム。...まだできてないから使わない方が吉',
         ex:'null',
         ns:'null',
         ps:'sthree',
@@ -1174,36 +1262,38 @@ let Charas = [
         buffs:[
             {
                 name:'頭にくっつくスライム',
-                type:'unique',
-                becauseof:'none',
-                hera:1,
-                kiju:'stack',
+                type:'stack',
+                gb:"b",
                 desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
-                kaijo:"行動開始",
-                kaijov:"",
-                kaijoF:() => {
-                    if(hit(30)){
-                        logText('纏わりついたスライムが邪魔をして動けなかった！');
-                        return 1;
-                    }
+                efs:{
+                    "turn_start":{
+                        func:async(buff, who, data = {}) => {
+                            if(data["行動不可"]) return 0;
 
-                    logText("スライムを何とか引きはがした！");
-                    return 0;
+                            buff.add(-1, data);
+                            logText("んっ、でっ、ぜぇいっ！！ (スライムを引き剥がす音)");
+
+                            return "行動不可";
+                        }
+                        
+                    }
                 }
             },
             {
                 name:"吸着質なスライム",
-                type:'unique',
-                becauseof:'turn_start',
-                hera:1,
-                kiju:'lv',
+                type:'turn',
                 desc:'スライムがくっついているおかげで行動するとダメージを受けます',
                 flav:'連続行動ビルドに大打撃 part2',
-                lvs:[
-                    {mg:10},
-                    {mg:20}
-                ],
-                max:2
+                efs:{
+                    "act_ed":{
+                        func:async(buff, who, ares, data = {})=>{
+                            data["攻撃者"] = "スライム";
+                            if(await damage(who, who, 6, "mg", data)); return 1;
+
+                            return 0;
+                        }
+                    }
+                }
             },
         ],
         buttonsolid:'#000000',
@@ -1215,6 +1305,7 @@ let Charas = [
         jpnm:'なんとか・アミー',
         img:'mechanic',
         desc:'メカニック。工具を用いて割となんでも作れる。\nそのせいか助手には大きく慕われている。\n打たれ弱いので繊細にね',
+        key:"n",
         ex:'placeturret',
         ns:'throwwrench',
         ps:'solplaceturret',
@@ -1233,11 +1324,15 @@ let Charas = [
         buffs:[
             {
                 name:"レンチ殴りモード、起動",
-                type:'unique',
-                becauseof:'turn_start',
-                hera:1,
-                kiju:'lv',
+                type:"stack",
+                gb:"g",
                 desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
+                efs:{
+                    "attack_ing":(atker, defer, data = {})=>{
+                        logText("レンチを装備したよっ！");
+                        return `dmg変更:${data["dmg"]*2}`;
+                    }
+                }
             }
         ],
         buttonsolid:'#ff7373',
@@ -1249,6 +1344,7 @@ let Charas = [
         jpnm:'週末の道化師',
         img:'clown',
         desc:'ピエロさん。ランダム要素多め。\n',
+        key:"n",
         ex:'trickyvaiavles',
         ns:'gambler',
         ps:'highsol',
@@ -1290,6 +1386,7 @@ let Charas = [
         jpnm:'スオーノ・フルマイン',
         img:'magodituono',
         desc:'雷電魔術師。"帯電"を用いて戦う\n将軍ではない。誰だ将軍って言ったやつは',
+        key:"n",
         ex:'lightningstorm',
         ns:'elecbarrier',
         ps:'elecshock',
@@ -3258,7 +3355,7 @@ const Enemies = [
                 p:30,
                 type:'',
                 num:3,
-                    func:async function(who){
+                func:async function(who){
                     let are = selectJodou(who, 'are', 'def', 'low');
                     let res = await qte(1000,['a','d']); //0が失敗, 1が成功
                     switch(res){
@@ -3268,6 +3365,67 @@ const Enemies = [
                     return 0;
                 }
             },
+        ]
+    },
+    {
+        no:1,
+        name:"顎のあいつ"
+    },
+
+    // 不思議ゾーン 本でもいいけど別のとこでもいい可能性はある
+    {
+        no:1,
+        name:"未定_不思議01",
+        maxhp:"-10",
+        def:'-5',
+        mdef:'+5',
+        acts:[
+            // セリフは基本ちゃんのイメージ
+            {
+                i:1,
+                name:"① シンプル",
+                p:"60",
+                type:"none",
+                func:async(who)=>{
+                    await logText("ちょっと失礼するね〜？"); //23
+                    
+                    let are = selectJodou(who, "are", "maxhp", "high", 1, {"優先": "data:key:a"});
+
+                    data = {};
+                    
+                    let waits = [1000, 300, 800];
+                    for(let i=0; i<3; i++){
+                        if(await attack(who, are, 90, "mg", 100, data)) return 1;
+
+                        buffAdd(who, are, "共通因数", 2);
+                        await delay(waits[i]);
+                    }
+
+                    return 0;
+                }
+            },
+            {
+                i:2,
+                name:"② 防御無視とか_お嬢様のアレみたいな",
+                p:"24",
+                type:"none",
+                func:async(who)=>{
+                    await logText("防御してもむだむだぁ♡"); //ちょっと...露骨か？いやいいか。他場所で♡を増やせばよい
+                    
+                    let are = selectJodou(who, "are", "maxhp", "high", 1, {"優先": "data:key:a"});
+
+                    data = {};
+                    data["貫通"] = 1;
+                    
+                    let waits = [1000, 500, 500];
+                    for(let i=0; i<3; i++){
+                        if(await attack(who, are, 85, "mg", 100, data)) return 1;
+
+                        buffAdd(who, are, "共通因数", 2);
+                        await delay(waits[i]);
+                    }
+                }
+            }
         ]
     }
 ];
