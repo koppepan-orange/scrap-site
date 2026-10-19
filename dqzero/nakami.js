@@ -272,7 +272,7 @@ function tekiou(){
         div.querySelector('.name').textContent = human.name;
         div.querySelector('.lv').textContent = `Lv.${human.lv}`;
         div.querySelector('.img').src = `assets/images/${srca}`;
-        div.querySelector('.skill .naka').style.height = `${human.kp/human.maxkp*100}%`;
+        div.querySelector('.skill .naka').style.height = `${(human.kp/human.maxkp) *100}%`;
 
         let [half, pinch] = [2, 4]
 
@@ -547,7 +547,7 @@ batC.turnD.addEventListener('click', encount)
 
 let context = {}; //consoleで変数見る用。正式実装の予定はない
 
-async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
+async function wuzzat(code, when, who = 0, ares = 0, data = {}){
     /*
     code デカ関数名
     when mae chu ato
@@ -654,8 +654,8 @@ async function wuzzat(code, when, who = 0, ares = 0, props = [], data = {}){
 }
 
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
-async function attack(who, ares, voi, tri, aim, props = [], data = {}){
-    console.log(`[attack] ${who.name}の攻撃！ ${voi}%[${tri}] (命中率:${aim}%) (${props.join(", ")})`)
+async function attack(who, ares, voi, tri, aim, data = {}){
+    console.log(`[attack] ${who.name}の攻撃！ ${voi}%[${tri}] (命中率:${aim}%)`)
      if((voi != 0 && !voi) || !tri || (aim != 0 && !aim)) return console.error("要素が足りないです");
     if(!Array.isArray(ares)) ares = [ares];
 
@@ -671,18 +671,34 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
     }
 
     // attack_pre
+    const pas_pre = (res) => {
+        if(res == 1) return 1;
+    }
+    if(are.data.ps && are.data.ps.because == "beattack_pre"){
+        let res = await are.data.ps.func(are, data);
+        if(pas_pre(res)) return 1;
+    }
+    if(who.data.ps && who.data.ps.because == "attack_ed"){
+        let res = await who.data.ps.func(who, data);
+        if(pas_pre(res)) return 1;
+    }
     for(let buff of who.buffs){
         if(!buff.data.efs) continue;
 
+        if(hask(buff.data.efs, "beattack_pre")){
+            let res = await buff.data.efs["beattack_pre"].func(who, ares, data);
+            if(pas_pre(res)) return 1;
+        }
         if(hask(buff.data.efs, "attack_pre")){
             let res = await buff.data.efs["attack_pre"].func(who, ares, data);
-            if(res == 1) return 1;
+            if(pas_pre(res)) return 1;
         }
     }
 
     for(let are of ares){
-        console.log(`[attack] ${who.name} => ${are.name}`)
+        console.log(`[attack] ${who.name} => ${are.name}`);
 
+        data["are"] = are;
 
         // 攻撃側の aim と 防御側の dod を加味して最終命中率をだす
         let atare = (aim+who.aim) - are.dod;
@@ -753,7 +769,7 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
          if(def < 0) def = 0; //流石に攻撃力強化は意味わからん
 
 
-        // crit | atker.crla -defer.crrs +propのなんか（会心:）（会心固:） | hitで判定
+        // crit | atker.crla -defer.crrs +dataのなんか（会心:）（会心固:） | hitで判定
         let cranus = atker.crla -defer.crrs;
         jump:{
             if(data["会心確定"]){
@@ -775,13 +791,12 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
                 cranus += +atai;
                 break jump;
             }
-            else return console.error(`[attack] prop{会心:${prop}}で問題発生: 数値でないものが用いられてます`);
             
             console.log("え誰？お前誰？");
         }
         if(hit(cranus)){
             console.log(`[attack] 会心の一撃発生！dmgが${atker.crdm}%になりました！ (最終会心率: ${cranus})`);
-            props.push("発生:会心");
+            data["会心発生"] = 1;
             atk *= (+atker.crdm/100);
             // 防御無視はなくしました。
         }
@@ -800,51 +815,80 @@ async function attack(who, ares, voi, tri, aim, props = [], data = {}){
         console.log(`[attack] ${who.name}(${atk}) => ${are.name}(${def}) | dmg:${dmg}`);
 
         // attack_ing
+        const pas_ing = (res) => {
+            if(res == 1) return 1;
+            if(typeof res == "string" && res.startsWith("dmg変更:")){
+                dmg = +res.slice(6);
+                data["dmg"] = dmg;
+            }
+        }
+        if(are.data.ps && are.data.ps.because == "beattack_ing"){
+            let res = await are.data.ps.func(are, data);
+            if(pas_ing(res)) return 1;
+        }
+        if(who.data.ps && who.data.ps.because == "attack_ing"){
+            let res = await who.data.ps.func(who, data);
+            if(pas_ing(res)) return 1;
+        }
         for(let buff of who.buffs){
             if(!buff.data.efs) continue;
 
+            if(hask(buff.data.efs, "beattack_ing")){
+                let res = await buff.data.efs["beattack_ing"].func(who, ares, data);
+                if(pas_ing()) return 1;
+            }
             if(hask(buff.data.efs, "attack_ing")){
                 let res = await buff.data.efs["attack_ing"].func(who, ares, data);
-                if(res == 1) return 1;
-                if(typeof res == "string" && res.startsWith("dmg変更:")){
-                    dmg = +res.slice(6);
-                    data["dmg"] = dmg;
-                }
+                if(pas_ing()) return 1;
             }
         }
         
-        if(await damage(who, are, dmg, tri, props)) return 1;
+        
+        if(await damage(who, are, dmg, tri)) return 1;
 
         // atatck_ed
         let kpadd = 5;
-        if(data[""])
+        if(data["kp増加"]) kpadd += data["kp増加"];
 
+        const pas_ed = (res) => {
+            if(res == 1) return 1;
+        }
+        if(are.data.ps && are.data.ps.because == "beattack_ed"){
+            let res = await are.data.ps.func(are, data);
+            if(pas_ed(res)) return 1;
+        }
+        if(who.data.ps && who.data.ps.because == "attack_ed"){
+            let res = await who.data.ps.func(who, data);
+            if(pas_ed(res)) return 1;
+        }
         for(let buff of who.buffs){
             if(!buff.data.efs) continue;
 
+            if(hask(buff.data.efs, "beattack_ed")){
+                let res = await buff.data.efs["beattack_ed"].func(who, ares, data);
+                if(pas_ed(res)) return 1;
+            }
             if(hask(buff.data.efs, "attack_ed")){
                 let res = await buff.data.efs["attack_ed"].func(who, ares, data);
-                if(res == 1) return 1;
+                if(pas_ed(res)) return 1;
             }
 
             tekiou();
         }
+        if(who.data.ps && who.data.ps.because == "attack_ed"){
+            let res = await who.data.ps.func(who)
+        }
         
         // kpの増加
-        who.ep += 1;
+        who.kp += kpadd;
+
+        tekiou();
 
         // 大丈夫そうなら次の標的へ
     }
 }
-async function heal(who, ares, val0, props=[], data = {}){
-    let hasp = (name) => {
-        if(props.includes(name)) return name;
-        let prop = props.find(a => a.startsWith(name));
-        if(prop) return prop;
-        
-        return "";
-    }
-    console.log(`[heal] ${who.name}の回復！ | ${val0} [${props.join(", ")}]`);
+async function heal(who, ares, val0, data = {}){
+    console.log(`[heal] ${who.name}の回復！ | ${val0}`);
     
     if(typeof val0 != "number" && !val0.endsWith("%")) return console.error(`[heal] valに ${val0} という文字列が謎に使われてます`);
     
@@ -858,7 +902,7 @@ async function heal(who, ares, val0, props=[], data = {}){
             if(+val){
                 val = +val;
                 let kiju = "maxhp";
-                if(hasp("%:")) kiju = hasp("%:").slice(2);
+                if(data["%"]) kiju = data["%"].slice(2);
                 
                 if(kiju == "maxhp") val = are[kiju] * (val/100);
                 else val = who[kiju] * (val/100);
@@ -869,18 +913,12 @@ async function heal(who, ares, val0, props=[], data = {}){
         let atker = copy(who);
         let defer = copy(are);
         
-        if(hasp("腐乱")) val *= -1;
+        if(data["腐乱"]) val *= -1;
 
-        if(await damage(who, are, -val, "hl", props)) return 1;
+        if(await damage(who, are, -val, "hl", data)) return 1;
     }
 }
-async function damage(who, are, dmg, tri, props = [], data={}){
-    let hasp = (name) => {
-        if(props.includes(name)) return name;
-        let prop = props.find(a => a.startsWith(name));
-         if(prop) return prop;
-        return "";
-    }
+async function damage(who, are, dmg, tri, data={}){
     let naguru = (dmg) => {
         if(dmg < 0) return dmg; //回復はそのまま返す
         if(0 < are.barrier){
@@ -905,9 +943,9 @@ async function damage(who, are, dmg, tri, props = [], data={}){
             case "hl": back = "#dfffc4"; mode = "booba"; break;
         }
 
-        if(!hasp("発生")) break jump;
+        if(!data["発生"]) break jump;
 
-        if(hasp("発生:会心")){
+        if(data["会心発生"]){
             kirameki(are.div);
             back = "#ffeb86";
         }
@@ -926,7 +964,7 @@ async function damage(who, are, dmg, tri, props = [], data={}){
     jump:{
         if(0 < are.hp) break jump;
 
-        if(hasp("寸々")){ //最初はedgeにしようとしたけど...prop日本語で良くね理論を忘れていたのでパペットにしました
+        if(data["寸々"]){ //最初はedgeにしようとしたけど...日本語で良くね理論を忘れていたのでパペットにしました
             are.hp = 1;
             tekiou();
 
@@ -935,7 +973,7 @@ async function damage(who, are, dmg, tri, props = [], data={}){
             break jump;
         }
 
-        if(hasp("復活")){
+        if(data["復活"]){
             are.hp = are.maxhp*0.5;
             tekiou();
 
@@ -944,7 +982,7 @@ async function damage(who, are, dmg, tri, props = [], data={}){
         }
 
         // これ以下は"死"です
-        if(await dead(who, are, props)) return 1;
+        if(await dead(who, are, data)) return 1;
         return 0;
     }
 
@@ -954,7 +992,7 @@ async function damage(who, are, dmg, tri, props = [], data={}){
 // リンク
 // sm45970682 | sm43363556
 
-async function dead(who, are, props = 0){
+async function dead(who, are){
     are.joutie = 0;
 
     let tcam = are.cam;
@@ -1065,7 +1103,7 @@ function buffAdd(who, ares, name, num){
         let data = findBuff(name);
         if(!data) return;
 
-        let already = buffHas(are, name)
+        let already = buffHas(are, name);
         if(already && data.type == "stack"){
             already.add(num);
             continue;
@@ -1321,15 +1359,18 @@ function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1){
 batF.acts = async(who, i) => {
     // who.acts[i]を実行するやつ
 
-    let name = who.acts[i];
-    let data = findActs(name);
-    if(!data) console.error(`${who.name}のacts[${i}]、${name}はガチ・存在しないらしいっす`);
-    if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
+    let data = {};
 
-    // Jammo ja
-    selects(0);
-    let ares = await selectSyudou(1);
-    if(await data.func(who, ares)) return 1;
+    let name = who.acts[i];
+    let act = findActs(name);
+     if(!act) console.error(`${who.name}のacts[${i}]、${name}はガチ・存在しないらしいっす`);
+     if(who.mp < act.mp ?? 0) return tobiText(who.div, "mp is not enough");
+
+    data["名称_行動"] = "Acts";
+    data["名称_技名"] = name;
+
+    selects(0); //y4t4歌うますぎてわろてる 全員なのやばい
+    if(await act.func(who, data)) return 1;
     
     // なければ
     turnEnd(who);

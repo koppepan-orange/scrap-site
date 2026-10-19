@@ -956,7 +956,7 @@ const Buffs = [
                     return "行動不可";
                 }
             },
-            "be_attack_ed": {
+            "beattack_ed": {
                 func: async(buff, who, are, data = {}) => {
                     if(data["tri"] == "fi" || data["属性"] == "炎") {
                         buff.vanish(data);
@@ -1101,7 +1101,7 @@ const Buffs = [
                     return "行動不可";
                 }
             },
-            "be_attack_ed": {
+            "beattack_ed": {
                 func: async(buff, who, are, data = {}) => {
                     if(hit(30)) buff.vanish(data);
                 }
@@ -1129,7 +1129,7 @@ const Buffs = [
         desc:"うわあ食べたなー！という状態。毎ターンhpが10ずつ回復する。",
         efs:{
             "turn_ed":{
-                func:(buff, who, ares, data = {}) => {
+                func:async(buff, who, ares, data = {}) => {
                     if(await heal(who, who, 10, data)) return 1;
 
                     return 0;
@@ -1152,15 +1152,17 @@ const Buffs = [
                     let num = buff.time;
                     if(100 <= num){
                         await logText("共通因数 が100に到達！");
-                        buff.vanish(data);
                         buffAdd(are, are, "共通因数の存在しない解", 3, data);
+                        buff.vanish(data);
                     }
                     else if(90 <= num){
                         are.aim -= 20;
                         are.crit -= 30;
+                        buff.stat = "っ...";
                     }
                     else if(num >= 60){
                         are.aim -= 5;
+                        buff.stat = "な、なに？";
                     }
                 }
             },
@@ -1168,6 +1170,17 @@ const Buffs = [
                 func:async(buff, who, ares, data = {})=>{
                     buff.add(-2, data); //calm_down
                     return 0;
+                }
+            },
+            "lastword":{
+                func:async(buff, who, are, data = {})=>{
+                    if(buff.stat == "っ..."){
+                        are.aim += 20;
+                        are.crit += 30;
+                    }
+                    if(buff.stat == "な、なに？"){
+                        are.aim += 5;
+                    }
                 }
             }
         }
@@ -1214,9 +1227,20 @@ let Charas = [
         jpnm:'持たざる者',
         img:'wretch',
         desc:'持たざる者。何もないが、何でもあるとも言える。\n平均的で普遍的。普通の凡才でただの人間。',
-        ex:'null',
-        ns:'null',
-        ps:'null',
+
+        ex:{
+            name:"none",
+            func:async(who)=>{}
+        },
+        ns:{
+            name:"none",
+            func:async(who)=>{}
+        },
+        ps:{
+            name:"none",
+            func:async(who)=>{}
+        },
+        
         stat:{
             atk:20,
             def:0,
@@ -1229,8 +1253,11 @@ let Charas = [
             crrs:0,
             spd:50,   
         },
-        buttonsolid:'#000000',
-        buttonback:'#999999',
+
+        col:{
+            back:"#999999",
+            col:"#000000"
+        },
     },
 
     {
@@ -1244,9 +1271,38 @@ let Charas = [
             color0:"green",
             colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
         },
-        ex:'null',
-        ns:'null',
-        ps:'sthree',
+        
+        acts: ["小突く", "小突く", "小突く"],
+        
+        ex:{
+            name:"none",
+            func:async(who)=>{}
+        },
+        ns:{
+            name:"none",
+            func:async(who)=>{}
+        },
+        ps:{
+            name:"二度漬けならぬ三度漬け",
+            desc:`actsの小突く使用時、20%の確率でさらに2回殴る。`,
+            because:"attack_ed",
+            func:async(who, data)=>{
+                if(data["名称_行動"] != "Acts" || data["名称_技名"] != "斬る") return 0;
+                if(data["流石に五度漬けはだめ"]) return 0;
+                
+                if(!hit(0)) return 0;
+
+                await logText(`${who.name} は 頑張った！`)
+
+                data["流石に五度漬けはだめ"] = 1;
+                data["are指定"] = data["ares"];
+                
+                let act = findActs("小突く");
+                if(await act.func(who, data)) return 1;
+                if(await act.func(who, data)) return 1;
+            }
+        },
+
         stat:{
             atk:20,
             def:0,
@@ -1695,8 +1751,7 @@ const Monoze = [
 
 const Acts = [
     {
-        name:'slash',
-        jpnm:'斬る',
+        name:'斬る',
         desc:`対象に攻撃力の${this.voi}%のダメージを与える。`,
         flav:"別に必中ではないが、必中みたいな扱いで使いがち（作者談）",
         aim:100,
@@ -1704,21 +1759,24 @@ const Acts = [
         mp:0,
         lv:1,
         tcam:'players',
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
+
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
             return 0;
         }
     },
     {
-        name:'double slash',
-        jpnm:'つばめ返し',
+        name:'つばめ返し',
         desc:`対象に攻撃力の${this.voi}%のダメージを2回与える。`,
         flav:"命中判定は毎回です。そのうち「ねずみざん」作りたいねぇ",
         aim: 85,
         voi:70,
         mp:0,
         lv:1,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
+
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
 
@@ -1726,17 +1784,18 @@ const Acts = [
         }
     },
     {
-        name:'slash of light',
-        jpnm:'踏み込み斬り',//まじん斬り も作りたいね 霹靂一閃も
+        name:'踏み込み斬り',//まじん斬り も作りたいね 霹靂一閃も
         desc:'対象に攻撃力の300%のダメージを与える。',
         voi: 300,
         aim: 40,
         mp:0,
         lv:1,
-        func:async function(who, are){
+        func:async function(who, data = {}){
+            let are = await selectSyudou(1);
+
             let aim = this.aim;
             let voi = this.voi;
-            if(who.ps == 'highsol'){
+            if(who.data.ps.name == 'highsol'){
                 aim -= 20;
                 voi *= 3;
             }
@@ -1758,7 +1817,25 @@ const Acts = [
 
             return 0;
         }
-    }
+    },
+
+    {
+        name:'小突く',
+        desc:`対象に攻撃力の${this.voi}%のダメージを与える。武器攻撃力を加算しない。`,
+        flav:"ぺちって感じ",
+        aim:100,
+        voi:50,
+        lv:1,
+        tcam:'players',
+        func:async function(who){
+            let are = await selectSyudou(1);
+
+            data = {};
+            data["素手"] = 1;
+            if(await attack(who, are, this.voi, "ph", this.aim, data)) return 1;
+            return 0;
+        }
+    },
 ]
 
 const Mags = [
