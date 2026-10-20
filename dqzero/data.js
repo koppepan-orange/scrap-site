@@ -1829,7 +1829,7 @@ const Acts = [
         tcam:'players',
         func:async function(who, data = {}){
             let are;
-            console.error(data["are指定"]);
+            console.error(data);
             if(data["are指定"]) are = data["are指定"];
             else are = await selectSyudou(1);
 
@@ -1839,7 +1839,7 @@ const Acts = [
         }
     },
 ]
-    
+
 const Mags = [
     {
         name:'heal',
