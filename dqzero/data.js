@@ -1295,7 +1295,7 @@ let Charas = [
                 await logText(`${who.name} は 頑張った！`)
 
                 data["流石に五度漬けはだめ"] = 1;
-                data["are指定"] = data["ares"];
+                data["are指定"] = data["are"];
                 
                 let act = findActs("小突く");
                 if(await act.func(who, data)) return 1;
