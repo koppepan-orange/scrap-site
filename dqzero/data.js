@@ -1072,7 +1072,7 @@ const Buffs = [
                 defer: 1,
                 func: async(buff, who, ares, data = {}) => {
                     console.log("あ、ども。俺お前の眠気の権化です");
-                    console.log(`現在私たちは${this.time}人います`)
+                    console.log(`現在私たちは${buff.time}人います`)
                     if(100 <= buff.time){
                         console.log("うおお発動")
                         buff.add(-100, data);
@@ -1286,11 +1286,11 @@ let Charas = [
             name:"二度漬けならぬ三度漬け",
             desc:`actsの小突く使用時、20%の確率でさらに2回殴る。`,
             because:"attack_ed",
-            func:async(who, data)=>{
-                if(data["名称_行動"] != "Acts" || data["名称_技名"] != "斬る") return 0;
+            func:async(who, data = {})=>{
+                if(data["名称_行動"] != "Acts" || data["名称_技名"] != "小突く") return 0;
                 if(data["流石に五度漬けはだめ"]) return 0;
                 
-                if(!hit(0)) return 0;
+                // if(!hit(0)) return 0;
 
                 await logText(`${who.name} は 頑張った！`)
 
@@ -1759,7 +1759,7 @@ const Acts = [
         mp:0,
         lv:1,
         tcam:'players',
-        func:async function(who){
+        func:async function(who, data = {}){
             let are = await selectSyudou(1);
 
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
@@ -1774,7 +1774,7 @@ const Acts = [
         voi:70,
         mp:0,
         lv:1,
-        func:async function(who){
+        func:async function(who, data = {}){
             let are = await selectSyudou(1);
 
             if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
@@ -1827,17 +1827,19 @@ const Acts = [
         voi:50,
         lv:1,
         tcam:'players',
-        func:async function(who){
-            let are = await selectSyudou(1);
+        func:async function(who, data = {}){
+            let are;
+            console.error(data["are指定"]);
+            if(data["are指定"]) are = data["are指定"];
+            else are = await selectSyudou(1);
 
-            data = {};
             data["素手"] = 1;
             if(await attack(who, are, this.voi, "ph", this.aim, data)) return 1;
             return 0;
         }
     },
 ]
-
+    
 const Mags = [
     {
         name:'heal',

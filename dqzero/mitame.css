@@ -929,7 +929,6 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     bottom: 0;
     left: 0;
     transition: height .3s ease;
-    z-index: -1;
     box-sizing: border-box;
 }
 #batt .humans .human .lv{

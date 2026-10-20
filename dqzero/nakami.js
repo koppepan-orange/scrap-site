@@ -670,35 +670,35 @@ async function attack(who, ares, voi, tri, aim, data = {}){
         return arrA.some(element => arrB.includes(element)); //someです！everyの塩基対
     }
 
-    // attack_pre
-    const pas_pre = (res) => {
-        if(res == 1) return 1;
-    }
-    if(are.data.ps && are.data.ps.because == "beattack_pre"){
-        let res = await are.data.ps.func(are, data);
-        if(pas_pre(res)) return 1;
-    }
-    if(who.data.ps && who.data.ps.because == "attack_ed"){
-        let res = await who.data.ps.func(who, data);
-        if(pas_pre(res)) return 1;
-    }
-    for(let buff of who.buffs){
-        if(!buff.data.efs) continue;
-
-        if(hask(buff.data.efs, "beattack_pre")){
-            let res = await buff.data.efs["beattack_pre"].func(who, ares, data);
-            if(pas_pre(res)) return 1;
-        }
-        if(hask(buff.data.efs, "attack_pre")){
-            let res = await buff.data.efs["attack_pre"].func(who, ares, data);
-            if(pas_pre(res)) return 1;
-        }
-    }
-
     for(let are of ares){
         console.log(`[attack] ${who.name} => ${are.name}`);
 
         data["are"] = are;
+        
+        // attack_pre
+        const pas_pre = (res) => {
+            if(res == 1) return 1;
+        }
+        if(are.data.ps && are.data.ps.because == "beattack_pre"){
+            let res = await are.data.ps.func(are, data);
+            if(pas_pre(res)) return 1;
+        }
+        if(who.data.ps && who.data.ps.because == "attack_pre"){
+            let res = await who.data.ps.func(who, data);
+            if(pas_pre(res)) return 1;
+        }
+        for(let buff of who.buffs){
+            if(!buff.data.efs) continue;
+
+            if(hask(buff.data.efs, "beattack_pre")){
+                let res = await buff.data.efs["beattack_pre"].func(who, are, data);
+                if(pas_pre(res)) return 1;
+            }
+            if(hask(buff.data.efs, "attack_pre")){
+                let res = await buff.data.efs["attack_pre"].func(who, are, data);
+                if(pas_pre(res)) return 1;
+            }
+        }
 
         // 攻撃側の aim と 防御側の dod を加味して最終命中率をだす
         let atare = (aim+who.aim) - are.dod;
@@ -791,8 +791,6 @@ async function attack(who, ares, voi, tri, aim, data = {}){
                 cranus += +atai;
                 break jump;
             }
-            
-            console.log("え誰？お前誰？");
         }
         if(hit(cranus)){
             console.log(`[attack] 会心の一撃発生！dmgが${atker.crdm}%になりました！ (最終会心率: ${cranus})`);
@@ -858,6 +856,7 @@ async function attack(who, ares, voi, tri, aim, data = {}){
             if(pas_ed(res)) return 1;
         }
         if(who.data.ps && who.data.ps.because == "attack_ed"){
+            console.log(`うおお ${who.data.ps.name} 発動！！(ed)`)
             let res = await who.data.ps.func(who, data);
             if(pas_ed(res)) return 1;
         }
@@ -874,9 +873,6 @@ async function attack(who, ares, voi, tri, aim, data = {}){
             }
 
             tekiou();
-        }
-        if(who.data.ps && who.data.ps.because == "attack_ed"){
-            let res = await who.data.ps.func(who)
         }
         
         // kpの増加
@@ -1078,7 +1074,6 @@ function buffHas(who, name){
     let buff = who.buffs.find(a => a.name == name);
     if(!buff) return 0;
 
-    console.log("あったよ")
     return buff;
 }
 function buffHeraso(who, name, becauseof){
