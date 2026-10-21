@@ -463,7 +463,7 @@ phoC.uwubF.win = async(from, to, vai) => {
     if(!from || !to) return 0;
     console.log(`[暇つぶジャック] ${from}の勝利！ 基礎ダメージx${vai}ダメージ`);
     if(await phoC.uwubF.damage(from, to, 1, "判定", [`倍率_${vai}`])) return 1;
-    phoC.uwubF.reset();
+     phoC.uwubF.reset();
 }
 phoC.uwubF.burst = async(cam) => {
     if(!cam) return 0;
@@ -477,12 +477,10 @@ phoC.uwubF.reset = () => {
     for(let cam of Object.keys(phoC.uwubC.h)){
         phoC.uwubC.h[cam].cards = [];
         phoC.uwubC.h[cam].Ds.place.innerHTML = "";
-        phoC.waiting = 0;
     }
 	phoC.uwubF.tekiou();
-	
-	phoC.uwubC.ing = 0;
-    phoC.uwubF.came();
+
+	phoC.uwubC.waiting = 0;
 }
 
 phoC.uwubF.damage = async(from, to, num, reason = "reason whyは後ろが完全文の時しか使えないんだぜ", props = []) => {
