@@ -480,6 +480,9 @@ phoC.uwubF.reset = () => {
         phoC.waiting = 0;
     }
 	phoC.uwubF.tekiou();
+	
+	phoC.uwubC.ing = 0;
+    phoC.uwubF.came();
 }
 
 phoC.uwubF.damage = async(from, to, num, reason = "reason whyは後ろが完全文の時しか使えないんだぜ", props = []) => {
