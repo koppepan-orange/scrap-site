@@ -2521,6 +2521,352 @@ gamC.forC.getoutD.addEventListener('click', gamC.forF.getout_get);
 
 //#endregion　リヴァーサル/syudou
 
+// #region phone
+let phoD = document.getElementById("phone");
+let phoC = {
+    Ds:{
+        apps: phoD.querySelector(".apps"),
+    },
+
+    tog:0,
+    now:0,
+}
+let phoF = {};
+phoC.apps = [
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {
+        name:"uwub",
+        jpnm:"暇つぶジャック",
+        D: phoD.querySelector(".app.uwub")
+    },
+];
+
+phoF.tog = (code = "黙れ") => {
+    if(!isNaN(+code)) phoC.tog = code;
+    else phoC.tog = fl(phoC.tog);
+
+    if(phoC.tog) phoD.classList.add("tog");
+    else phoD.classList.remove("tog");
+}
+phoD.addEventListener("click", (e) => {
+    let rect = phoD.getBoundingClientRect();
+    let clickY = e.clientY - rect.top;
+
+    if(0 <= clickY && clickY <= 40){
+        phoF.tog();
+    }
+    
+    if(rect.height - 40 <= clickY && clickY <= rect.height){
+        phoF.home(); // ホームボタンって感じ
+    }
+});
+
+phoF.load = () => {
+    for(let ap of phoC.apps){
+        let div = document.createElement("div");
+        div.className = `ap ${ap.name}`;
+
+        let img = images["apps"][ap.name].cloneNode();
+         div.appendChild(img);
+
+        let label = document.createElement("div");
+         label.className = "label";
+         label.textContent = ap.jpnm;
+         div.appendChild(label);
+        
+        if(ap.name != "error"){
+            div.addEventListener("click", () => {
+                phoF.activate(ap.name);
+            });
+        }
+
+        phoC.Ds["apps"].appendChild(div);
+        
+        // let wid = label.offsetWidth;
+        let wid = 72; //magic
+        let siz = (wid)/ ap.jpnm.length;
+         label.style.fontSize = `${Math.min(siz, 12)}px`;
+    }
+}
+phoF.activate = (name) => {
+    console.log(`[app] ${name} を起動した4`);
+    
+    let arr = phoC.apps;
+     for(let ap of phoC.apps.filter(a => a.name != "error")) ap.D.classList.remove("carryout");
+    let tarD = phoC.apps.find(a => a.name == name || a.jpnm == name);
+     tarD.D.classList.add("carryout");
+    phoC.now = name;
+    
+    switch(name){
+        case "uwub":
+            phoC.uwubF.came();
+    }
+}
+phoF.home = () => {
+    let name = phoC.now;
+    let tarD = phoC.apps.find(a => a.name == name || a.jpnm == name);
+     tarD.D.classList.remove("carryout");
+}
+
+// #region phone-uwub
+phoC.uwubD = phoC.apps.find(a => a.name == "uwub").D;
+phoC.uwubC = {
+    Ds:{
+        dere: phoC.uwubD.querySelector(".area.dealer"),
+        pere: phoC.uwubD.querySelector(".area.player"),
+
+        // hit, stand, bag
+        btsD: phoC.uwubD.querySelector(".bts"),
+        
+    },
+    
+    h:{
+        dealer:{
+            name:"Dealer",
+            cards:[],
+            hp: 1,
+            maxhp: 1,
+            D: phoC.uwubD.querySelector(".area.dealer"),
+        },
+        player:{
+            name:"Player",
+            cards:[],
+            hp: 3,
+            maxhp: 3,
+            D: phoC.uwubD.querySelector(".area.player"),
+        }
+    },
+
+    
+
+    ing:0,
+    waiting:0,
+}
+phoC.uwubF = {};
+
+phoC.uwubF.load = () => {
+    for(let cam of ["dealer", "player"]){
+        phoC.uwubC.h[cam].Ds = {
+            name: phoC.uwubC.h[cam].D.querySelector(".name"),
+            hp:   phoC.uwubC.h[cam].D.querySelector(".hp"),
+            num:  phoC.uwubC.h[cam].D.querySelector(".num"),
+            place:phoC.uwubC.h[cam].D.querySelector(".place"),
+        }
+    }
+
+    let labelD = El("div", "label")
+     labelD.textContent = "";
+    for(let i=0; i<4; i++){
+        let div = El("div", `bt bt${i}`, [labelD.cloneNode()]);
+        div.addEventListener("click", () => {
+            let code = div.dataset.code;
+            phoC.uwubF.execute(code);
+        })
+        phoC.uwubC.Ds.btsD.appendChild(div);
+    }
+    phoC.uwubC.Ds.bts = [
+        phoC.uwubD.querySelector(".bts .bt0"),
+        phoC.uwubD.querySelector(".bts .bt1"),
+        phoC.uwubD.querySelector(".bts .bt2"),
+        phoC.uwubD.querySelector(".bts .bt3")
+    ]
+}
+phoC.uwubF.came = () => {
+    phoC.uwubF.btSet(0, "start");
+    phoC.uwubF.btDel(1);
+    phoC.uwubF.btDel(2);
+    phoC.uwubF.btDel(3);
+}
+
+phoC.uwubF.btSet = (id, name) => {
+    if(3 < id) return 0;
+    let div = phoC.uwubC.Ds.bts[id];
+     div.classList.add("acti");
+     div.dataset.code = name;
+     
+    let labelD = div.querySelector(".label"); 
+     labelD.textContent = name;
+}
+phoC.uwubF.btDel = (id) => {
+    if(3 < id) return 0;
+    let div = phoC.uwubC.Ds.bts[id];
+     div.classList.remove("mars");
+     div.dataset.code = "";
+}
+
+phoC.uwubF.tekiou = () => {
+    for(let h of Object.values(phoC.uwubC.h)){
+        // hp
+        h.Ds.hp.innerHTML = "";
+        for(let i=1; i<h.maxhp+1; i++){
+            let src = "heart";
+            if(h.hp < i) src += "_blank";
+            let img = images["systems"][src].cloneNode();
+            h.Ds.hp.appendChild(img);
+        }
+
+        let cards = h.cards;
+        let sum = cardCalc(cards, "bj");
+         h.Ds.num.textContent = sum;
+         h.sum = sum;
+        if(sum == 21) h.D.classList.add("bj");
+        else h.D.classList.remove("bj");
+
+    }
+}
+
+phoC.uwubF.execute = (code) => {
+    switch(code){
+        case "start":
+            console.log("うおおファンファーレ")
+            phoC.uwubF.start();
+            break;
+        case "hit":
+            phoC.uwubF.hit();
+            break;
+        case "stand":
+            phoC.uwubF.stand();
+            break;
+    }
+}
+
+phoC.uwubF.start = () => {
+    if(phoC.uwubC.ing) return 1;
+    phoC.uwubC.ing = 1;
+    console.log(`[暇つぶジャック] ===開始===`);
+    
+    phoC.uwubF.btSet(0, "hit");
+    phoC.uwubF.btSet(1, "stand");
+
+    phoC.uwubF.tekiou();
+}
+phoC.uwubF.hit = async() => {
+    if(phoC.uwubC.waiting) return 0;
+    await phoC.uwubF.cardDraw("player")
+}
+phoC.uwubF.stand = async() => {
+    if(phoC.uwubC.waiting) return 0;
+    phoC.uwubC.waiting = 1;
+    
+    // ここからDealer
+    let dh = phoC.uwubC.h["dealer"];
+    do{
+        let card = cardDraw(0, 0, "bj");
+        dh.cards.push(card);
+        let div = phoC.uwubF.cardMake(card);
+        dh.Ds.place.appendChild(div);
+         phoC.uwubF.tekiou();
+        // phoC.uwubF.cardDrawn(cam);
+        await delay(800);
+    } while(dh.sum < 17);
+
+    if(21 < dh.sum) return phoC.uwubF.burst("dealer");
+    phoC.uwubF.judge();
+}
+
+phoC.uwubF.cardMake = (card) => {
+    let num = El("div", "suu");
+     num.textContent = card.num;
+    let sui = El("div", "suit");
+     sui.textContent = card.suit;
+    let div = El("div", `card ${card.suit}`, [num, sui]);
+     if(card.suit == "♤" || card.suit == "♧") div.classList.add("black");
+     if(card.suit == "♡" || card.suit == "♢") div.classList.add("red");
+
+    return div;
+}
+phoC.uwubF.cardDraw = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
+    let card = cardDraw(0, 0, "bj");
+    h.cards.push(card);
+    let div = phoC.uwubF.cardMake(card);
+    h.Ds.place.appendChild(div);
+     phoC.uwubF.tekiou();
+    phoC.uwubF.cardDrawn(cam);
+}
+phoC.uwubF.cardDrawn = async(cam) => {
+    let sum = cardCalc(phoC.uwubC.h[cam].cards, "bj");
+     if(21 < sum) return phoC.uwubF.burst(cam);
+    
+}
+
+phoC.uwubF.judge = () => {
+    let ph = phoC.uwubC.h["player"];
+    let dh = phoC.uwubC.h["dealer"];
+
+    console.error(`[暇つぶジャック] p:${ph.sum} d:${dh.sum}`);
+    // burstでここにきてたらお菓子
+    let num = 1, win;
+    if(ph.sum == 21) win = "player", num = 2.0;
+    else if(dh.sum == 21) win = "dealer", num = 2.0;
+    else if(dh.sum < ph.sum) win = "player";
+    else if(ph.sum < dh.sum) win = "dealer";
+
+    let lose = fl(win, ["player", "dealer"]);
+    phoC.uwubF.win(win, lose, num);
+}
+phoC.uwubF.win = async(from, to, vai) => {
+    if(!from || !to) return 0;
+    console.log(`[暇つぶジャック] ${from}の勝利！ 基礎ダメージx${vai}ダメージ`);
+    if(await phoC.uwubF.damage(from, to, 1, "判定", [`倍率_${vai}`])) return 1;
+     phoC.uwubF.reset();
+}
+phoC.uwubF.burst = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
+    nicoText(`${h.name}がバーストした！`);
+    if(await phoC.uwubF.damage("player", "player", 1, "バースト")) return 1;
+     phoC.uwubF.reset();
+}
+
+phoC.uwubF.reset = () => {
+    for(let cam of Object.keys(phoC.uwubC.h)){
+        phoC.uwubC.h[cam].cards = [];
+        phoC.uwubC.h[cam].Ds.place.innerHTML = "";
+    }
+	phoC.uwubF.tekiou();
+
+	phoC.uwubC.waiting = 0;
+}
+
+phoC.uwubF.damage = async(from, to, reason = "reason whyは後ろが完全文の時しか使えないんだぜ") => {
+    let who = phoC.uwubC.h[from];
+    let are = phoC.uwubC.h[to];
+    
+    let dmg = 1;
+    tobiText(are.Ds.name, dmg, {mode: "kiki"});
+    are.hp -= dmg;
+    if(are.hp < 0) are.hp = 0;
+     phoC.uwubF.tekiou();
+    if(are.hp <= 0) if(await phoC.uwubF.dead(to)) return 1;
+
+    //はいっ
+    return 0;
+}
+phoC.uwubF.dead = async(cam) => {
+    if(!cam) return 0;
+    let h = phoC.uwubC.h[cam];
+    nicoText(`${h.name}は死んだ！`);
+    
+    if(cam == "player")
+
+    phoC.uwubF.encount();
+    
+    return 1;
+
+    // その後の展開は知りません
+}
+// #endregion
+
+// #endregion
+
+
 
 
 //#region start

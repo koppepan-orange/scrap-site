@@ -365,10 +365,11 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "attack_pre":{
-                func: async(buff, atker, defer, data = {}) => {
-                    atker.pow += 20;
-                }
+            "fanfare":async(buff, who, are, data = {}) => {
+                are.pow += 20;
+            },
+            "lastword":async(buff, who, are, data = {}) => {
+                are.pow -= 20;
             }
         }
     },
@@ -378,10 +379,11 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "attack_pre":{
-                func: async(buff, atker, defer, data = {}) => {
-                    atker.pow += 40;
-                }
+            "fanfare":async(buff, who, are, data = {}) => {
+                are.pow += 40;
+            },
+            "lastword":async(buff, who, are, data = {}) => {
+                are.pow -= 40;
             }
         }
     },
@@ -391,10 +393,11 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "attack_pre":{
-                func: async(buff, atker, defer, data = {}) => {
-                    defer.she += 20;
-                }
+            "fanfare":async(buff, who, are, data = {}) => {
+                are.she += 20;
+            },
+            "lastword":async(buff, who, are, data = {}) => {
+                are.she -= 20;
             }
         }
     },
@@ -404,10 +407,11 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "attack_pre":{
-                func: async(buff, atker, defer, data = {}) => {
-                    defer.she += 40;
-                }
+            "fanfare":async(buff, who, are, data = {}) => {
+                are.she += 40;
+            },
+            "lastword":async(buff, who, are, data = {}) => {
+                are.she -= 40;
             }
         }
     },
@@ -1054,7 +1058,7 @@ const Buffs = [
         efs: {
             "turn_end": {
                 func: async(buff, who, ares, data = {}) => {
-                    await buffAdd(who, who, "眠気", 50);
+                    await buffAdd(who, who, "眠気", 10);
                     return 0;
                 }
             }
@@ -1290,7 +1294,7 @@ let Charas = [
                 if(data["名称_行動"] != "Acts" || data["名称_技名"] != "小突く") return 0;
                 if(data["流石に五度漬けはだめ"]) return 0;
                 
-                // if(!hit(0)) return 0;
+                if(!hit(20)) return 0;
 
                 await logText(`${who.name} は 頑張った！`)
 
@@ -3247,7 +3251,7 @@ const Enemies = [
                     await logText(`${who.name}は粘液を絡ませてきた！`);
                     let are = await selectJodou(who, "are", 'hp', 'high');
                     console.log(are)
-                    await buffAdd(who, are, 'stickyslime', 2, 1);
+                    await buffAdd(who, are, '頭にくっつくスライム', 2);
                     return 0;
                 }
             }
