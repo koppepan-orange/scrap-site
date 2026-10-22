@@ -73,6 +73,11 @@ let Style = {
         "bor":  "#ffffff",
         "aima": "#808080"
     },
+    kPhone:{
+        "bc-hontai": "#000000",
+        "bc-jouge": "#1f1f1f",
+        "waku": "#381204",
+    },
     "batSt":{
         solid:"#2b2b2b",
         back:"#b2b2b2",
@@ -97,7 +102,8 @@ const Fonts = [
 ];
 
 const Images = {
-    systems:["error",'select','circle','mush','mush_high','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon'],
+    systems:["error",'select','circle','mush','mush_high','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon', "heart", "heart_blank"],
+    apps:["map", "amon", "error", "uwub"],
 }
 
 const Sounds = {

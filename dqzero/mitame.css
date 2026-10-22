@@ -1686,3 +1686,332 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 /* #endregion */
 
 /* #endregion */
+
+
+/* #region phone */
+#phone{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 350px;
+    height: 600px;
+    padding: 40px 16px;
+    background: var(--kPhone-bc-hontai);
+    border-radius: 30px;
+    position: absolute;
+    bottom: -550px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: bottom 0.95s ease-in-out;
+    overflow: hidden;
+    box-sizing: border-box;
+    z-index: 21;
+
+    & .gz-waku{
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 8px solid var(--kPhone-waku);
+         border-radius: inherit;
+        position: absolute;
+        inset: 0;
+        box-sizing: border-box;
+        pointer-events: none;
+        z-index: 3;
+    }
+    &::before{
+        /* 上部 */
+        content: "";
+        width: 100%;
+        height: 40px;
+        background: var(--kPhone-bc-jouge);
+         border-radius: inherit;
+        position: inherit;
+        top: 0;
+        left: 0;
+    }
+    &::after{
+        /* 上部 */
+        content: "";
+        width: 100%;
+        height: 40px;
+        background: var(--kPhone-bc-jouge);
+         border-radius: inherit;
+        position: inherit;
+        bottom: 0;
+        left: 0;
+    }
+
+    &.tog{
+        bottom: -6px;
+    }
+}
+#phone .apps{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px 10px;
+    width: 100%;
+    height: fit-content;
+    padding-top: 15px;
+    box-sizing: border-box;
+
+    & .ap{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2px;   
+        width: 100%;
+        height: 60px;
+        transition: filter 0.1s;
+        box-sizing: border-box;
+
+        & img{
+            width: 65%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+        }
+        &:active img{filter: brightness(0.5)}
+
+        & .label{
+            width: 100%;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            color: #fefefe;
+            /* font-size: 12px; */
+        }
+        
+    }
+}
+#phone .app{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+    transition: scale 0.3s;
+    box-sizing: border-box;
+    scale: 0;
+
+    &.carryout{
+        scale: 1;
+    }
+}
+#phone .app.map{
+    content: "マップアプリ。価格未定";
+    background: #2b2b2b;
+}
+#phone .app.map .liver{
+    display: grid;
+    grid-template-columns: repeat(20, 1fr);
+    align-content: space-between;
+    justify-items: center;
+    gap: 1px;
+    width: 80%;
+    aspect-ratio: 1/1;
+    padding: 3px;
+    background: #4b4b4b;
+    box-sizing: border-box;
+
+    & .cell{
+        width: 100%;
+        aspect-ratio: 1/1;
+        background: #2b2b2b;
+        position: relative;
+
+        &.mas.m1{
+            background: #b2b2b2;
+        }
+        &.mas.m2{
+            background: #9dc7e6;
+        }
+        &.mas.m3{
+            background: #c8c8c8;
+        }
+        
+        & .walker{
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: contain;
+            position: absolute;
+            inset: 0;
+
+            &.dir0{transform: rotate(0deg)}
+            &.dir1{transform: rotate(90deg)}
+            &.dir2{transform: rotate(180deg)}
+            &.dir3{transform: rotate(270deg)}
+        }
+    }
+}
+
+#phone .app.uwub{
+    content: "BJ。初期体力は♡3つで、尽きるとゲームオーバー......全体の色が変わって二ラウンド目。1敗ごとに3から1選択型でレリックを獲得。shop機能をつけてもいいかもしれない";
+    background: #c6c6c6;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 30px;
+    padding: 25px 10px 5px;
+
+    & .area{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+
+        & .card{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 45px;
+            aspect-ratio: 2/3;
+            background: #ffffff;
+            border: 2px solid #43269a;
+             border-radius: 5px;
+            position: relative;
+            color: #2b2b2b;
+            font-size: 24px;
+            font-family: hangyaku;
+            box-sizing: border-box;
+            &.ura{
+                color: #43269a;
+                background-color: #43269a;
+            }
+
+            & .suu{
+                content: "中央配置"
+            }
+            & .suit{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                font-size: 8px;
+            }
+        }
+
+        &.area{
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            width: 90%;
+            height: 60px;
+            padding: 0 5px 10px;
+            border-bottom: 2px solid #2b2b2b;
+            &.player{
+                flex-direction: row-reverse;
+                justify-content: flex-end;
+            }
+
+            & .column{
+                justify-content: center;
+                align-items: flex-start;
+                gap: 3px;
+                width: 70px;
+                height: 100%;
+                flex-shrink: 0;
+
+                & .hp{
+                    display: flex;
+                    flex-direction: row;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 5px;
+
+                    & img{
+                        width: 20px;
+                        aspect-ratio: 1/1;
+                        object-fit: contain;
+                    }
+                }
+            }
+
+            & .num{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 35px;
+                /* height: 90%; */
+                aspect-ratio: 1/1;
+                flex-shrink: 0;
+                background: #b2b2b2;
+                border-radius: 5px;
+                text-align: center;
+                line-height: 35px;
+                font-family: hangyaku;
+                font-size: 24px;
+            }
+
+            & .place{
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+                gap: 5px;
+                /* flex: 1; */
+                width: 100%;
+                 max-width: 100%;
+                height: 100%;
+                overflow: scroll;
+                background: #dedede;
+                padding: 5px 10px;
+                border-radius: 10px;
+                box-sizing: border-box;
+            }
+        }
+        &.area.bj .num{
+            background-color: #eca2e0;
+        }
+    }
+
+    & .bts{
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+
+        & .bt{
+            display: none;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            width: 60px;
+            height: 75px;
+            font-family: craft;
+            transition: transform 0.1s, scale 0.1s;
+            &.acti{
+                display: flex;
+            }
+            &:hover{
+                scale: 1.10;
+            }
+            &:active{
+                transform: translate(0, -15px);
+                scale: 1.00;
+            }
+
+            &.bt0{background: #f980ff}
+            &.bt1{background: #94d8ff}
+            &.bt2{background: #ffce80}
+            &.bt3{background: #84ff80}
+        }
+    }
+}
+
+#phone .app.amon{
+    content: "ポイ活アプリ。UIから何まで全部頑張ろうぜ。...あ。アプリ名はエイモンズです。amonds。エイモンさんが作ったゲーム...とかではなくdiamondsのdiaの部分はもらっていくよ、つまりお前らに入らない部分しか上げないよ、的なひどい思想のポイ活アプリ。dia自体に「2倍の」って意味があった気がする...フランスかなんかで";
+    background: #ffffc7;
+}
+/* #endregion */

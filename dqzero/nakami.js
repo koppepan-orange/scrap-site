@@ -2876,6 +2876,8 @@ function start(){
 
     mainF.load();
     gamF.load();
+    phoF.load();
+     phoC.uwubF.load();
 
     rimiF.inc(255)
 
