@@ -300,6 +300,7 @@ function tekiou(){
         for(let buff of human.buffs){
             let name = buff.data.img ?? buff.name;
             let buD = El("div", "buff");
+             buD.dataset.description = `名前: ${buff.data.name}\n${buff.data.type}: ${buff.time}\n${buff.data.desc}`.trim();
             let buID = El("img");
              buID.src = `assets/images/buffs/${name}.png`;
              buD.appendChild(buID);
@@ -547,11 +548,11 @@ batC.turnD.addEventListener('click', encount)
 
 let context = {}; //consoleで変数見る用。正式実装の予定はない
 
-async function wuzzat(code, when, who = 0, ares = 0, data = {}){
-    /*
-    code デカ関数名
-    when mae chu ato
-    */
+/*
+async function 昔のwuzzat(code, when, who = 0, ares = 0, data = {}){
+    //code デカ関数名
+    //when mae chu ato
+
     if(!Array.isArray(ares)) ares = [ares];
     if(!code || !when) return 0;
     
@@ -652,6 +653,85 @@ async function wuzzat(code, when, who = 0, ares = 0, data = {}){
         }
     }
 }
+*/
+
+async function wuzzat(code, data = {}, func = 0){
+    /*
+    ーcode早見表
+
+    -汎用-
+    add_ing　何らかの効果を付与する直前に発動
+    attack_pre　ダメージ与え準備前
+    attack_ing　ダメージ与え直前
+    attack_ed　 ダメージ与え後
+    ↑be-が付いたら受身側。現段階ではbecodeのあとにcode発動
+
+    -バフ用-
+    fanfare　この効果が付与された時に発動
+    lastword　この効果が解消された時に発動
+    be-add_ed　「この効果以外のバフ」が付与された時に発動
+
+    */
+    
+    if(typeof code != "string") return console.error("codeが文字じゃないって何？→", code), 0; 
+    if(!code) return 0;
+
+    let becode = `be-${code}`;
+    let setlist = []; //セトリ
+
+    // console.error(data["who"]);
+    // console.error(data["are"]);
+
+    // された人
+    if(data["are"]){
+        if(data["are"].data?.ps && hask(data["are"].data.ps.efs, becode)){
+            let osu = data["are"].data.ps.efs[becode];
+            if(!osu.jun) osu.jun = 30;
+            setlist.push(osu);
+        }
+        for(let buff of data["are"].buffs){
+            if(code == "turn_end" && buff.data.type == "turn") buff.add(-1, data);
+
+            if(!buff.data.efs) continue;
+            
+            if(hask(buff.data.efs, becode)){
+                let osu = copy(buff.data.efs[becode]);
+                if(!osu.jun) osu.jun = 30;
+                osu.buff = buff;
+                setlist.push(osu);
+            }
+        }
+    }
+
+    // した人
+    if(data["who"]){
+        if(data["who"].data?.ps && hask(data["who"].data.ps.efs, code)){
+            let osu = data["who"].data.ps.efs[code];
+            if(!osu.jun) osu.jun = 70;
+            setlist.push(osu);
+        }
+        for(let buff of data["who"].buffs){
+            if(code == "turn_end" && buff.data.type == "turn") buff.add(-1, data);
+
+            if(!buff.data.efs) continue;
+
+            if(hask(buff.data.efs, code)){
+                let osu = copy(buff.data.efs[code]);
+                if(!osu.jun) osu.jun = 70;
+                osu.buff = buff;
+                setlist.push(osu);
+            }
+        }
+    }
+
+    setlist.sort((a, b) => a.jun - b.jun);
+
+    // ライブ会場
+    for(let osu of setlist){
+        let res = await osu.func(data["who"], data["are"], data, osu.buff ?? 0);
+        if(func(res)) return 1;
+    }
+}
 
 // #region 攻撃！（自分以外のプレイヤー全員はカードはカードを1枚引く）（無関係）
 async function attack(who, ares, voi, tri, aim, data = {}){
@@ -676,29 +756,12 @@ async function attack(who, ares, voi, tri, aim, data = {}){
         data["are"] = are;
         
         // attack_pre
-        const pas_pre = (res) => {
+        data["who"] = who;
+        data["are"] = are;
+        if(await wuzzat("attack_pre", data, (res) => {
+            tekiou();
             if(res == 1) return 1;
-        }
-        if(are.data.ps && are.data.ps.because == "beattack_pre"){
-            let res = await are.data.ps.func(are, data);
-            if(pas_pre(res)) return 1;
-        }
-        if(who.data.ps && who.data.ps.because == "attack_pre"){
-            let res = await who.data.ps.func(who, data);
-            if(pas_pre(res)) return 1;
-        }
-        for(let buff of who.buffs){
-            if(!buff.data.efs) continue;
-
-            if(hask(buff.data.efs, "beattack_pre")){
-                let res = await buff.data.efs["beattack_pre"].func(who, are, data);
-                if(pas_pre(res)) return 1;
-            }
-            if(hask(buff.data.efs, "attack_pre")){
-                let res = await buff.data.efs["attack_pre"].func(who, are, data);
-                if(pas_pre(res)) return 1;
-            }
-        }
+        })) return 1;
 
         // 攻撃側の aim と 防御側の dod を加味して最終命中率をだす
         let atare = (aim+who.aim) - are.dod;
@@ -813,67 +876,31 @@ async function attack(who, ares, voi, tri, aim, data = {}){
         console.log(`[attack] ${who.name}(${atk}) => ${are.name}(${def}) | dmg:${dmg}`);
 
         // attack_ing
-        const pas_ing = (res) => {
+        data["who"] = who;
+        data["are"] = are;
+        if(await wuzzat("attack_ing", data, (res) => {
+            tekiou();
             if(res == 1) return 1;
             if(typeof res == "string" && res.startsWith("dmg変更:")){
                 dmg = +res.slice(6);
                 data["dmg"] = dmg;
             }
-        }
-        if(are.data.ps && are.data.ps.because == "beattack_ing"){
-            let res = await are.data.ps.func(are, data);
-            if(pas_ing(res)) return 1;
-        }
-        if(who.data.ps && who.data.ps.because == "attack_ing"){
-            let res = await who.data.ps.func(who, data);
-            if(pas_ing(res)) return 1;
-        }
-        for(let buff of who.buffs){
-            if(!buff.data.efs) continue;
-
-            if(hask(buff.data.efs, "beattack_ing")){
-                let res = await buff.data.efs["beattack_ing"].func(who, ares, data);
-                if(pas_ing()) return 1;
-            }
-            if(hask(buff.data.efs, "attack_ing")){
-                let res = await buff.data.efs["attack_ing"].func(who, ares, data);
-                if(pas_ing()) return 1;
-            }
-        }
+        })) return 1;
         
         
         if(await damage(who, are, dmg, tri)) return 1;
 
         // atatck_ed
         let kpadd = 5;
-        if(data["kp増加"]) kpadd += data["kp増加"];
+        if(data["基礎kp増加"]) kpadd += data["基礎kp増加"];
+        data["kp増加量"] = kpadd;
 
-        const pas_ed = (res) => {
-            if(res == 1) return 1;
-        }
-        if(are.data.ps && are.data.ps.because == "beattack_ed"){
-            let res = await are.data.ps.func(are, data);
-            if(pas_ed(res)) return 1;
-        }
-        if(who.data.ps && who.data.ps.because == "attack_ed"){
-            console.log(`うおお ${who.data.ps.name} 発動！！(ed)`)
-            let res = await who.data.ps.func(who, data);
-            if(pas_ed(res)) return 1;
-        }
-        for(let buff of who.buffs){
-            if(!buff.data.efs) continue;
-
-            if(hask(buff.data.efs, "beattack_ed")){
-                let res = await buff.data.efs["beattack_ed"].func(who, ares, data);
-                if(pas_ed(res)) return 1;
-            }
-            if(hask(buff.data.efs, "attack_ed")){
-                let res = await buff.data.efs["attack_ed"].func(who, ares, data);
-                if(pas_ed(res)) return 1;
-            }
-
+        data["who"] = who;
+        data["are"] = are;
+        if(await wuzzat("attack_ed", data, (res) => {
             tekiou();
-        }
+            if(res == 1) return 1;
+        })) return 1;
         
         // kpの増加
         who.kp += kpadd;
@@ -1544,17 +1571,15 @@ async function turnNext(who){
 
     // turn_start
     let canceled = 0;
-    for(let buff of who.buffs){
-        if(!buff.data.efs) continue;
-
-        if(canceled && !hask(data, "内定:行動不可")) data["内定:行動不可"] = 1;
-
-        if(hask(buff.data.efs, "turn_start")){
-            let res = await buff.data.efs["turn_start"].func(buff, who, data);
-            if(res == 1) return 1;
-            if(res == "行動不可") canceled = 1;
+    data["who"] = who;
+    if(await wuzzat("turn_start", data, (res) => {
+        tekiou();
+        if(res == 1) return 1;
+        if(res == "行動不可"){
+            canceled = 1;
+            data["内定:行動不可"] = 1;
         }
-    }
+    })) return 1;
     if(who.hp <= 0) return dead(0, who);
     if(canceled) return turnBye(who);
 
@@ -1584,22 +1609,19 @@ async function turnEnd(who, ares, data = {}){
         }
     }
 
+    // turn_end
     let exTurn = 0;
-    for(let buff of who.buffs){
-        // turnのやつを1減らす処理
-        if(buff.data.type == "turn") buff.add(-1, data);
-
-        // 以下は効果。stack式減算も含む
-        if(!buff.data.efs) continue;
-
-        if(exTurn && !hask(data, "内定:もう1度だ")) data["内定:もう1度だ"] = 1;
-
-        if(hask(buff.data.efs, "turn_end")){
-            let res = await buff.data.efs["turn_end"].func(buff, who, ares, data);
-            if(res == 1) return 1;
-            if(res == "もう1度だ") exTurn = 1;
+    data["who"] = who;
+    data["are"] = ares;
+    if(await wuzzat("turn_end", data, (res) => {
+        tekiou();
+        if(res == 1) return 1;
+        if(res == "もう1度だ"){
+            exTurn = 1;
+            data["内定:もう1度だ"] = 1;
         }
-    }
+    })) return 1;
+
     if(who.hp <= 0) return;
     if(exTurn){
         if(who.cam == 'player') turnPlayer(who);
@@ -2716,6 +2738,8 @@ phoC.uwubF.tekiou = () => {
          h.sum = sum;
         if(sum == 21) h.D.classList.add("bj");
         else h.D.classList.remove("bj");
+        if(21 < sum) h.D.classList.add("burst");
+        else h.D.classList.remove("burst");
 
     }
 }
@@ -2788,6 +2812,8 @@ phoC.uwubF.cardDraw = async(cam) => {
     let div = phoC.uwubF.cardMake(card);
     h.Ds.place.appendChild(div);
      phoC.uwubF.tekiou();
+
+    await delay(1800);
     phoC.uwubF.cardDrawn(cam);
 }
 phoC.uwubF.cardDrawn = async(cam) => {

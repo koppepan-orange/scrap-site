@@ -1973,6 +1973,9 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         &.area.bj .num{
             background-color: #eca2e0;
         }
+        &.area.burst .num{
+            background-color: #de8e8e;
+        }
     }
 
     & .bts{

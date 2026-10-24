@@ -98,7 +98,8 @@ const Fonts = [
     {src:'comicsans', type:'ttf'},
     {src:'hangyaku', type:'ttf'},
     {src:'kurobara', type:'ttf'},
-    {src:'cube12', type:'ttf'}
+    {src:'cube12', type:'ttf'},
+    {src:"craft", type:"otf "}
 ];
 
 const Images = {
@@ -371,10 +372,10 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(buff, who, are, data = {}) => {
+            "fanfare":async(who, are, data, buff) => {
                 are.pow += 20;
             },
-            "lastword":async(buff, who, are, data = {}) => {
+            "lastword":async(who, are, data, buff) => {
                 are.pow -= 20;
             }
         }
@@ -385,10 +386,10 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(buff, who, are, data = {}) => {
+            "fanfare":async(who, are, data, buff) => {
                 are.pow += 40;
             },
-            "lastword":async(buff, who, are, data = {}) => {
+            "lastword":async(who, are, data, buff) => {
                 are.pow -= 40;
             }
         }
@@ -399,10 +400,10 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(buff, who, are, data = {}) => {
+            "fanfare":async(who, are, data, buff) => {
                 are.she += 20;
             },
-            "lastword":async(buff, who, are, data = {}) => {
+            "lastword":async(who, are, data, buff) => {
                 are.she -= 20;
             }
         }
@@ -413,10 +414,10 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(buff, who, are, data = {}) => {
+            "fanfare":async(who, are, data, buff) => {
                 are.she += 40;
             },
-            "lastword":async(buff, who, are, data = {}) => {
+            "lastword":async(who, are, data, buff) => {
                 are.she -= 40;
             }
         }
@@ -430,7 +431,7 @@ const Buffs = [
         flav: "私はこのデバフが最も嫌いです。まぢ無理",
         efs: {
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     data["攻撃者"] = "傷口";
                     data["ダメージ"] = "効果";
                     if(await damage(who, who, 5, data)) return 1;
@@ -447,12 +448,12 @@ const Buffs = [
         desc: "Oを消費する時、50%の確率で消費しない。",
         efs: {
             "attack_pre": {
-                func: async(buff, atker, defer, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.saved["O"] = batC.field["O"];
                 }
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     let now = batC.field["O"];
                     let diff = now - buff.saved["O"];
 
@@ -470,7 +471,7 @@ const Buffs = [
         flav: "数々のゲーマーを狂わせてきたと噂されている。",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     if(hask(data, "内定:もう1度だ")) return 0;
                     if(!hit(20)) return 0;
 
@@ -502,7 +503,7 @@ const Buffs = [
                 no: 1
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["範囲攻撃"]) buff.vanish(data);
                 }
             }
@@ -518,7 +519,7 @@ const Buffs = [
                 no: 1
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["範囲攻撃"]) buff.vanish(data);
                 }
             }
@@ -533,23 +534,23 @@ const Buffs = [
         flav: "嬉しいけどちょっと緊張しちゃうよね。わかるぞ",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.spd += 20;
                 }
             },
             "attack_pre": {
-                func: async(buff, atker, defer, data = {}) => {
+                func: async(atker, defer, data, buff) => {
                     atker.pow += 100;
                     atker.crla -= 5;
                 }
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.add(-1, data);
                 }
             },
             "lastword": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.spd -= 20;
                 }
             }
@@ -564,7 +565,7 @@ const Buffs = [
         flav: "？？？「毒の苦しみもお好きなんですね」",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = Math.max(Math.floor(who.maxhp * 0.04), 1);
 
                     data["攻撃者"] = "病原体";
@@ -584,7 +585,7 @@ const Buffs = [
         desc: "ターン開始時、最大HPの7%分、シールドを貫通したダメージを受ける。その後、ランダムな自身の良いバフの持続時間が1減少する。",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = Math.max(Math.floor(who.maxhp * 0.07), 1);
 
                     data["攻撃者"] = "病原体";
@@ -616,7 +617,7 @@ const Buffs = [
         flav: "えぐ",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = Math.max(Math.floor(who.maxhp * 0.07), 1);
 
                     data["攻撃者"] = "病原体";
@@ -640,12 +641,12 @@ const Buffs = [
         flav: "傷口が広がる、ってイメージ。ターン経過は酷だしな",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.saved["val"] = 6;
                 }
             },
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = buff.saved["val"];
 
                     data["攻撃者"] = "傷";
@@ -656,7 +657,7 @@ const Buffs = [
                 }
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.time += 1;
 
                     if(data["tri"] == "ph") {
@@ -675,12 +676,12 @@ const Buffs = [
         flav: "私がやりたがってるゲーム。でも最初の盗賊団ですでに無理ってるから相当無理かも",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.saved["val"] = 6;
                 }
             },
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = buff.saved["val"];
 
                     data["攻撃者"] = "傷";
@@ -691,7 +692,7 @@ const Buffs = [
                 }
             },
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.time += 1;
 
                     if(data["tri"] == "ph") {
@@ -710,13 +711,13 @@ const Buffs = [
         flav: "追加効果が多い気がする、、まあいいか。木製装備へのメタになってくれ、君は",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.saved["atk"] = are.atk;
                     are.atk -= 4;
                 }
             },
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = 5 * buff.time;
 
                     let hasWood = Array.isArray(who.equips) &&
@@ -738,7 +739,7 @@ const Buffs = [
                 }
             },
             "lastword": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.atk = buff.saved["atk"];
                 }
             }
@@ -754,13 +755,13 @@ const Buffs = [
         flav: "...だいじょぶかなぁ、、てあれ、これ死因も判定しないとなのでは？だ、だるくね、、？",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.saved["atk"] = are.atk;
                     are.atk -= 7;
                 }
             },
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let val = 5 * buff.time;
 
                     let hasWood = Array.isArray(who.equips) &&
@@ -782,7 +783,7 @@ const Buffs = [
                 }
             },
             "lastword": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.atk = buff.saved["atk"];
                 }
             }
@@ -795,7 +796,7 @@ const Buffs = [
         desc: "火傷状態のキャラクターから、同じ陣営の別のキャラクターへ火傷を伝染させる。",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let burns = who.buffs.filter(a => a.data.name == "火傷");
                     if(!burns.length) return 0;
 
@@ -822,7 +823,7 @@ const Buffs = [
             [2] 金属製の防具を着ている場合、ダメージは2倍になる。`,
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     let val = 4;
 
                     let hasMetal = Array.isArray(who.equips) &&
@@ -866,7 +867,7 @@ const Buffs = [
         flav: "帯電・帯電ってなんだよ",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     data["攻撃者"] = "帯電・帯電";
                     data["ダメージ"] = "効果";
 
@@ -877,7 +878,7 @@ const Buffs = [
                 }
             },
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     let targets = humans.filter(a =>
                         a.cam == who.cam &&
                         a.id != who.id &&
@@ -900,7 +901,7 @@ const Buffs = [
         desc: "行動時に固定ダメージを受ける。また、受ける回復量が半減する。",
         efs: {
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     data["攻撃者"] = "裂痕";
                     data["ダメージ"] = "効果";
 
@@ -909,7 +910,7 @@ const Buffs = [
                 }
             },
             "heal_pre": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(typeof data["回復量"] == "number") {
                         data["回復量"] = Math.floor(data["回復量"] / 2);
                     }
@@ -925,12 +926,12 @@ const Buffs = [
         flav: "凍傷の英語カッコよすぎ問題、あります",
         efs: {
             "fanfare": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.spd -= 10;
                 }
             },
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     let val = Math.max(buff.time, 1) * 5;
 
                     data["攻撃者"] = "凍傷";
@@ -941,7 +942,7 @@ const Buffs = [
                 }
             },
             "lastword": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     are.spd += 10;
                 }
             }
@@ -955,7 +956,7 @@ const Buffs = [
         desc: "凍っている状態。ターン開始時、75%の確率で解除される。炎属性の攻撃を受けても解除される。",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(hit(75)) {
                         buff.vanish(data);
                         return 0;
@@ -967,7 +968,7 @@ const Buffs = [
                 }
             },
             "beattack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["tri"] == "fi" || data["属性"] == "炎") {
                         buff.vanish(data);
                     }
@@ -982,7 +983,7 @@ const Buffs = [
         desc: "凍結されている状態。ターン開始時、40%の確率で解除される。炎属性の攻撃を受けても解除されない。",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(hit(40)) {
                         buff.vanish(data);
                         return 0;
@@ -1003,7 +1004,7 @@ const Buffs = [
         desc: "解除されない凍結状態。",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["内定:行動不可"]) return 0;
                     return "行動不可";
                 }
@@ -1018,9 +1019,13 @@ const Buffs = [
         flav: "麻痺ですね。これ好き",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["内定:行動不可"]) return 0;
-                    if(hit(20)) return "行動不可";
+                    
+                    if(hit(20)){
+                        await logText("麻痺った！");
+                        return "行動不可";
+                    }
                     return 0;
                 }
             }
@@ -1033,7 +1038,7 @@ const Buffs = [
         desc: "行動できなくなる。内部処理的には麻痺の延長。",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["内定:行動不可"]) return 0;
                     return "行動不可";
                 }
@@ -1048,7 +1053,7 @@ const Buffs = [
         flav: "ゲーム終了間際で相手がこれを出してきた時の絶望感たるや",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["内定:行動不可"]) return 0;
                     return "行動不可";
                 }
@@ -1063,7 +1068,7 @@ const Buffs = [
         flav: "睡魔..微熱魔じゃないです。あと決して湖のほとりの人じゃないです",
         efs: {
             "turn_end": {
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     await buffAdd(who, who, "眠気", 10);
                     return 0;
                 }
@@ -1080,7 +1085,7 @@ const Buffs = [
         efs: {
             "turn_end": {
                 defer: 1,
-                func: async(buff, who, ares, data = {}) => {
+                func: async(who, ares, data, buff) => {
                     console.log("あ、ども。俺お前の眠気の権化です");
                     console.log(`現在私たちは${buff.time}人います`)
                     if(100 <= buff.time){
@@ -1093,7 +1098,7 @@ const Buffs = [
                 }
             },
             "act_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     buff.add(-7, data);
                 }
             }
@@ -1106,14 +1111,16 @@ const Buffs = [
         desc: "行動できなくなる。攻撃された時、30%の確率でこのバフは解消される",
         efs: {
             "turn_start": {
-                func: async(buff, who, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(data["内定:行動不可"]) return 0;
+                    await logText("寝てます。");
                     return "行動不可";
                 }
             },
             "beattack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     if(hit(30)) buff.vanish(data);
+                    return 0;
                 }
             }
         }
@@ -1126,7 +1133,7 @@ const Buffs = [
         flav: "すごいイラつかせてくる敵..? いやまあ普通にパクリですけれども。で避けられてさらに煽られるみたいな",
         efs: {
             "attack_ed": {
-                func: async(buff, who, are, data = {}) => {
+                func: async(who, are, data, buff) => {
                     logText(`${who.name}は攻撃を避けられ、さらに怒った。`);
                 }
             }
@@ -1139,7 +1146,7 @@ const Buffs = [
         desc:"うわあ食べたなー！という状態。毎ターンhpが10ずつ回復する。",
         efs:{
             "turn_ed":{
-                func:async(buff, who, ares, data = {}) => {
+                func:async(who, ares, data, buff) => {
                     if(await heal(who, who, 10, data)) return 1;
 
                     return 0;
@@ -1157,7 +1164,7 @@ const Buffs = [
         [4] もし100になったならば、これは0になる。それと同時に攻撃力・防御力が一時的に下がる。しかし、魔法攻撃力は上がる。`,
         efs:{
             "fanfare":{ //追加された時
-                func:async(buff, who, are, data = {})=>{
+                func:async(who, are, data, buff)=>{
                     // whoが付与した側, areが付与された側
                     let num = buff.time;
                     if(100 <= num){
@@ -1177,13 +1184,13 @@ const Buffs = [
                 }
             },
             "turn_ed":{
-                func:async(buff, who, ares, data = {})=>{
+                func:async(who, ares, data, buff)=>{
                     buff.add(-2, data); //calm_down
                     return 0;
                 }
             },
             "lastword":{
-                func:async(buff, who, are, data = {})=>{
+                func:async(who, are, data, buff)=>{
                     if(buff.stat == "っ..."){
                         are.aim += 20;
                         are.crit += 30;
@@ -1201,14 +1208,14 @@ const Buffs = [
         desc:"攻撃倍率と防御倍率が下がり、魔法攻撃力が上がる。また、「共通因数」が付与されなくなる",
         efs:{
             "fanfare":{
-                func:async(buff, who, are, data = {})=>{
+                func:async(who, are, data, buff)=>{
                     are.pow -= 30;
                     are.she -= 50;
                     are.matk += 60;
                 }
             },
             "add_pre":{
-                func:async(buff, who, are, name, time, data = {}) => {
+                func:async(who, are, name, time, data, buff) => {
                     // こっちが「自分でないものが追加される時」
 
                     if(data["内定:だめ"]) return 0;
@@ -1217,7 +1224,7 @@ const Buffs = [
                 }
             },
             "lastword":{
-                func:async(buff, who, are, data = {})=>{
+                func:async(who, are, data, buff)=>{
                     are.pow += 30;
                     are.she += 50;
                     are.matk -= 60;
@@ -1295,21 +1302,24 @@ let Charas = [
         ps:{
             name:"二度漬けならぬ三度漬け",
             desc:`actsの小突く使用時、20%の確率でさらに2回殴る。`,
-            because:"attack_ed",
-            func:async(who, data = {})=>{
-                if(data["名称_行動"] != "Acts" || data["名称_技名"] != "小突く") return 0;
-                if(data["流石に五度漬けはだめ"]) return 0;
-                
-                if(!hit(20)) return 0;
+            efs:{
+                "attack_ed":{
+                    func:async(who, are, data = {})=>{
+                        if(data["名称_行動"] != "Acts" || data["名称_技名"] != "小突く") return 0;
+                        if(data["流石に五度漬けはだめ"]) return 0;
+                        
+                        // if(!hit(20)) return 0;
 
-                await logText(`${who.name} は 頑張った！`)
+                        await logText(`${who.name} は 頑張った！`)
 
-                data["流石に五度漬けはだめ"] = 1;
-                data["are指定"] = data["are"];
-                
-                let act = findActs("小突く");
-                if(await act.func(who, data)) return 1;
-                if(await act.func(who, data)) return 1;
+                        data["流石に五度漬けはだめ"] = 1;
+                        data["are指定"] = data["are"];
+                        
+                        let act = findActs("小突く");
+                        if(await act.func(who, data)) return 1;
+                        if(await act.func(who, data)) return 1;
+                    }
+                }
             }
         },
 
@@ -1333,7 +1343,7 @@ let Charas = [
                 desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
                 efs:{
                     "turn_start":{
-                        func:async(buff, who, data = {}) => {
+                        func:async(who, are, data = {}, buff) => {
                             if(data["行動不可"]) return 0;
 
                             buff.add(-1, data);
@@ -1352,7 +1362,7 @@ let Charas = [
                 flav:'連続行動ビルドに大打撃 part2',
                 efs:{
                     "act_ed":{
-                        func:async(buff, who, ares, data = {})=>{
+                        func:async(who, ares, data = {}, buff)=>{
                             data["攻撃者"] = "スライム";
                             if(await damage(who, who, 6, "mg", data)); return 1;
 
@@ -1394,9 +1404,11 @@ let Charas = [
                 gb:"g",
                 desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
                 efs:{
-                    "attack_ing":(atker, defer, data = {})=>{
-                        logText("レンチを装備したよっ！");
-                        return `dmg変更:${data["dmg"]*2}`;
+                    "attack_ing":{
+                        func:(who, are, data = {}, buff)=>{
+                            logText("レンチを装備したよっ！");
+                            return `dmg変更:${data["dmg"]*2}`;
+                        }
                     }
                 }
             }
@@ -1433,7 +1445,7 @@ let Charas = [
                 desc:"次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？",
                 efs:{
                     "attack_ing":{
-                        func:async(atker, defer, data = {}) => {
+                        func:async(who, are, data = {}, buff) => {
                             let rate = arrayGacha([0, 2, 4], [20, 70, 10]);
                             data["dmg"] = `*${rate}`;
                         }
@@ -1839,7 +1851,6 @@ const Acts = [
         tcam:'players',
         func:async function(who, data = {}){
             let are;
-            console.error(data);
             if(data["are指定"]) are = data["are指定"];
             else are = await selectSyudou(1);
 
