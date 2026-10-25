@@ -133,13 +133,13 @@ homF.start = async() => {
     let charas = Charas.map(a => {
         return {
             name: a.name,
-            img: `assets/images/charas/${a.name}.png`
+            img: `assets/images/charas/${a.img ?? a.name}.png`
         };
     });
     // let charas = Charas.map(a => `${a.jpnm} [${a.name}]`)
     let charaSen = new TakushiSen(charas, 'tate');
     let name = await charaSen.select(homD); //文字列が来るヨ
-    console.log(name) //"color_slime"
+    console.log(name) //"greenslime"
     console.log(`選ばれたのは、[${name}]でした`); //"選ばれたのは、[undefined]でした"
 
     makePlayer(name);
@@ -203,6 +203,11 @@ let batC = {
     turn: 0, //1巡すると++1
     actbar: [], //行動する順番
     acted: 0, //barの進行度。0からbar.length-1
+
+    kps:{
+        "attack_ed": 20,
+        "be-attack_ed": 10
+    }
 };
 batC.shokey = {
     acts: ['斬る', 'つばめ返し', '踏み込み斬り'],
@@ -235,7 +240,6 @@ batF.hasSet = (arr) => {
 
     batF.hasTekiou();
 }
-
 
 function tekiou(){
     for(let human of humans){
@@ -272,7 +276,7 @@ function tekiou(){
         div.querySelector('.name').textContent = human.name;
         div.querySelector('.lv').textContent = `Lv.${human.lv}`;
         div.querySelector('.img').src = `assets/images/${srca}`;
-        div.querySelector('.skill .naka').style.height = `${(human.kp/human.maxkp) *100}%`;
+        if(human.data.ks) div.querySelector('.skill .naka').style.height = `${(human.kp/human.maxkp) *100}%`;
 
         let [half, pinch] = [2, 4]
 
@@ -300,7 +304,7 @@ function tekiou(){
         for(let buff of human.buffs){
             let name = buff.data.img ?? buff.name;
             let buD = El("div", "buff");
-             buD.dataset.description = `名前: ${buff.data.name}\n${buff.data.type}: ${buff.time}\n${buff.data.desc}`.trim();
+             buD.dataset.description = `名前: ${buff.data.name}\n${buff.data.type}: ${buff.time}\n${buff.data.desc ?? "読めばわかるやろ"}`.trim();
             let buID = El("img");
              buID.src = `assets/images/buffs/${name}.png`;
              buD.appendChild(buID);
@@ -308,6 +312,17 @@ function tekiou(){
             buffD.appendChild(buD)
         }
     }   
+}
+
+batF.buffLoad = () => {
+    for(let chara of Charas){
+        if(!chara.buffs) continue;
+        
+        for(let buff of chara.buffs){
+            buff.whose = chara.name;
+            Buffs.push(buff);
+        }
+    }
 }
 
 //#region 今日は何ーーーー
@@ -445,10 +460,10 @@ class Human {
             this.ps = this.data.ps;
             this.ts = this.data.ts;
 
-            if (this.data.buttonsolid) {
-                Style.batSt.solid = this.data.buttonsolid;
-                Style.batSt.back = this.data.buttonback;
-                Style.batSt.aima = irohaMix(this.data.buttonsolid, this.data.buttonback);
+            if(this.data.col){
+                Style.batSt.bor = this.data.col["bor"];
+                Style.batSt.back = this.data.col["back"];
+                Style.batSt.aima = irohaMix(this.data.col["bor"], this.data.col["back"]);
                 Style.tekiou();
             }
         } else if (cam == "enemie") {
@@ -473,9 +488,14 @@ class Human {
         let imgD = images["systems"].error.cloneNode(true);
         imgD.classList.add("img");
 
+        console.log(this.data)
         let backD = El('div', "naka");
+         if(this.data.col) this.data.col["back"];
+          else backD.style.backgroundColor = irohaMix(Style.batSt["back"], sd.color);
         let skillD = El('div', 'skill', [backD]);
-        skillD.style.borderColor = irohaMix('#2b2b2b', sd.color);
+         skillD.style.backgroundColor = irohaMix(Style.ki["back"], sd.color);
+         if(this.data.col) skillD.style.borderColor = this.data.col["col"];
+          else skillD.style.borderColor = irohaMix(Style.batSt["bor"], sd.color);
         
         let baa = (code) => {
             return El('div', `${code} bar0`, [
@@ -484,9 +504,8 @@ class Human {
             ]);
         }
 
-        let div = El('div', `human ${this.cam}${this.me}`, [
+        let els = [
             imgD,
-            skillD,
             El('div', 'lv'),
             nameD,
             El('div', 'bars', [
@@ -494,7 +513,10 @@ class Human {
                 baa('mp')
             ]),
             El('div', 'buffs')
-        ]);
+        ];
+        if(this.data.ks) els.push(skillD);
+
+        let div = El('div', `human ${this.cam}${this.me}`, els);
 
         this.div = div;
 
@@ -872,7 +894,6 @@ async function attack(who, ares, voi, tri, aim, data = {}){
 
         data["dmg"] = dmg;
         
-
         console.log(`[attack] ${who.name}(${atk}) => ${are.name}(${def}) | dmg:${dmg}`);
 
         // attack_ing
@@ -886,15 +907,17 @@ async function attack(who, ares, voi, tri, aim, data = {}){
                 data["dmg"] = dmg;
             }
         })) return 1;
+        dmg = data["dmg"];
         
         
         if(await damage(who, are, dmg, tri)) return 1;
 
-        // atatck_ed
-        let kpadd = 5;
+        let kpadd = batC.kps["attack_ed"];
         if(data["基礎kp増加"]) kpadd += data["基礎kp増加"];
-        data["kp増加量"] = kpadd;
+        await kpAdd(who, kpadd);
+        await kpAdd(are, batC.kps["be-attack_ed"]);
 
+        // atatck_ed
         data["who"] = who;
         data["are"] = are;
         if(await wuzzat("attack_ed", data, (res) => {
@@ -1035,6 +1058,7 @@ async function win(cam){
 }
 // #endregion
 
+
 // #region buffとか
 
 /* 呼びだし例[turn_end]: 
@@ -1067,30 +1091,40 @@ class Buff{
         
         this.name = name;
         this.time = num;
-        this.data = copy(data0);
+        this.data = data0;
         this.saved = {}; //保存エリア
     }
-    push = (who, are) => {
+    push = async(who, are) => {
         if(!are) return 0;
-        this.who = are.id;
-        this.from = who?.id ?? 0;
+        this.who = who.id;
+        this.are = are.id ?? who.id;
         are.buffs.push(this);
-        tekiou();
-    }
-    
-    add = (num = 1, data = {}) => {
-        this.time += num;
-        if(this.time <= 0) this.vanish();
-        tekiou();
-    }
-    
-    vanish = (data = {}) => {
-        let who = cm(0, 0, this.who);
-        if(!who || !who.buffs) return;
 
-        let index = who.buffs.indexOf(this);
+        if(this.data.efs["fanfare"]){
+            if(await this.data.efs["fanfare"].func(who, are)) return 1;
+        }
+
+        tekiou();
+    }
+    
+    add = async(num = 1, data = {}) => {
+        this.time = Math.max(this.time+num, 0);
+
+        // console.log(`[buff] ${cm(0, 0, this.are).name} の ${this.name} を ${num} 減らし、 ${this.time} にしたよ。 this.time <= 0 は ${this.time <= 0} です！`);
+        if(this.time <= 0) await this.vanish(data);
+        tekiou();
+    }
+    
+    vanish = async(data = {}) => {
+        let are = cm(0, 0, this.are);
+
+        let index = are.buffs.indexOf(this);
         if(index != -1){
-            who.buffs.splice(index, 1);
+            are.buffs.splice(index, 1);
+        }
+
+        if(this.data.efs["lastword"]){
+            if(await this.data.efs["lastword"].func(cm(0, 0, this.who), are)) return 1;
         }
 
         tekiou();
@@ -1118,7 +1152,7 @@ function buffHeraso(who, name, becauseof){
     return 0;
 }
 
-function buffAdd(who, ares, name, num){
+async function buffAdd(who, ares, name, num){
     if(!Array.isArray(ares)) ares = [ares];
     for(let are of ares){
         console.log(`[buffAdd] ${who.name ?? "不明"} => ${are.name} | 「${name}」を ${num}`);
@@ -1132,7 +1166,7 @@ function buffAdd(who, ares, name, num){
         }
 
         let buff = new Buff(name, num);
-        buff.push(who, are);
+        await buff.push(who, are);
     }
 
     return 0;
@@ -1318,7 +1352,7 @@ function selectSyudou(code = 1){
     });
 }
 //受動的な選択
-function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1){
+function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1, data = {}){
     let cam = who.cam;
     if(tar == "who") tar = cam;
     if(tar == "are") tar = fl(cam, ['player', 'enemie']);
@@ -1347,8 +1381,9 @@ function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1){
     if(spread == 0) return list; //0は全体、そう決めたのです
 
     let listed;
-    if(stat != 0) listed = copy(list).sort((a, b) => a[stat] - b[stat]); //ソートされたってことでed sortは元の子を破壊するらしい
-    else listed = copy(list);
+    if(stat != 0) listed = copy(list).sort((a, b) => a[stat] - b[stat]); //ソートされたってことでed。sortは元の子を破壊するらしい
+    else listed = copy(list); //statが指定なければそのまま順
+
     // console.log(list);
     
 
@@ -1386,12 +1421,16 @@ batF.acts = async(who, i) => {
     let name = who.acts[i];
     let act = findActs(name);
      if(!act) console.error(`${who.name}のacts[${i}]、${name}はガチ・存在しないらしいっす`);
-     if(who.mp < act.mp ?? 0) return tobiText(who.div, "mp is not enough");
+
+    let needmp = act.mp ?? 0;
+    if(who.mp < needmp) return tobiText(who.div, "mp is not enough");
 
     data["名称_行動"] = "Acts";
     data["名称_技名"] = name;
 
     selects(0); //y4t4歌うますぎてわろてる 全員なのやばい
+    
+    who.mp -= needmp;
     if(await act.func(who, data)) return 1;
     
     // なければ
@@ -1400,29 +1439,32 @@ batF.acts = async(who, i) => {
 }
 batF.mags = async(who, i) => {
     let name = who.mags[i];
-    let data = findMags(name);
-    if(!data) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
-    if(who.mp < data.mp) return tobiText(who.div, "mp is not enough");
+    let mag = findMags(name);
+     if(!mag) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
+    
+    let needmp = mag.mp ?? 0;
+    if(who.mp < needmp) return tobiText(who.div, "しかしmpが足りない！");
     
     selects(0);
-    let ares = await selectSyudou(1);
     
-    if(await data.func(who, ares)) return 1;
+    who.mp -= needmp;
+    tekiou();
+    if(await mag.func(who)) return 1;
     
     // なければ
     turnEnd(who);
     return 0;
 }
 batF.tool = async(who, i) => {
-
     let name = who.tool[i];
-    let data = findTool(name);
-    if(!data) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
+    let tool = findTool(name);
+     if(!tool) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
+
     if(!has.includes(name)) return tobiText(who.div, `${name} not enough`);
     
     selects(0);
     let ares = await selectSyudou(1);
-    if(await data.func(who, ares)) return 1;
+    if(await tool.func(who, ares)) return 1;
     
     // なければ
     turnEnd(who);
@@ -1433,6 +1475,20 @@ async function runaway(){
 
     logText("未実装");
 }
+
+// #region Kスキル --のちのちこれより深いものが見つかる可能性があるから（作る予定はない）--
+async function kpAdd(who, num){
+    if(typeof num == "string") num = +num;
+    if(!num) return 0;
+    
+    who.kp = Math.min(who.kp+num, who.maxkp);
+    if(who.kp < 0) who.kp = 0;
+    
+    if(who.kp == who.maxkp) who.div.classList.add("charged");
+    else who.div.classList.remove("charged");
+}
+// 一旦割り込みは無し。ターン中に発動して、ターン消費なしっていうふうに。敵はなし
+// #endregion
 
 // #region turnとかbarとかactedとか
 function selects(arr = []) {
@@ -1550,37 +1606,29 @@ async function turnNext(who){
 
     let data = {};
     
-    /*
-    for(let buff of who.buffs){
-        let data = findBuff(buff.name);
-
-        if(buff.name == 'onslime'){
-            if(isCrit(buff.value)){
-                buffremove(who, 'onslime');
-                await logText('なんとかスライムを取り払った!!');
-            }
-            else{
-                await logText('スライムが邪魔して動けない!!');
-                turnBye(who);
-                 // 動けないから次の人へパス
-                return;
-            }
-        }
-    }
-    */
-
     // turn_start
-    let canceled = 0;
-    data["who"] = who;
-    if(await wuzzat("turn_start", data, (res) => {
+    const hanyo = (res) => {
         tekiou();
         if(res == 1) return 1;
         if(res == "行動不可"){
             canceled = 1;
             data["内定:行動不可"] = 1;
         }
-    })) return 1;
+    }
+    let canceled = 0;
+    data["who"] = who;
+    if(await wuzzat("turn_start", data, hanyo)) return 1;
     if(who.hp <= 0) return dead(0, who);
+
+    // ns
+    if(who.data.ns && who.data.ns.type == "turn"){
+        let ns = who.data.ns;
+        if(batC.turn % ns.time == 0){
+            let res = await ns.func(who);
+            if(hanyo(res)) return 1;
+        }
+    }
+
     if(canceled) return turnBye(who);
 
     console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
@@ -2901,6 +2949,7 @@ function start(){
     OBS.load();
 
     mainF.load();
+     batF.buffLoad();
     gamF.load();
     phoF.load();
      phoC.uwubF.load();

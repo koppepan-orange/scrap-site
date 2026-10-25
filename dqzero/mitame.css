@@ -913,24 +913,37 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     aspect-ratio: 1/1;
     border-radius: 40%;
     /* background: var(--batSt-back); */
-    border: 2.5px solid var(--batSt-solid);
+    border: 2.5px solid var(--batSt-bor);
     position: absolute;
     top: 5px;
     right: 5px;
     overflow: hidden;
     box-sizing: border-box;
+
+    & .naka{
+        width: 100%;
+        height: 0;
+        border-radius: 0;
+        background: var(--batSt-back);
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        transition: height .3s ease;
+        box-sizing: border-box;
+    }
+
+    
 }
-#batt .humans .human .skill .naka{
-    width: 100%;
-    height: 0;
-    border-radius: 0;
-    background: var(--batSt-back);
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    transition: height .3s ease;
-    box-sizing: border-box;
+#batt .humans .human.charged .skill{
+    animation: swingX 0.25s infinite ease-in-out;
 }
+@keyframes swingX{
+    0%  {transform: translateX(0px)}
+    25% {transform: translateX(1px)}
+    75% {transform: translateX(-1px)}
+    100%{transform: translateX(0px)}
+}
+
 #batt .humans .human .lv{
     margin-top: 50px;
     display: block;
@@ -980,7 +993,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     width: 100%;
     height: 17px;
     border: 1.5px solid #b2b2b2;
-    /* border: 1.5px solid var(--batSt-solid); */
+    /* border: 1.5px solid var(--batSt-bor); */
     /* clip-path: polygon(10% 0, 100% 0, 100% 100%, 0 100%); */
     background: #eeeeee;
     position: relative;

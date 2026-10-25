@@ -69,8 +69,8 @@ let Style = {
         "width": "393px",
     },
     ki:{
-        "back": "#000000",
-        "bor":  "#ffffff",
+        "back": "#b2b2b2",
+        "bor":  "#2b2b2b",
         "aima": "#808080"
     },
     kPhone:{
@@ -79,7 +79,7 @@ let Style = {
         "waku": "#381204",
     },
     "batSt":{
-        solid:"#2b2b2b",
+        bor:"#2b2b2b",
         back:"#b2b2b2",
         aima:"#6f6f6f"
     },
@@ -232,14 +232,14 @@ function SpeciusLight(){
         let toku = 0;
         if(ch.name == "color_slime") toku = 1;
         if(toku == 0){
-            let img = `${ch.img}`;
+            let img = ch.img ?? ch.name;
             Images.charas.push(img);
         }
         else{
             switch(ch.name){
                 case "color_slime":
-                    for(let c of ch.data.colors){
-                        let img = `${ch.data.colorp}${c}`;
+                    for(let c of ch.idios.colorList["col"]){
+                        let img = `${ch.idios.colorIorg}${c}`;
                         Images.charas.push(img);
                     }
             }
@@ -372,11 +372,15 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(who, are, data, buff) => {
-                are.pow += 20;
+            "fanfare":{
+                func:async(who, are, data, buff) => {
+                    are.pow += 20;
+                }
             },
-            "lastword":async(who, are, data, buff) => {
-                are.pow -= 20;
+            "lastword":{
+                func:async(who, are, data, buff) => {
+                    are.pow -= 20;
+                }
             }
         }
     },
@@ -386,11 +390,15 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(who, are, data, buff) => {
-                are.pow += 40;
+            "fanfare":{
+                func:async(who, are, data, buff) => {
+                    are.pow += 40;
+                }
             },
-            "lastword":async(who, are, data, buff) => {
-                are.pow -= 40;
+            "lastword":{
+                func:async(who, are, data, buff) => {
+                    are.pow -= 40;
+                }
             }
         }
     },
@@ -400,11 +408,15 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(who, are, data, buff) => {
-                are.she += 20;
+            "fanfare":{
+                func:async(who, are, data, buff) => {
+                    are.she += 20;
+                }
             },
-            "lastword":async(who, are, data, buff) => {
-                are.she -= 20;
+            "lastword":{
+                func:async(who, are, data, buff) => {
+                    are.she -= 20;
+                }
             }
         }
     },
@@ -414,11 +426,15 @@ const Buffs = [
         type: "turn",
         gb:" g",
         efs:{
-            "fanfare":async(who, are, data, buff) => {
-                are.she += 40;
+            "fanfare":{
+                func:async(who, are, data, buff) => {
+                    are.she += 40;
+                }
             },
-            "lastword":async(who, are, data, buff) => {
-                are.she -= 40;
+            "lastword":{
+                func:async(who, are, data, buff) => {
+                    are.she -= 40;
+                }
             }
         }
     },
@@ -1245,7 +1261,7 @@ let Charas = [
         img:'wretch',
         desc:'持たざる者。何もないが、何でもあるとも言える。\n平均的で普遍的。普通の凡才でただの人間。',
 
-        ex:{
+        ks:{
             name:"none",
             func:async(who)=>{}
         },
@@ -1255,7 +1271,7 @@ let Charas = [
         },
         ps:{
             name:"none",
-            func:async(who)=>{}
+            efs:[]
         },
         
         stat:{
@@ -1272,32 +1288,33 @@ let Charas = [
         },
 
         col:{
-            back:"#999999",
-            col:"#000000"
+            bor:"#000000",
+            back:"#999999"
         },
     },
 
     {
-        name:'color_slime',
+        name:'greenslime',
         jpnm:'ファン・ボイ・チャウ',
-        img:'color_slime_green',
-        desc:'スライム。...まだできてないから使わない方が吉',
-        key:"l",
-        data:{
-            colorp:"color_slime_", //original
-            color0:"green",
-            colors:["green", "black", "blue", "purple", "red", "white", "yellow"]
-        },
+        img:'greenslime',
+        desc:'スライム。旧姿。まずはここから再現。これさへできれば応用できる。',
+        key:"m",
         
         acts: ["小突く", "小突く", "小突く"],
         
-        ex:{
+        ks:{
             name:"none",
             func:async(who)=>{}
         },
         ns:{
-            name:"none",
-            func:async(who)=>{}
+            name:"邪魔してやんよ",
+            type:"turn",
+            time:3,
+            desc:"4の倍数のターン開始時に、ランダムな敵の頭に「粘着質なスライム」を1stack付与する。（粘着質なスライム: 攻撃時に発動し、攻撃を無効化する。無効化したならば、これは1stack減少する。）",
+            func:async(who)=>{
+                let are = selectJodou(who, "are", 0, "random", 1);
+                buffAdd(who, are, "頭にくっつくスライム", 1)
+            }
         },
         ps:{
             name:"二度漬けならぬ三度漬け",
@@ -1308,7 +1325,7 @@ let Charas = [
                         if(data["名称_行動"] != "Acts" || data["名称_技名"] != "小突く") return 0;
                         if(data["流石に五度漬けはだめ"]) return 0;
                         
-                        // if(!hit(20)) return 0;
+                        if(!hit(20)) return 0;
 
                         await logText(`${who.name} は 頑張った！`)
 
@@ -1346,8 +1363,8 @@ let Charas = [
                         func:async(who, are, data = {}, buff) => {
                             if(data["行動不可"]) return 0;
 
+                            await logText("んっ、でっ、ぜぇいっ！！ (スライムを引き剥がす音)");
                             buff.add(-1, data);
-                            logText("んっ、でっ、ぜぇいっ！！ (スライムを引き剥がす音)");
 
                             return "行動不可";
                         }
@@ -1372,8 +1389,170 @@ let Charas = [
                 }
             },
         ],
-        buttonsolid:'#000000',
-        buttonback:'#999999',
+
+        col:{
+            bor:"#206e1a",
+            back:"#5ed15e"
+        },
+    },
+
+    {
+        name:"color_slime",
+        jpnm:"Silly Slimy",
+        img:"color_slime-white",
+        desc:"周りに流されがちで小柄なスライム。色に応じて相手にデバフを与えたりする。",
+        key:"m",
+
+        tags:["スライム", "魔胞"],
+
+        idios:{
+            color:"white", //original
+            colorIorg:"color_slime-", 
+            colorList:{
+                col: ["green", "yellow", "red", "purple"],
+                buff:["毒", "麻痺", "火傷", "帯電"]
+            },
+
+            supply:async(who, are, num = 1, data = {})=>{
+                let idios = who.data.idios;
+                let color = idios.color;
+                if(!idios.colorList["col"].includes(color)) return 0; //whiteが該当。これは無を意味するので
+                
+                let i = idios.colorList["col"].indexOf(color);
+                let name = idios.colorList[i];
+                let time = num + idios.addtime;
+                if(await buffAdd(who, are, name, time, data)) return 1;
+
+                return 0;
+            },
+            
+            addtime: 0,
+        },
+
+        ks:{
+            name:"べちょ",
+            desc:"自身の色をランダムに変更し、敵全体にデバフ2t付与",
+            func:async(who)=>{
+                let idios = who.data.idios;
+                let pre = idios.color;
+                let color;
+                do{
+                    color = arraySelect(idios.colorList["col"]);
+                }while(pre != color);
+                console.log(`[SillySlimy] 色変更 / ${pre} => ${color}`);
+
+                let ares = await selectJodou(who, "are", 0, "random", 0); //最後の0は全体への証
+                for(let are of ares){
+                    if(await who.data.idios.supply(who, are, 2)) return 1;
+                }
+                
+                return 0;
+            }
+        },
+        ns:{
+            name:"あげるね",
+            type:"turn",
+            time:"2",
+            desc:"敵陣からランダムな1人にデバフ2t付与",
+            func:async(who)=>{
+                let are = await selectJodou(who, "are", 0, "random", 1);
+                if(await who.data.idios.supply(who, are, 2)) return 1;
+            }
+        },
+        ps:{
+            name:"うにゅぅ",
+            desc:"会心/被会心無効。攻撃時、20%の確率でその対象にデバフ1t付与",
+            efs:{
+                "attack_ed":{
+                    func:async(who, are, data)=>{
+                        if(!hit(20)) return 0;
+
+                        if(await who.data.idios.supply(who, are, 1)) return 1;
+                        return 0;
+                    }
+                }
+            },
+        },
+
+        ts:[
+            {
+                name:"ts1",
+                desc:"自身が与えるデバフの継続時間を+1する",
+                func:async(who)=>{
+                    who.data.idios.addtime += 1;
+                }
+            },
+            {
+                name:"ts2",
+                desc:"デバフを受けている敵から自身が受ける物理ダメージを35%軽減する。",
+                func:async(who)=>{
+                    let sore = {
+                        jun:90,
+                        func:async(who, are, data)=>{
+                            if(who.buffs.every(a => a.data.gb != "b")) return 0;
+                            if(data["tri"] != "ph") return 0;
+
+                            let dmg = data["dmg"] * 0.5;
+                            return `dmg変更:${dmg}`;
+                        }
+                    }
+
+                    who.data.ps.efs["be-attack_ing"] = sore;
+                    return 0;
+                }
+            },
+            {
+                name:"ts3",
+                desc:"緑色のデバフ「毒」を「猛毒」に変更",
+                func:async(who)=>{
+                    who.data.idios.colorList["buff"][0] = "猛毒";
+                    return 0;
+                }
+            },
+            {
+                name:"ts4",
+                desc:"色に水色（デバフ: 睡魔）を追加",
+                func:async(who)=>{
+                    who.data.idios.colorList["col"].push("alice");
+                    who.data.idios.colorList["buff"].push("睡魔");
+                    return 0;
+                }
+            },
+            {
+                name:"ts5",
+                desc:"自身が与えるデバフの継続時間を+1する",
+                func:async(who)=>{
+                    who.data.idios.addtime += 1;
+                    return 0;
+                }
+            },
+            {
+                name:"ts6",
+                desc:"黄色のデバフ「麻痺」を「スタン」に変更",
+                func:async(who)=>{
+                    who.data.idios.colorList["buff"][1] = "スタン";
+                    return 0;
+                }
+            }
+        ],
+
+        stat:{
+            atk:20,
+            def:5,
+            matk:30,
+            mdef:40,
+            maxhp:45,
+            maxmp:15,
+            crla:0,
+            crdm:100,
+            crrs:"absolute",
+            spd:90,
+        },
+
+        col:{
+            bor:"#cfe9ff",
+            back:"#def0ff"
+        }
     },
 
     {
@@ -1382,7 +1561,8 @@ let Charas = [
         img:'mechanic',
         desc:'メカニック。工具を用いて割となんでも作れる。\nそのせいか助手には大きく慕われている。\n打たれ弱いので繊細にね',
         key:"n",
-        ex:'placeturret',
+
+        ks:'placeturret',
         ns:'throwwrench',
         ps:'solplaceturret',
         stat:{
@@ -1413,8 +1593,11 @@ let Charas = [
                 }
             }
         ],
-        buttonsolid:'#ff7373',
-        buttonback:'#fcffc0',
+
+        col:{
+            back:"#fcffc0",
+            bor:"#ff7373"
+        },
     },
     
     {
@@ -1423,7 +1606,7 @@ let Charas = [
         img:'clown',
         desc:'ピエロさん。ランダム要素多め。\n',
         key:"n",
-        ex:'trickyvaiavles',
+        ks:'trickyvaiavles',
         ns:'gambler',
         ps:'highsol',
         stat:{
@@ -1465,7 +1648,7 @@ let Charas = [
         img:'magodituono',
         desc:'雷電魔術師。"帯電"を用いて戦う\n将軍ではない。誰だ将軍って言ったやつは',
         key:"n",
-        ex:'lightningstorm',
+        ks:'lightningstorm',
         ns:'elecbarrier',
         ps:'elecshock',
         stat:{
@@ -1480,8 +1663,11 @@ let Charas = [
             crrs:5,
             spd:60,
         },
-        buttonsolid:'#7f1184',
-        buttonback:'#5f4894',
+        
+        col:{
+            back:"#5f4894",
+            bor:"#7f1184"
+        },
     },
 ]
 
@@ -1868,7 +2054,8 @@ const Mags = [
         desc:'指定した味方の体力を20%回復する。',
         mp:4,
         lv:1,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await heal(who, are, '20%')) return 1;
             
             return 0;
@@ -1880,7 +2067,8 @@ const Mags = [
         desc:'指定した味方に攻撃倍率増加(3t, 1lv)を付与する。',
         mp:5,
         lv:1,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are, "攻撃倍率20%上昇", 3);
             //soldatoのシステム応用しつつで
             return 0;
@@ -1892,7 +2080,8 @@ const Mags = [
         desc:'指定した味方の防御力を1.25倍にします。\n実感あんまりないけど..',
         mp:5,
         lv:1,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are, "防御倍率20%上昇", 3);
             return 0;
         }
@@ -1903,7 +2092,8 @@ const Mags = [
         desc:'指定した人に_毒_(4t,1lv)を付与する',
         mp:7,
         lv:3,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are,'毒', 4,1);
             return 0;
         }
@@ -1914,7 +2104,8 @@ const Mags = [
         desc:'牽制に使われがち',
         mp:3,
         lv:4,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await attack(who, are, 30, 'mg', 100, ["属性_雷"])) return 1;
             if(hit(2)) buffAdd(who, are, 'hirumi' , 1)
             return 0;
@@ -1926,7 +2117,8 @@ const Mags = [
         desc:'濁点多いと強そうだよね\nまれに火傷も',
         mp:4,
         lv:4,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await attack(who, are, 110, 'mg', 100, ["属性_炎"])) return 1;//火
             if(hit(10)) await buffAdd(who, are,'burn', 2, 1);
             return 0;
@@ -1938,7 +2130,8 @@ const Mags = [
         desc:'体力を40%回復します。healよりも強い。だから比較のthanなんですね〜',
         mp:8,
         lv:6,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await heal(who, are, "40%")) return 1;
             return 0;
         }
@@ -1949,7 +2142,8 @@ const Mags = [
         desc:'二回行動人間になれるかも？なやつ。\n欠けた運を施錠しましょう',
         mp:4,
         lv:7,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are, "幸運", 4);
             return 0;
         }
@@ -1960,7 +2154,8 @@ const Mags = [
         desc:'二段目。\nサンドじゃないんです許してください',
         mp:8,
         lv:8,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await attack(who, are, 120, 'mg', 93, ["属性_雷"])) return 1;
             if(hit(10)) await buffAdd(who, are, 'hirumi',1)
             return 0
@@ -1972,7 +2167,8 @@ const Mags = [
         desc:'攻撃力が1.5倍になります。power使ってた人いるんかな',
         mp:8,
         lv:9,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are,'攻撃倍率40%増加',3,2)
             return 0
         }
@@ -1983,7 +2179,8 @@ const Mags = [
         desc:'防御力が1.5倍になります。けどあんまり実感はないよね',
         mp:8,
         lv:9,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are, 'shellup', 3, 2)
             return 0
         }
@@ -1994,7 +2191,8 @@ const Mags = [
         desc:'敵を猛毒にします。やったね！！！',
         mp:12,
         lv:10,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             await buffAdd(who, are,'猛毒', 5);
             return 0;
         }
@@ -2005,10 +2203,12 @@ const Mags = [
         desc:'\nnotラージャン',
         mp:10,
         lv:11,
-        func:async function(who, are){
-            let result = await attack(who, are, 230, 'mg', 90, ["属性_炎"]);//火
+        func:async function(who){
+            let are = await selectSyudou(1);
+            if(await attack(who, are, 230, 'mg', 90, ["属性_炎"])) return 1;;//火
+
             await buffAdd(who, are,'burn', 2,2);
-            return result
+            return 0;
         }
     },
     {
@@ -2017,7 +2217,8 @@ const Mags = [
         desc:'60%回復。これ以上はない、っていう意味ですね。\nxyzじゃないよ',
         mp:12,
         lv:12,
-        func:async function(who, are){
+        func:async function(who){
+            let are = await selectSyudou(1);
             if(await heal(who, are, '60%')) return 1;
             return 0
         }
@@ -2028,8 +2229,9 @@ const Mags = [
         desc:'luckよりも行動しやすいです。嬉しいね',
         mp:12,
         lv:14,
-        func:async function(who, are){
-            await buffAdd(who, are,'luck', 5,2);
+        func:async function(who){
+            let are = await selectSyudou(1);
+            await buffAdd(who, are,'luck', 5, 2);
             return 0
         }
     },
@@ -2039,10 +2241,12 @@ const Mags = [
         desc:'ぬわーーっっ!!ってしてやりましょうぜ(炎の大ダメージ)',//対パパス最強にしたいね、これ
         mp:12,
         lv:12,
-        func:async function(who, are){
-            let result = await attack(who, are, 3.5, 'mg',4);//雷
+        func:async function(who){
+            let are = await selectSyudou(1);
+            if(await attack(who, are, 3.5, 'mg',4)) return 1;//雷
+
             await buffAdd(who, are, 'burn', 3,2);
-            return result
+            return 0;
         }
     },
     {
@@ -2051,9 +2255,10 @@ const Mags = [
         desc:'当たったらラッキー、シールドでされたら空前で追撃なつよつよ技。\nけどギガサンダーの方が好き(雷の大ダメージ)',
         mp:20,
         lv:15,
-        func:async function(who, are){
-            let result = await attack(who, are,6,'mg',4);//雷
-            return result
+        func:async function(who){
+            let are = await selectSyudou(1);
+            if(await attack(who, are,6,'mg',4)) return 1;//雷
+            return 0;
         }
     },
     {
@@ -2062,11 +2267,14 @@ const Mags = [
         desc:'自身が覚えてる魔法からランダム(mpは5固定)。これぞ醍醐味ってやつよな',
         mp:5,
         lv:1,
-        func:async function(who, are){
+        func:async function(who){
             // x = Object.keys(Mags).map(a => Mags[a].lv <= humans[cam][me].level ? Mags[a].name : null).filter(Boolean)
             // y = Math.floor(Math.random() * x.length);
             // log.textContent = x[y]+'が出た！';await delay(1000);
             // x[y](who, are);
+
+            let are = await selectSyudou(1);
+
             let arr = Mags.filter(a => a.lv <= who.level && a.mp <= who.mp).map(a => a.name);
             if(arr.length >= 1){
                 let mg = arraySelect(arr);
@@ -2435,7 +2643,7 @@ const Tools = [
         price:20,
         desc:'味方単体の体力を20%回復',
         flav:'おや、頭が痛いって？頭痛に効くのはアスピリン！',
-        func:async function(who, are){
+        func:async function(who){
             if(await heal(who, are, "20%")) return 1;
             return 0;
         }
@@ -2548,7 +2756,7 @@ const Tools = [
         jpnm:'ブルーカード',
         price:60,
         desc:'トランプのJでも代用可。\nなぜか知らないけど青色のイメージが強い',
-        func:async function(who, are){
+        func:async function(who){
             await logText('これはリバースのモニュメントか？');
             aH = who.hp/who.maxhp * are.maxhp;//割合交換(そのうちゲージにする時用)
             wH = are.hp/are.maxhp * who.maxhp;
@@ -3268,7 +3476,7 @@ const Enemies = [
                     await logText(`${who.name}は粘液を絡ませてきた！`);
                     let are = await selectJodou(who, "are", 'hp', 'high');
                     console.log(are)
-                    await buffAdd(who, are, '頭にくっつくスライム', 2);
+                    await buffAdd(who, are, '頭にくっつくスライム', 1);
                     return 0;
                 }
             }
