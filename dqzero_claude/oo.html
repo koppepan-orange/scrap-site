@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="phosphorusCanvas" width="600" height="400" style="border:1px solid #000;"></canvas>
+<script>
+const canvas = document.getElementById('phosphorusCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+const types = {
+    white: { color: '#ffffe0', next: 'red', label: '白リン' },
+    red: { color: '#ff4500', next: 'white', label: '赤リン' },
+    black: { color: '#333333', next: null, label: '黒リン' },
+    purple: { color: '#800080', next: null, label: '紫リン' }
+};
+
+function createParticle(type) {
+    particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        type: type
+    });
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+        ctx.fillStyle = types[p.type].color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'black';
+        ctx.fillText(types[p.type].label, p.x - 10, p.y - 20);
+    });
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    particles.forEach(p => {
+        const dist = Math.hypot(e.offsetX - p.x, e.offsetY - p.y);
+        if (dist < 15 && types[p.type].next) {
+            p.type = types[p.type].next;
+        }
+    });
+    draw();
+});
+
+// 初期配置
+['white', 'white', 'red', 'red'].forEach(t => createParticle(t));
+draw();
+</script>
+</body>
+</html>

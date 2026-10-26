@@ -1352,43 +1352,46 @@ let Charas = [
             crrs:'absolute',
             spd:35,
         },
-        buffs:[
-            {
-                name:'頭にくっつくスライム',
-                type:'stack',
-                gb:"b",
-                desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
-                efs:{
-                    "turn_start":{
-                        func:async(who, are, data = {}, buff) => {
-                            if(data["行動不可"]) return 0;
 
-                            await logText("んっ、でっ、ぜぇいっ！！ (スライムを引き剥がす音)");
-                            buff.add(-1, data);
+        special:{
+            buffs:[
+                {
+                    name:'頭にくっつくスライム',
+                    type:'stack',
+                    gb:"b",
+                    desc:'スライムが体に粘りついている状態です。やばいね(行動不可)',
+                    efs:{
+                        "turn_start":{
+                            func:async(who, are, data = {}, buff) => {
+                                if(data["行動不可"]) return 0;
 
-                            return "行動不可";
-                        }
-                        
-                    }
-                }
-            },
-            {
-                name:"吸着質なスライム",
-                type:'turn',
-                desc:'スライムがくっついているおかげで行動するとダメージを受けます',
-                flav:'連続行動ビルドに大打撃 part2',
-                efs:{
-                    "act_ed":{
-                        func:async(who, ares, data = {}, buff)=>{
-                            data["攻撃者"] = "スライム";
-                            if(await damage(who, who, 6, "mg", data)); return 1;
+                                await logText("んっ、でっ、ぜぇいっ！！ (スライムを引き剥がす音)");
+                                buff.add(-1, data);
 
-                            return 0;
+                                return "行動不可";
+                            }
+                            
                         }
                     }
-                }
-            },
-        ],
+                },
+                {
+                    name:"吸着質なスライム",
+                    type:'turn',
+                    desc:'スライムがくっついているおかげで行動するとダメージを受けます',
+                    flav:'連続行動ビルドに大打撃 part2',
+                    efs:{
+                        "act_ed":{
+                            func:async(who, ares, data = {}, buff)=>{
+                                data["攻撃者"] = "スライム";
+                                if(await damage(who, who, 6, "mg", data)); return 1;
+
+                                return 0;
+                            }
+                        }
+                    }
+                },
+            ],
+        },
 
         col:{
             bor:"#206e1a",
@@ -1413,13 +1416,28 @@ let Charas = [
                 buff:["毒", "麻痺", "火傷", "帯電"]
             },
 
+            change:(who, color = 0)=>{
+                let idios = who.data.idios;
+                let pre = idios.color;
+                if(color) idios.color = color;
+                else{
+                    let color;
+                    do{
+                        color = arraySelect(idios.colorList["col"]);
+                    }while(pre == color);
+                    idios.color = color;
+                };
+                who.data.img = idios.colorIorg + idios.color;
+                console.log(`[SillySlimy] 色変更 / ${pre} => ${color}`);
+            },
+
             supply:async(who, are, num = 1, data = {})=>{
                 let idios = who.data.idios;
                 let color = idios.color;
                 if(!idios.colorList["col"].includes(color)) return 0; //whiteが該当。これは無を意味するので
                 
                 let i = idios.colorList["col"].indexOf(color);
-                let name = idios.colorList[i];
+                let name = idios.colorList["buff"][i];
                 let time = num + idios.addtime;
                 if(await buffAdd(who, are, name, time, data)) return 1;
 
@@ -1431,19 +1449,17 @@ let Charas = [
 
         ks:{
             name:"べちょ",
-            desc:"自身の色をランダムに変更し、敵全体にデバフ2t付与",
+            desc:"自身の色をランダムに変更したのち、敵全体にデバフ2t付与する",
             func:async(who)=>{
                 let idios = who.data.idios;
-                let pre = idios.color;
-                let color;
-                do{
-                    color = arraySelect(idios.colorList["col"]);
-                }while(pre != color);
-                console.log(`[SillySlimy] 色変更 / ${pre} => ${color}`);
+                idios.change(who);
+
+                if(hit(98)) await logText(`${who.name}「べちょ」`);
+                else await logText(`べちょ「${who.name}」`);
 
                 let ares = await selectJodou(who, "are", 0, "random", 0); //最後の0は全体への証
                 for(let are of ares){
-                    if(await who.data.idios.supply(who, are, 2)) return 1;
+                    if(await idios.supply(who, are, 2)) return 1;
                 }
                 
                 return 0;
@@ -1452,9 +1468,11 @@ let Charas = [
         ns:{
             name:"あげるね",
             type:"turn",
-            time:"2",
+            time:"3",
             desc:"敵陣からランダムな1人にデバフ2t付与",
             func:async(who)=>{
+                await logText(`コッペ「あげるね～♪」`);
+
                 let are = await selectJodou(who, "are", 0, "random", 1);
                 if(await who.data.idios.supply(who, are, 2)) return 1;
             }
@@ -1466,6 +1484,8 @@ let Charas = [
                 "attack_ed":{
                     func:async(who, are, data)=>{
                         if(!hit(20)) return 0;
+
+                        await logText(`${who.name}「うにゅぅ」`);
 
                         if(await who.data.idios.supply(who, are, 1)) return 1;
                         return 0;
@@ -1536,6 +1556,8 @@ let Charas = [
             }
         ],
 
+        acts:["変色", "小突く", "少し固まる"],
+
         stat:{
             atk:20,
             def:5,
@@ -1552,6 +1574,52 @@ let Charas = [
         col:{
             bor:"#cfe9ff",
             back:"#def0ff"
+        },
+        
+        special:{
+            acts:[
+                {
+                    name:"変色",
+                    desc:"色を変える。だけぇ～～～～",
+                    func:async(who)=>{
+                        await logText(`${who.name}「ふにえぇ」`);
+
+                        let idios = who.data.idios;
+                        idios.change(who);
+                        tekiou();
+                        return 0;
+                    }
+                },
+                {
+                    name:"少し固まる",
+                    desc:"防御力を上昇させる。",
+                    func:async(who)=>{
+                        await logText(`${who.name}「ふんっ」`);
+                        await buffAdd(who, who, "少し固まったスライム", 2);
+                        return 0;
+                    }
+                }
+            ],
+            
+            buffs:[
+                {
+                    name:"少し固まったスライム",
+                    type:"turn",
+                    desc:"防御力が10上昇する。",
+                    efs:{
+                        "fanfare":{
+                            func:async(who, are, data, buff)=>{
+                                are.def += 10;
+                            }
+                        },
+                        "lastword":{
+                            func:async(who, are, data, buff)=>{
+                                are.def -= 10;
+                            }
+                        }
+                    }
+                }
+            ]
         }
     },
 
@@ -1577,22 +1645,25 @@ let Charas = [
             crrs:0,
             spd:65,
         },
-        buffs:[
-            {
-                name:"レンチ殴りモード、起動",
-                type:"stack",
-                gb:"g",
-                desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
-                efs:{
-                    "attack_ing":{
-                        func:(who, are, data = {}, buff)=>{
-                            logText("レンチを装備したよっ！");
-                            return `dmg変更:${data["dmg"]*2}`;
+
+        special:{
+            buffs:[
+                {
+                    name:"レンチ殴りモード、起動",
+                    type:"stack",
+                    gb:"g",
+                    desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
+                    efs:{
+                        "attack_ing":{
+                            func:(who, are, data = {}, buff)=>{
+                                logText("レンチを装備したよっ！");
+                                return `dmg変更:${data["dmg"]*2}`;
+                            }
                         }
                     }
                 }
-            }
-        ],
+            ],
+        },
 
         col:{
             back:"#fcffc0",
@@ -1621,22 +1692,27 @@ let Charas = [
             crrs:10,
             spd:40,
         },
-        buffs:[
-            {
-                name:'gambling',
-                type:"turn",
-                desc:"次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？",
-                efs:{
-                    "attack_ing":{
-                        func:async(who, are, data = {}, buff) => {
-                            let rate = arrayGacha([0, 2, 4], [20, 70, 10]);
-                            data["dmg"] = `*${rate}`;
+
+        
+        special:{
+            buffs:[
+                {
+                    name:'gambling',
+                    type:"turn",
+                    desc:"次の攻撃が0,2,4倍になる。これぞ醍醐味..ってやつ？",
+                    efs:{
+                        "attack_ing":{
+                            func:async(who, are, data = {}, buff) => {
+                                let rate = arrayGacha([0, 2, 4], [20, 70, 10]);
+                                data["dmg"] = `*${rate}`;
+                            }
                         }
                     }
                 }
-            }
-        ],
-        color:{
+            ],
+        },
+
+        col:{
             bor:"#ffacf9",
             back:"#acf8ff",
         }

@@ -53,6 +53,34 @@ document.addEventListener('keyup',e => {
 
 //#endregion main
 
+// #region サーチ系
+function findGeneric(list, type, name, extraCheck = null){
+    let data;
+    if(extraCheck) data = extraCheck(list, name);
+     else data = list.find(a => a.name == name || a.jpnm == name);
+    if(data) return data;
+    
+    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
+    return 0;
+}
+const findChara = (name) => findGeneric(Charas, "Chara", name);
+const findEnemie = (name) => findGeneric(Enemies, "Enemie", name);
+const findActs = (name) => findGeneric(Acts, "Acts", name);
+const findMags = (name) => findGeneric(Mags, "Mags", name);
+const findTool = (name) => findGeneric(Tools, "Tool", name);
+const findBuff = (name) => findGeneric(Buffs, "Buff", name);
+function findEquips(name, type = 0){
+    let arr;
+    if(type) arr = Equips.filter(a => a.type == type);
+    else Equips;
+
+    let data = arr.find(a => a.name == name || a.jpnm == name);
+     if(data) return data;
+    return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
+}
+// #endregion
+
+
 
 // #region rimi
 let rimi = 0;
@@ -207,7 +235,14 @@ let batC = {
     kps:{
         "attack_ed": 20,
         "be-attack_ed": 10
-    }
+    },
+
+    map:[],
+    mapD:batD.querySelector(".map"),
+    mapK:{
+        "len": 23,
+        "boss": 7,
+    },
 };
 batC.shokey = {
     acts: ['斬る', 'つばめ返し', '踏み込み斬り'],
@@ -215,6 +250,56 @@ batC.shokey = {
     tool: ['aspirin', 'throw knife', 'redcard'],
     booth: ["act", "mags", "tool", "run"],
 }
+batC.Events = [
+    {
+        id: 0,
+        name:"none",
+        p:0,
+        desc:"",
+    },
+    {
+        id: 1,
+        name:"敵さん登場",
+        p:59,
+        desc:"交戦になります",
+    },
+    {
+        id: 2,
+        name:"敵さん登場（強）",
+        p:0,
+        desc:"強敵の予定..だけどまだ未実装。prefixeは普通に付くしなぁ...",
+    },
+    {
+        id: 3,
+        name:"上のものを呼ぶ",
+        p:0,
+        desc:"いわゆるボス戦です。なんマスかごとに確定にすっかな",
+    },
+    {
+        id: 4,
+        name:"...駅でいいか",
+        p:0,
+        desc:"別の国に行く、、的な。ワープパッドとかも考えたけど全然駅でいいわ"
+    },
+    {
+        id: 5,
+        name:"出店に寄る",
+        p:18,
+        desc:"アイテムとかを買えます"
+    },
+    {
+        id: 6,
+        name:"突発性出来事",
+        p:10,
+        desc:"予期せぬ出来事が起こります。いわゆるイベント"
+    },
+    {
+        id: 7,
+        name:"お、焚火あんじゃん",
+        p:8,
+        desc:"HPを一定割合回復できたり、運が良ければ旅商人がいたり、Itary。"
+    }
+]
 let batF = {};
 
 let humans = [];
@@ -248,21 +333,13 @@ function tekiou(){
         let div0 = batC.sesD[cam]
         let div = div0.querySelector(`.${cam}${human.me}`);
 
-        let hd = 0;
+        let hd = human.data;
         let srca = null;
         if(cam == 'enemie'){
-            hd = Enemies.find(a => a.name == human.name);
             srca = `enemies/${batC.stage}/${hd.img ?? hd.name}.png`;
         }
         if(cam == 'player'){
-            hd = Charas.find(a => a.name == human.name);
-            // console.log(hd)
-            if(hd) srca = `charas/${hd.img}.png`;
-            if(!hd){
-                hd = Friends.find(a => a.name == human.name);
-                srca = `friends/${hd.img}.png`;
-            }
-            // console.log(srca)
+            srca = `charas/${hd.img}.png`;
         }
 
         // console.log(`${cam}${human.me}`)
@@ -276,7 +353,11 @@ function tekiou(){
         div.querySelector('.name').textContent = human.name;
         div.querySelector('.lv').textContent = `Lv.${human.lv}`;
         div.querySelector('.img').src = `assets/images/${srca}`;
-        if(human.data.ks) div.querySelector('.skill .naka').style.height = `${(human.kp/human.maxkp) *100}%`;
+        if(human.data.ks){
+            div.querySelector('.skill .naka').style.height = `${(human.kp/human.maxkp) *100}%`;
+            if(human.maxkp <= human.kp) div.classList.add("charged");
+            else div.classList.remove("charged");
+        }
 
         let [half, pinch] = [2, 4]
 
@@ -314,65 +395,24 @@ function tekiou(){
     }   
 }
 
-batF.buffLoad = () => {
+batF.speciaLoad = () => {
     for(let chara of Charas){
-        if(!chara.buffs) continue;
+        if(!chara.special) continue;
         
-        for(let buff of chara.buffs){
-            buff.whose = chara.name;
-            Buffs.push(buff);
+        if(chara.special.acts){
+            for(let act of chara.special.acts){
+                act.whose = act.name;
+                Acts.push(act);
+            }
+        }
+
+        if(chara.special.buffs){
+            for(let buff of chara.special.buffs){
+                buff.whose = chara.name;
+                Buffs.push(buff);
+            }
         }
     }
-}
-
-//#region 今日は何ーーーー
-function whatdo(who, are, shu, name){
-    console.log(`${who.name}が${are.name}に${shu}[${name}]をします`)
-    let [cam, me] = [who.cam, who.me];
-    
-    let ares = copy(are);
-    if(typeof ares == "object") ares = [ares];
-    let ts = [];
-    for(let ar of ares){
-        let [tcam, tme] = [ar.cam, ar.me];
-        ts.push([tcam, tme]);
-    }
-    
-    let res = {
-        cam,
-        me,
-        ts,
-        shu,
-        name
-    }
-    return res;
-}
-//#endregion どちらかと言うと youは何しに日本へ
-
-// #region サーチ系
-function findGeneric(list, type, name, extraCheck = null){
-    let data;
-    if(extraCheck) data = extraCheck(list, name);
-     else data = list.find(a => a.name == name || a.jpnm == name);
-    if(data) return data;
-    
-    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
-    return 0;
-}
-const findChara = (name) => findGeneric(Charas, "Chara", name);
-const findEnemie = (name) => findGeneric(Enemies, "Enemie", name);
-const findActs = (name) => findGeneric(Acts, "Acts", name);
-const findMags = (name) => findGeneric(Mags, "Mags", name);
-const findTool = (name) => findGeneric(Tools, "Tool", name);
-const findBuff = (name) => findGeneric(Buffs, "Buff", name);
-function findEquips(name, type = 0){
-    let arr;
-    if(type) arr = Equips.filter(a => a.type == type);
-    else Equips;
-
-    let data = arr.find(a => a.name == name || a.jpnm == name);
-     if(data) return data;
-    return console.log(`[find] Equipの${type}で、「${name}」っていうものはないらしいです`), 0;
 }
 
 function calclation(gen, code){
@@ -383,9 +423,8 @@ function calclation(gen, code){
     let sum = eval(`${gen}${code}`);
     return sum;
 }
-// #endregion
 
-// #region 人体工場
+
 // #region 人体工場
 class Human {
     constructor(cam, name = 0, data = {}) {
@@ -487,15 +526,6 @@ class Human {
         
         let imgD = images["systems"].error.cloneNode(true);
         imgD.classList.add("img");
-
-        console.log(this.data)
-        let backD = El('div', "naka");
-         if(this.data.col) this.data.col["back"];
-          else backD.style.backgroundColor = irohaMix(Style.batSt["back"], sd.color);
-        let skillD = El('div', 'skill', [backD]);
-         skillD.style.backgroundColor = irohaMix(Style.ki["back"], sd.color);
-         if(this.data.col) skillD.style.borderColor = this.data.col["col"];
-          else skillD.style.borderColor = irohaMix(Style.batSt["bor"], sd.color);
         
         let baa = (code) => {
             return El('div', `${code} bar0`, [
@@ -514,7 +544,22 @@ class Human {
             ]),
             El('div', 'buffs')
         ];
-        if(this.data.ks) els.push(skillD);
+
+        if(this.data.ks){
+            let backD = El('div', "naka");
+             if(this.data.col) this.data.col["back"];
+             else backD.style.backgroundColor = irohaMix(Style.batSt["back"], sd.color);
+            let skillD = El('div', 'skill', [backD]);
+             skillD.style.backgroundColor = irohaMix(Style.ki["back"], sd.color);
+             if(this.data.col) skillD.style.borderColor = this.data.col["col"];
+             else skillD.style.borderColor = irohaMix(Style.batSt["bor"], sd.color);
+            
+            skillD.addEventListener('click', async() => {
+                if(await Kfire(this)) return 1;
+            });
+          
+            els.push(skillD);
+        }
 
         let div = El('div', `human ${this.cam}${this.me}`, els);
 
@@ -542,6 +587,63 @@ const makeEnemy  = (name = 0) => new Human('enemie', name);
 // #endregion
 
 // #region 道との遭遇
+batF.mapmake = () => {
+    /*
+    想定:
+    [
+        [0, 1, 0],
+        [1, 1, 2],
+        [1, 1, 2],
+        [1, 1, 2],
+    ]
+    の形。簡単に言えばスレスパ。あれの3本線のみverって感じ
+    
+    ----
+    
+    数字たちはbatC.Eventsに記載。a => a.idがそれ
+
+    */
+
+    let chose = (code = null) => {
+        if(code == null) return arrayGacha(batC.Events, batC.Events.map(a => a.p));
+        else return batC.Events.find(a => a.id == code);
+    }
+
+    let map = [];
+    // let len = random(Math.max(batC.mapK["len"]-2, 1), batC.mapK["len"]+2);
+    let len = batC.mapK["len"];
+    for(let i=0; i<len; i++){
+        let arr = [];
+        console.log(`[${i}]`, i-1, (i)==(len-1), (i)%b/atC.mapK["boss"]==0);
+        if(i == (len-1)){ //駅
+            arr.push(chose(0));
+            arr.push(chose(4));
+            arr.push(chose(0));
+        }
+
+        else if(i != 0 && (i) % batC.mapK["boss"] == 0){ //上司
+            arr.push(chose(0));
+            arr.push(chose(3)); //ん不可避
+            arr.push(chose(0));
+        }
+
+        else{
+            for(let i2=0; i2<3; i2++){
+                let mono = chose();
+                arr.push(mono);
+            }
+        }
+        map.push(arr);
+    }
+    console.log(map);
+
+    batC.map = map;
+
+    batF.mapUpdate();
+}
+batF.mapUpdate = () => {
+    let div = batC.mapD.querySelector(".gird");
+
 function encount(){
     let enemiesD = batC.sesD["enemie"];
      enemiesD.innerHTML = "";
@@ -1101,7 +1203,7 @@ class Buff{
         are.buffs.push(this);
 
         if(this.data.efs["fanfare"]){
-            if(await this.data.efs["fanfare"].func(who, are)) return 1;
+            if(await this.data.efs["fanfare"].func(who, are, {}, this)) return 1;
         }
 
         tekiou();
@@ -1124,7 +1226,7 @@ class Buff{
         }
 
         if(this.data.efs["lastword"]){
-            if(await this.data.efs["lastword"].func(cm(0, 0, this.who), are)) return 1;
+            if(await this.data.efs["lastword"].func(cm(0, 0, this.who), are, {}, this)) return 1;
         }
 
         tekiou();
@@ -1484,8 +1586,17 @@ async function kpAdd(who, num){
     who.kp = Math.min(who.kp+num, who.maxkp);
     if(who.kp < 0) who.kp = 0;
     
-    if(who.kp == who.maxkp) who.div.classList.add("charged");
-    else who.div.classList.remove("charged");
+    tekiou();
+}
+async function Kfire(who){
+    if(!who.data.ks) return console.error(`${who.name}のKスキルは存在しないらしいっす(???????)`);
+    if(who.kp < who.maxkp) return tobiText(who.div, "kp is not enough");
+    who.kp = 0;
+    tekiou();
+
+    if(await who.data.ks.func(who)) return 1;
+
+    return 0;
 }
 // 一旦割り込みは無し。ターン中に発動して、ターン消費なしっていうふうに。敵はなし
 // #endregion
@@ -2949,7 +3060,7 @@ function start(){
     OBS.load();
 
     mainF.load();
-     batF.buffLoad();
+     batF.speciaLoad();
     gamF.load();
     phoF.load();
      phoC.uwubF.load();

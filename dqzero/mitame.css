@@ -860,6 +860,47 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     border-color: #ff4848;
 }
 
+/* #region map */
+#batt .map{
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    background: #2b2b2bb2;
+    box-sizing: border-box;
+    overflow: scroll;
+    
+    & .body{
+        display: flex;
+        /* grid-template-columns: repeat(3, 1fr); */
+        flex-direction: column-reverse;
+        justify-content: flex-start;
+        align-items: center;        
+        gap: 15px;
+        width: 100%;
+        height: 100%;
+        overflow-y: scroll;
+        box-sizing: border-box;
+
+        & .card{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            aspect-ratio: 2/3;
+            padding: 10px;
+            background: #b2b2b2;
+            border: #2a98ff;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+    }
+}
+/* #endregion */
+
 #batt .humans{
     display: flex;
     flex-direction: row;
@@ -890,52 +931,54 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     border-radius: 10px;
     position: relative;
     box-sizing: border-box;
-}
-#batt .humans .human.sl{
-    background: #fff3c9;
-}
-#batt .humans .human .img{
-    width: 70%;
-    aspect-ratio: 1/1;
-    opacity: 0.7;
-    mask-image: linear-gradient(
-        to bottom,
-        rgba(0,0,0,1) 75%,
-        rgba(0,0,0,0) 100%
-    );
-    position: absolute;
-    top: 0;
-    left: 5px;
-    box-sizing: border-box;
-}
-#batt .humans .human .skill{
-    width: 40px;
-    aspect-ratio: 1/1;
-    border-radius: 40%;
-    /* background: var(--batSt-back); */
-    border: 2.5px solid var(--batSt-bor);
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    overflow: hidden;
-    box-sizing: border-box;
+    &.sl{
+        background: #fff3c9;
+    }
 
-    & .naka{
-        width: 100%;
-        height: 0;
-        border-radius: 0;
-        background: var(--batSt-back);
+    & .img{
+        width: 70%;
+        aspect-ratio: 1/1;
+        opacity: 0.7;
+        mask-image: linear-gradient(
+            to bottom,
+            rgba(0,0,0,1) 75%,
+            rgba(0,0,0,0) 100%
+        );
         position: absolute;
-        bottom: 0;
-        left: 0;
-        transition: height .3s ease;
+        top: 0;
+        left: 5px;
         box-sizing: border-box;
     }
 
-    
-}
-#batt .humans .human.charged .skill{
-    animation: swingX 0.25s infinite ease-in-out;
+    & .skill{
+        width: 40px;
+        aspect-ratio: 1/1;
+        border-radius: 40%;
+        /* background: var(--batSt-back); */
+        border: 2.5px solid var(--batSt-bor);
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        overflow: hidden;
+        box-sizing: border-box;
+
+        & .naka{
+            width: 100%;
+            height: 0;
+            border-radius: 0;
+            background: var(--batSt-back);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            transition: height .3s ease;
+            box-sizing: border-box;
+        }
+    }
+    &.charged .skill{
+        animation: swingX 0.25s infinite ease-in-out;
+    }
+
+
 }
 @keyframes swingX{
     0%  {transform: translateX(0px)}
