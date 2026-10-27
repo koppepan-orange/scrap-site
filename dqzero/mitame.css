@@ -862,7 +862,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 
 /* #region map */
 #batt .map{
-    display: flex;
+    display: none;
     flex-direction: column-reverse;
     justify-content: center;
     align-items: center;
@@ -870,8 +870,15 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     height: 100%;
     padding: 10px;
     background: #2b2b2bb2;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 23;
     box-sizing: border-box;
     overflow: scroll;
+    &.show{
+        display: flex;
+    }
     
     & .body{
         display: flex;
@@ -879,23 +886,61 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         flex-direction: column-reverse;
         justify-content: flex-start;
         align-items: center;        
-        gap: 15px;
+        gap: 25px;
         width: 100%;
         height: 100%;
+        padding: 5px;
+        padding-bottom: 150px;
         overflow-y: scroll;
         box-sizing: border-box;
 
-        & .card{
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        & .row{
+            gap: 15px;
             width: 100%;
-            aspect-ratio: 2/3;
-            padding: 10px;
-            background: #b2b2b2;
-            border: #2a98ff;
-            overflow: hidden;
+            height: fit-content;
+            padding: 15px;
             box-sizing: border-box;
+            &.high{
+                background: #535353b2;
+            }
+
+            & .card{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                aspect-ratio: 2/3;
+                padding: 10px;
+                background: #b2b2b2;
+                border: #2a98ff;
+                transition: scale 0.10s;
+                position: relative;
+                overflow: hidden;
+                box-sizing: border-box;
+                &:active{
+                    scale: 0.80;
+                }
+
+                & .label{
+                    display: inline-block;
+                    width: auto;
+                    height: 23px;
+                    padding: 2px;
+                    border-bottom: 1px solid #2b2b2b;
+                    position: absolute;
+                    top: 3px;
+                    left: 0;
+                    box-sizing: border-box;
+                }
+
+                & img{
+                    display: block;
+                    width: 90%;
+                    aspect-ratio: 1/1;
+                    object-fit: contain;
+                    box-sizing: border-box;
+                }
+            }
         }
     }
 }
@@ -1759,7 +1804,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     bottom: -550px;
     left: 50%;
     transform: translateX(-50%);
-    transition: bottom 0.95s ease-in-out;
+    transition: bottom 0.50s ease-in-out;
     overflow: hidden;
     box-sizing: border-box;
     z-index: 21;
@@ -2072,5 +2117,72 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 #phone .app.amon{
     content: "ポイ活アプリ。UIから何まで全部頑張ろうぜ。...あ。アプリ名はエイモンズです。amonds。エイモンさんが作ったゲーム...とかではなくdiamondsのdiaの部分はもらっていくよ、つまりお前らに入らない部分しか上げないよ、的なひどい思想のポイ活アプリ。dia自体に「2倍の」って意味があった気がする...フランスかなんかで";
     background: #ffffc7;
+}
+
+#phone .app.debug{
+    content: "名前は「err0r」。f12で確認でもしないと多分見つけられん";
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 50px 10px 5px;
+    background: #0f1f2d;
+    color: #def0ff;
+    font-family: nyashi;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    
+
+    & .komock{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+        height: fit-content;
+        padding: 5px;
+         padding-left: 10px;
+        border-left: 3px #e6812d solid;
+        background: #162838;
+        box-sizing: border-box;
+
+        & .title{
+            font-size: 14px;
+        }
+    }
+
+    & .komock.targets{
+
+        & .mono{
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 2px;
+            height: 20px;
+            line-height: 20px;
+
+            & .label{
+                display: block;
+                width: 40px;
+                flex-shrink: 0;
+            }
+            & .now{
+                display: block;
+                /* width: 100px; */
+                flex: 1;
+            }
+            & .me{
+                width: 30px;
+            }
+        }
+    }
+
+    & .komock.buffs{
+        & .execute{
+            display: block;
+            width: 100%;
+        }
+    }
 }
 /* #endregion */

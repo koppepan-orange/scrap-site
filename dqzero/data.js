@@ -99,12 +99,14 @@ const Fonts = [
     {src:'hangyaku', type:'ttf'},
     {src:'kurobara', type:'ttf'},
     {src:'cube12', type:'ttf'},
-    {src:"craft", type:"otf "}
+    {src:"craft", type:"otf "},
+    {src:"nyashi", type:"ttf "},
 ];
 
 const Images = {
     systems:["error",'select','circle','mush','mush_high','phone','star1','star1_pre','star2','star2_pre','star3','star3_pre','dungeon', "heart", "heart_blank"],
-    apps:["map", "amon", "error", "uwub"],
+    apps:["map", "amon", "error", "err0r", "uwub"],
+    rogues:["none", "enemy", "enemy_high", "boss", "station", "shop", "event", "campfire"],
 }
 
 const Sounds = {
@@ -1157,11 +1159,26 @@ const Buffs = [
     },
 
     {
+        name:"今を大事にすることができる魔法",
+        type:"stack",
+        desc:"永遠なんていらないから 終わりがくれる 今を",
+        efs:{
+            "turn_end":{
+                func:async(who, are, data, buff)=>{
+                    data["貫通"] = 1;
+                    if(await damage(who, who, 2147483647, "ph", data)) return 1;
+                    return 0;
+                }
+            }
+        }
+    },
+
+    {
         name:"満腹感",
         type:"turn",
         desc:"うわあ食べたなー！という状態。毎ターンhpが10ずつ回復する。",
         efs:{
-            "turn_ed":{
+            "turn_end":{
                 func:async(who, ares, data, buff) => {
                     if(await heal(who, who, 10, data)) return 1;
 
@@ -1199,7 +1216,7 @@ const Buffs = [
                     }
                 }
             },
-            "turn_ed":{
+            "turn_end":{
                 func:async(who, ares, data, buff)=>{
                     buff.add(-2, data); //calm_down
                     return 0;

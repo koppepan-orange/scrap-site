@@ -64,7 +64,9 @@
         </div>
 
         <div class="space" id="batt">
-            <div class="map"></div>
+            <div class="map">
+                <div class="body"></div>
+            </div>
 
             <div class="upui">
                 <!-- upper ui -->
@@ -225,6 +227,39 @@
                     <div class="place"></div>
                 </div>
                 <div class="bts"></div>
+            </div>
+
+            <div class="app debug">
+                <div class="komock targets">
+                    <div class="title">Targets</div>
+                    <div class="mono who">
+                        <div class="label">From:</div>
+                        <div class="now">undefined</div>
+                        <select class="cam" aria-placeholder="cam">
+                            <option>player</option>
+                            <option>enemie</option>
+                        </select>
+                        <input class="me" type="number" min="0" value="0" placeholder="me"/>
+                    </div>
+                    <div class="mono are">
+                        <div class="label">To:</div>
+                        <div class="now">undefined</div>
+                        <select class="cam" aria-placeholder="cam">
+                            <option>player</option>
+                            <option>enemie</option>
+                        </select>
+                        <input class="me" type="number" min="0" value="0" placeholder="me"/>
+                    </div>
+                    <button class="apply">Apply</buttons>
+                </div>
+
+                <div class="komock buffs">
+                    <div class="add">
+                        <select class="name"></select>
+                        <input class="num" value="1" type="number" placeholder="time"/>
+                        <button class="execute">Execute</button>
+                    </div>
+                </div>
             </div>
         </div>
 

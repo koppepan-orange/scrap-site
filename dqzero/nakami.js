@@ -156,7 +156,7 @@ let homC = {
 let homF = {};
 
 homF.start = async() => {
-    if(homC.started) return 1;
+    if(homC.started) return mainF.move("batt");
     homC.started = 1;
     let charas = Charas.map(a => {
         return {
@@ -179,7 +179,10 @@ homF.start = async() => {
 
     mainF.move('batt');
 
-    encount();
+    batF.mapmake();
+    batC.mapD.classList.add("show");
+
+    // encount();
 }
 homC.startD.addEventListener('click', homF.start);
 
@@ -239,9 +242,10 @@ let batC = {
 
     map:[],
     mapD:batD.querySelector(".map"),
-    mapK:{
+    mapC:{
         "len": 23,
         "boss": 7,
+        now:0,
     },
 };
 batC.shokey = {
@@ -254,50 +258,84 @@ batC.Events = [
     {
         id: 0,
         name:"none",
+        jpnm:"none",
         p:0,
         desc:"",
     },
     {
         id: 1,
-        name:"敵さん登場",
+        name:"enemy",
+        jpnm:"敵さん登場",
         p:59,
         desc:"交戦になります",
+        func:async()=>{
+            encount();
+        }
     },
     {
         id: 2,
-        name:"敵さん登場（強）",
+        name:"enemy_high",
+        jpnm:"敵さん登場（強）",
         p:0,
         desc:"強敵の予定..だけどまだ未実装。prefixeは普通に付くしなぁ...",
+        func:async()=>{
+            encount();
+        }
     },
     {
         id: 3,
-        name:"上のものを呼ぶ",
+        name:"boss",
+        jpnm:"上のものを呼ぶ",
         p:0,
         desc:"いわゆるボス戦です。なんマスかごとに確定にすっかな",
+        func:async()=>{
+            encount();
+        }
     },
     {
         id: 4,
-        name:"...駅でいいか",
+        name:"station",
+        jpnm:"...駅でいいか",
         p:0,
-        desc:"別の国に行く、、的な。ワープパッドとかも考えたけど全然駅でいいわ"
+        desc:"別の国に行く、、的な。ワープパッドとかも考えたけど全然駅でいいわ",
+        func:async()=>{
+            await logText("一旦クリアおめ。");
+            await logText("はい、リロードしまーす");
+            window.location.reload();
+        }
     },
     {
         id: 5,
-        name:"出店に寄る",
+        name:"shop",
+        jpnm:"出店に寄る",
         p:18,
-        desc:"アイテムとかを買えます"
+        desc:"アイテムとかを買えます",
+        func:async()=>{
+            encount();
+            
+        }
     },
     {
         id: 6,
-        name:"突発性出来事",
+        name:"event",
+        jpnm:"突発性出来事",
         p:10,
-        desc:"予期せぬ出来事が起こります。いわゆるイベント"
+        desc:"予期せぬ出来事が起こります。いわゆるイベント",
+        func:async()=>{
+            encount();
+            
+        }
     },
     {
         id: 7,
-        name:"お、焚火あんじゃん",
+        name:"campfire",
+        jpnm:"焚火",
         p:8,
-        desc:"HPを一定割合回復できたり、運が良ければ旅商人がいたり、Itary。"
+        desc:"HPを一定割合回復できたり、運が良ければ旅商人がいたり、Itary。",
+        func:async()=>{
+            encount();
+            
+        }
     }
 ]
 let batF = {};
@@ -327,6 +365,8 @@ batF.hasSet = (arr) => {
 }
 
 function tekiou(){
+    batC.turnD.textContent = batC.turn;
+
     for(let human of humans){
         let cam = human.cam;
         let chokkin = cam.substring(0,1);
@@ -610,18 +650,18 @@ batF.mapmake = () => {
     }
 
     let map = [];
-    // let len = random(Math.max(batC.mapK["len"]-2, 1), batC.mapK["len"]+2);
-    let len = batC.mapK["len"];
+    // let len = random(Math.max(batC.mapC["len"]-2, 1), batC.mapC["len"]+2);
+    let len = batC.mapC["len"];
     for(let i=0; i<len; i++){
         let arr = [];
-        console.log(`[${i}]`, i-1, (i)==(len-1), (i)%b/atC.mapK["boss"]==0);
+        console.log(`[${i}]`, i-1, (i)==(len-1), (i)%batC.mapC["boss"]==0);
         if(i == (len-1)){ //駅
             arr.push(chose(0));
             arr.push(chose(4));
             arr.push(chose(0));
         }
 
-        else if(i != 0 && (i) % batC.mapK["boss"] == 0){ //上司
+        else if(i != 0 && (i) % batC.mapC["boss"] == 0){ //上司
             arr.push(chose(0));
             arr.push(chose(3)); //ん不可避
             arr.push(chose(0));
@@ -639,12 +679,57 @@ batF.mapmake = () => {
 
     batC.map = map;
 
+    batC.mapC.now = 0;
     batF.mapUpdate();
+
 }
 batF.mapUpdate = () => {
-    let div = batC.mapD.querySelector(".gird");
+    let div0 = batC.mapD.querySelector(".body");
+     div0.innerHTML = "";
+    let len = batC.mapC["len"];
+    for(let i=0; i<len; i++){
+        let ima = 0;
+        if(batC.mapC.now == i) ima = 1;
+
+        let flex = El("div", "row");
+        if(ima) flex.classList.add("high");
+        
+        for(let i2=0; i2<3; i2++){
+            let mas = batC.map[i][i2];
+            let label = El("div", "label");
+            if(mas.jpnm != "none") label.innerText = mas.jpnm;
+            
+            let img = images["rogues"][mas.name].cloneNode();
+            if(!img) img = images["systems"]["error"].cloneNode();
+            
+            let div = El("div", `card`, [label, img]);
+            div.addEventListener("click", async() => {
+                if(!ima) return 0;
+                if(mas.name == "none") return 0;
+
+                batC.mapD.classList.remove("show");
+                if(mas.func) await mas.func();
+            })
+
+            flex.appendChild(div);
+        }
+        div0.appendChild(flex);
+    }
+}
+batF.mapBack = (code = 0) => {
+    // code 1:進まずに戻る
+    let pre = batC.mapC.now;
+    if(code != 1) batC.mapC.now += 1;
+
+    console.log(`[map] ${pre}歩 => ${batC.mapC.now}歩 | どんどん進みましょう`);
+    batF.mapUpdate();
+    batC.mapD.classList.add("show");
+}
 
 function encount(){
+    // reset
+    batC.turn = 1;
+
     let enemiesD = batC.sesD["enemie"];
      enemiesD.innerHTML = "";
     let playersD = batC.sesD["player"];
@@ -1143,20 +1228,33 @@ async function damage(who, are, dmg, tri, data={}){
 async function dead(who, are){
     are.joutie = 0;
 
+    let cam = who.cam;
+    if(who == are) cam = fl(cam, ["player", "enemie"]);
+
     let tcam = are.cam;
     let tes = cm(tcam);
     let res = tes.every(a => !a.joutie); //joutie:: 0:死 1:生 2↑:？？
-    if(res) return await win(who.cam);
+    if(res) return await win(cam);
     
     // ここは何？
 
     return 0;
 }
 async function win(cam){
-    await logText(`${cam}陣営の勝ち！`)
-    encount();
+    await logText(`${cam}陣営の勝ち！`);
+    await delay(500);
 
-    location.reload();
+    if(cam == "enemie"){
+        await logText(`こうして ${cm().data.jpnm}たちの ぼうけんは おわった...`);
+        await logText("タイトルに もどります。");
+        mainF.move("home");
+
+        homC.started = 0;
+    }
+    if(cam == "player"){
+        batF.mapBack();
+    }
+    return 1;
 }
 // #endregion
 
@@ -2716,15 +2814,31 @@ let phoF = {};
 phoC.apps = [
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
     {
         name:"uwub",
         jpnm:"暇つぶジャック",
         D: phoD.querySelector(".app.uwub")
     },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {
+        name:"err0r",
+        jpnm:"error",
+        D: phoD.querySelector(".app.debug"),
+    },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
 ];
 
 phoF.tog = (code = "黙れ") => {
@@ -3049,6 +3163,64 @@ phoC.uwubF.dead = async(cam) => {
 }
 // #endregion
 
+// #region phone-debug
+phoC.debugD = phoC.apps.find(a => a.name == "err0r").D;
+phoC.debugC = {
+    Ds:{
+        targets: phoC.debugD.querySelector(".komock.targets"),
+        buffs: phoC.debugD.querySelector(".komock.buffs"),
+    },
+
+    ids:{}
+}
+phoC.debugF = {};
+
+phoC.debugF.load = () => {
+    let tarD = phoC.debugC.Ds["targets"];
+    
+    let buffD = phoC.debugC.Ds["buffs"];
+    let bDl = buffD.querySelector(".add .name");
+    for(let buff of Buffs){
+        let div = El("option");
+        div.textContent = buff.name;
+        bDl.appendChild(div);
+    }
+
+}
+
+phoC.debugF.target = () => {
+    let tarD = phoC.debugC.Ds["targets"];
+    phoC.debugC.ids = {};
+    for(let which of ["who", "are"]){
+        let camD = tarD.querySelector(`.${which} .cam`);
+        let meD = tarD.querySelector(`.${which} .me`);
+        let who = cm(camD.value, meD.value);
+        if(!who){
+            tarD.querySelector(`.${which}`).classList.add("error");
+            nicoText(`[Targets] ${which} に不明な点があります。ご確認ください`);
+        }
+        else tarD.querySelector(`.${which}`).classList.remove("error");
+
+        tarD.querySelector(`.${which} .now`).textContent = who.name;
+        phoC.debugC.ids[which] = who.id;
+    }
+
+    console.log(`who:${phoC.debugC.ids["who"]} are:${phoC.debugC.ids["are"]}`);
+}
+phoC.debugC.Ds["targets"].querySelector(".apply").addEventListener("click", phoC.debugF.target)
+
+phoC.debugF.buffAdd = async() => {
+    let bufD = phoC.debugC.Ds["buffs"];
+    let who = cm(0, 0, phoC.debugC.ids["who"]);
+    let are = cm(0, 0, phoC.debugC.ids["are"]);
+
+    let nameD = bufD.querySelector(".add .name");
+    let numD = bufD.querySelector(".add .num");
+
+    if(await buffAdd(who, are, nameD.value, +numD.value)) return 1;
+}
+phoC.debugC.Ds["buffs"].querySelector(".add .execute").addEventListener("click", phoC.debugF.buffAdd);
+
 // #endregion
 
 
@@ -3064,6 +3236,7 @@ function start(){
     gamF.load();
     phoF.load();
      phoC.uwubF.load();
+     phoC.debugF.load();
 
     rimiF.inc(255)
 
