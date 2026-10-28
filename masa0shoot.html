@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゼロ摩擦サッカー・プロトタイプ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #030712; color: #f8fafc; overflow-x: hidden; }
+        .font-cyber { font-family: 'Orbitron', sans-serif; }
+        canvas { touch-action: none; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 select-none">
+
+    <!-- ヘッダーUI -->
+    <div class="w-full max-w-lg flex flex-col sm:flex-row justify-between items-center mb-4 bg-slate-900/90 backdrop-blur-md p-4 rounded-2xl shadow-2xl border border-slate-800 gap-4">
+        <div>
+            <h1 class="text-xl font-black text-cyan-400 font-cyber tracking-wider flex items-center gap-2">
+                <span>⚽</span> ゼロ摩擦サッカー <span class="text-xs bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">PROTOTYPE v2</span>
+            </h1>
+            <p class="text-xs text-slate-400 mt-1">壁やボールを手で押して、反作用で縦型フィールドを駆け抜けろ！</p>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="bg-slate-950 px-4 py-2 rounded-xl border border-slate-800 text-center">
+                <span class="text-[10px] text-slate-400 font-cyber block">ENEMY : PLAYER</span>
+                <span id="score" class="text-xl font-extrabold text-emerald-400 font-cyber"><span id="scoreEnemy">0</span> - <span id="scorePlayer">0</span></span>
+            </div>
+            <button id="resetBtn" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs transition border border-slate-700 active:scale-95">
+                リセット
+            </button>
+        </div>
+    </div>
+
+    <!-- ゲームキャンバスエリア（縦長: Aspect 1:1.5） -->
+    <div class="relative w-full max-w-lg aspect-[2/3] bg-slate-950 rounded-3xl overflow-hidden shadow-2xl border-2 border-slate-800 ring-1 ring-slate-700/50">
+        <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+        <!-- 操作チュートリアル・オーバーレイ -->
+        <div class="absolute bottom-3 left-3 right-3 bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-800 text-xs text-slate-300 pointer-events-none shadow-lg">
+            <p class="font-bold text-cyan-400 font-cyber mb-1 flex items-center gap-1.5"><span>⚡</span> 操作方法（プッシュ＆反作用）</p>
+            <p class="mb-0.5">・<b>マウス</b>：手の向き（狙う方向）</p>
+            <p class="mb-0.5">・<b>クリック / スペース</b>：手で壁やボールを力強く一押し！</p>
+            <p class="text-slate-400 text-[11px]">※壁際から手を壁に向けて押し、反作用で飛び出そう！</p>
+        </div>
+
+        <!-- ゴール演出オーバーレイ -->
+        <div id="goalMsg" class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+            <div id="goalText" class="text-5xl font-black text-amber-400 font-cyber animate-bounce tracking-widest drop-shadow-[0_0_25px_rgba(245,158,11,0.5)]">GOAL!!</div>
+            <p id="goalSub" class="text-slate-300 text-sm mt-2 font-cyber tracking-wider">見事な壁プレス＆反作用シュート！</p>
+        </div>
+    </div>
+
+    <script>
+        // batC グローバル管理オブジェクト
+        const batC = {
+            obs: [],
+            size: 40,
+            ctx: null
+        };
+        const images = { systems: { error: document.createElement('canvas') } };
+
+        // 基底 Ob クラス
+        class Ob {
+            constructor(x, y, w = 0, h = 0, dir = 0, props = [], data = {}) {
+                this.id = data.id ?? batC.obs.length;
+                this.x = x;
+                this.y = y;
+                this.w = w || batC.size;
+                this.h = h || batC.size;
+                this.dir = dir;
+
+                this.rotation = data.rotation || "はい";
+                this.zock = data.zock || "systems";
+                this.name = data.name || "error";
+                this.img = data.img || null;
+
+                this.vx = data.vx || 0;
+                this.vy = data.vy || 0;
+                this.ax = data.ax || 0;
+                this.ay = data.ay || 0;
+                this.masa = 1; // 摩擦ゼロ（完全慣性）
+
+                this.maxhp = data.maxhp ?? 1;
+                this.hp = 1;
+                this.cols = data.cols || [];
+                this.stats = data.stats || [];
+            }
+            add(){
+                batC.obs.push(this);
+            }
+
+            calc(){
+                this.vx += this.ax;
+                this.vy += this.ay;
+
+                this.vx *= this.masa;
+                this.vy *= this.masa;
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                this.ax = 0;
+                this.ay = 0;
+            }
+            push(x, y){
+                this.ax += x;
+                this.ay += y;
+            }
+            move(d){
+                let rad = this.dir * (Math.PI / 180);
+                this.x += Math.cos(rad) * d;
+                this.y += Math.sin(rad) * d;
+            }
+            set(x, y){
+                this.x = x;
+                this.y = y;
+            }
+            koheX(x){this.x += x}
+            koheY(y){this.y += y}
+            
+            draw(){
+                let ctx = batC.ctx;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.dir - 90) * (Math.PI / 180));
+                ctx.restore();
+            }
+        }
+
+        // プレイヤー（自分）クラス
+        class Player extends Ob {
+            constructor(x, y) {
+                super(x, y, 40, 40, 0, [], { rotation: "はい" });
+                this.radius = 20;
+                this.handDist = 32; // 手の到達距離
+                this.handRadius = 10;
+                this.isPushing = false;
+                this.pushEffectTimer = 0;
+            }
+
+            // 手の先端ワールド座標を取得
+            getHandPos() {
+                let rad = this.dir * (Math.PI / 180);
+                return {
+                    x: this.x + Math.cos(rad) * this.handDist,
+                    y: this.y + Math.sin(rad) * this.handDist
+                };
+            }
+
+            draw() {
+                let ctx = batC.ctx;
+                let hand = this.getHandPos();
+
+                ctx.save();
+
+                // 手の押し出し線＆エフェクト
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(hand.x, hand.y);
+                ctx.strokeStyle = this.pushEffectTimer > 0 ? '#f59e0b' : 'rgba(255, 255, 255, 0.4)';
+                ctx.lineWidth = this.pushEffectTimer > 0 ? 5 : 2;
+                ctx.stroke();
+
+                // プレイヤー本体（サイバーブルー）
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#06b6d4';
+                ctx.shadowColor = '#22d3ee';
+                ctx.shadowBlur = 12;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // 手（押し手）
+                ctx.beginPath();
+                ctx.arc(hand.x, hand.y, this.handRadius, 0, Math.PI * 2);
+                ctx.fillStyle = this.pushEffectTimer > 0 ? '#fbbf24' : '#f59e0b';
+                ctx.shadowColor = '#f59e0b';
+                ctx.shadowBlur = this.pushEffectTimer > 0 ? 18 : 6;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#fff';
+                ctx.stroke();
+
+                if (this.pushEffectTimer > 0) this.pushEffectTimer--;
+
+                ctx.restore();
+            }
+        }
+
+        // ボールクラス
+        class Ball extends Ob {
+            constructor(x, y) {
+                super(x, y, 30, 30, 0, [], { rotation: "はい" });
+                this.radius = 16;
+            }
+            draw() {
+                let ctx = batC.ctx;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#f8fafc';
+                ctx.shadowColor = '#e2e8f0';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#0f172a';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // ボールの模様
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // 初期化＆メインロジック
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('gameCanvas');
+            batC.ctx = canvas.getContext('2d');
+
+            // 縦長論理フィールドサイズ (500 x 750)
+            const fWidth = 500;
+            const fHeight = 750;
+
+            function resizeCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                canvas.width = rect.width * window.devicePixelRatio;
+                canvas.height = rect.height * window.devicePixelRatio;
+                batC.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // フィールド壁定義
+            const wallOffset = 20;
+            const leftWall = wallOffset;
+            const rightWall = fWidth - wallOffset;
+            const topWall = wallOffset;
+            const bottomWall = fHeight - wallOffset;
+
+            // ゴール定義（上：敵ゴール、下：味方ゴール）
+            const goalWidth = 180;
+            const goalDepth = 25;
+            const topGoal = { x: (fWidth - goalWidth) / 2, y: topWall - goalDepth, w: goalWidth, h: goalDepth };
+            const bottomGoal = { x: (fWidth - goalWidth) / 2, y: bottomWall, w: goalWidth, h: goalDepth };
+
+            // スタート位置：壁真横（左壁ぴったり）
+            const playerStartPos = { x: leftWall + 22, y: fHeight / 2 + 100 };
+            const ballStartPos = { x: fWidth / 2, y: fHeight / 2 };
+
+            const player = new Player(playerStartPos.x, playerStartPos.y);
+            const ball = new Ball(ballStartPos.x, ballStartPos.y);
+
+            let mouseX = fWidth / 2;
+            let mouseY = fHeight / 2;
+            let playerScore = 0;
+            let enemyScore = 0;
+
+            // 入力イベント
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = fWidth / rect.width;
+                const scaleY = fHeight / rect.height;
+                mouseX = (e.clientX - rect.left) * scaleX;
+                mouseY = (e.clientY - rect.top) * scaleY;
+            });
+
+            function executePush() {
+                player.pushEffectTimer = 10;
+                let hand = player.getHandPos();
+                let pushed = false;
+
+                // 1. 壁を押す（反作用で壁から遠ざかる方向へインパルスを得る）
+                const pushPower = 11;
+
+                if (hand.x <= leftWall + player.handRadius) {
+                    player.vx += pushPower; // 左壁を押す -> 右へ移動
+                    pushed = true;
+                } else if (hand.x >= rightWall - player.handRadius) {
+                    player.vx -= pushPower; // 右壁を押す -> 左へ移動
+                    pushed = true;
+                }
+
+                if (hand.y <= topWall + player.handRadius) {
+                    player.vy += pushPower; // 上壁を押す -> 下へ移動
+                    pushed = true;
+                } else if (hand.y >= bottomWall - player.handRadius) {
+                    player.vy -= pushPower; // 下壁を押す -> 上へ移動
+                    pushed = true;
+                }
+
+                // 2. ボールを直接手で押す
+                let distToBall = Math.hypot(ball.x - hand.x, ball.y - hand.y);
+                if (distToBall < player.handRadius + ball.radius + 8) {
+                    let angle = Math.atan2(ball.y - hand.y, ball.x - hand.x);
+                    let ballPushPower = 14;
+
+                    // ボールを押し飛ばす
+                    ball.vx = Math.cos(angle) * ballPushPower;
+                    ball.vy = Math.sin(angle) * ballPushPower;
+
+                    // 反作用でプレイヤーも少し逆方向に弾かれる
+                    player.vx -= Math.cos(angle) * (ballPushPower * 0.4);
+                    player.vy -= Math.sin(angle) * (ballPushPower * 0.4);
+                    pushed = true;
+                }
+            }
+
+            canvas.addEventListener('mousedown', executePush);
+            window.addEventListener('keydown', (e) => {
+                if (e.code === 'Space') executePush();
+            });
+
+            document.getElementById('resetBtn').addEventListener('click', resetPositions);
+
+            function resetPositions() {
+                player.x = playerStartPos.x;
+                player.y = playerStartPos.y;
+                player.vx = 0; player.vy = 0;
+                ball.x = ballStartPos.x;
+                ball.y = ballStartPos.y;
+                ball.vx = 0; ball.vy = 0;
+            }
+
+            function triggerGoal(isPlayerGoal) {
+                if (isPlayerGoal) playerScore++; else enemyScore++;
+                document.getElementById('scorePlayer').innerText = playerScore;
+                document.getElementById('scoreEnemy').innerText = enemyScore;
+
+                const msg = document.getElementById('goalMsg');
+                const goalText = document.getElementById('goalText');
+                const goalSub = document.getElementById('goalSub');
+
+                if (isPlayerGoal) {
+                    goalText.innerText = "GOAL!!";
+                    goalText.className = "text-5xl font-black text-amber-400 font-cyber animate-bounce tracking-widest drop-shadow-[0_0_25px_rgba(245,158,11,0.5)]";
+                    goalSub.innerText = "ナイス反作用シュート！敵ゴール突破！";
+                } else {
+                    goalText.innerText = "OWN GOAL..";
+                    goalText.className = "text-5xl font-black text-rose-500 font-cyber animate-bounce tracking-widest drop-shadow-[0_0_25px_rgba(244,63,94,0.5)]";
+                    goalSub.innerText = "自陣ゴールに入ってしまった！";
+                }
+
+                msg.classList.remove('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    msg.classList.add('opacity-0', 'pointer-events-none');
+                    resetPositions();
+                }, 1400);
+            }
+
+            // ループ
+            function loop() {
+                // 手の向き（マウスへの角度）
+                let dx = mouseX - player.x;
+                let dy = mouseY - player.y;
+                player.dir = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                // 物理計算
+                player.calc();
+                ball.calc();
+
+                // 壁反発（完全弾性衝突）
+                const wallElasticity = 1.0;
+
+                // プレイヤーの壁反射
+                if (player.x - player.radius < leftWall) { player.x = leftWall + player.radius; player.vx *= -wallElasticity; }
+                if (player.x + player.radius > rightWall) { player.x = rightWall - player.radius; player.vx *= -wallElasticity; }
+                if (player.y - player.radius < topWall) { player.y = topWall + player.radius; player.vy *= -wallElasticity; }
+                if (player.y + player.radius > bottomWall) { player.y = bottomWall - player.radius; player.vy *= -wallElasticity; }
+
+                // ボールの壁＆ゴール判定
+                // 上ゴール判定
+                if (ball.x >= topGoal.x && ball.x <= topGoal.x + topGoal.w && ball.y - ball.radius <= topWall) {
+                    triggerGoal(true);
+                } 
+                // 下ゴール判定
+                else if (ball.x >= bottomGoal.x && ball.x <= bottomGoal.x + bottomGoal.w && ball.y + ball.radius >= bottomWall) {
+                    triggerGoal(false);
+                } 
+                else {
+                    // 通常のボール壁反射
+                    if (ball.x - ball.radius < leftWall) { ball.x = leftWall + ball.radius; ball.vx *= -wallElasticity; }
+                    if (ball.x + ball.radius > rightWall) { ball.x = rightWall - ball.radius; ball.vx *= -wallElasticity; }
+                    if (ball.y - ball.radius < topWall) { ball.y = topWall + ball.radius; ball.vy *= -wallElasticity; }
+                    if (ball.y + ball.radius > bottomWall) { ball.y = bottomWall - ball.radius; ball.vy *= -wallElasticity; }
+                }
+
+                // プレイヤーとボールの体当たり判定
+                let distPlayerBall = Math.hypot(ball.x - player.x, ball.y - player.y);
+                let minDist = player.radius + ball.radius;
+                if (distPlayerBall < minDist) {
+                    let overlap = minDist - distPlayerBall;
+                    let angle = Math.atan2(ball.y - player.y, ball.x - player.x);
+                    ball.x += Math.cos(angle) * overlap;
+                    ball.y += Math.sin(angle) * overlap;
+
+                    let nx = Math.cos(angle);
+                    let ny = Math.sin(angle);
+                    let kx = player.vx - ball.vx;
+                    let ky = player.vy - ball.vy;
+                    let p = 2 * (nx * kx + ny * ky) / 2;
+
+                    player.vx -= p * nx * 0.8;
+                    player.vy -= p * ny * 0.8;
+                    ball.vx += p * nx * 1.2;
+                    ball.vy += p * ny * 1.2;
+                }
+
+                // --- 描画処理 ---
+                const ctx = batC.ctx;
+                ctx.clearRect(0, 0, fWidth, fHeight);
+
+                // 背景
+                ctx.fillStyle = '#090d16';
+                ctx.fillRect(0, 0, fWidth, fHeight);
+
+                // グリッド線
+                ctx.strokeStyle = '#1e293b';
+                ctx.lineWidth = 1;
+                for (let x = 0; x < fWidth; x += 35) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, fHeight); ctx.stroke();
+                }
+                for (let y = 0; y < fHeight; y += 35) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(fWidth, y); ctx.stroke();
+                }
+
+                // センターライン＆センターサークル
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(leftWall, fHeight / 2);
+                ctx.lineTo(rightWall, fHeight / 2);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(fWidth / 2, fHeight / 2, 50, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // アッパーゴール（敵ゴール：赤）
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                ctx.fillRect(topGoal.x, topGoal.y, topGoal.w, topGoal.h);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(topGoal.x, topGoal.y, topGoal.w, topGoal.h);
+
+                // ロワーゴール（味方ゴール：緑）
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+                ctx.fillRect(bottomGoal.x, bottomGoal.y, bottomGoal.w, bottomGoal.h);
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(bottomGoal.x, bottomGoal.y, bottomGoal.w, bottomGoal.h);
+
+                // アウターウォール（壁）
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(leftWall, topWall, rightWall - leftWall, bottomWall - topWall);
+
+                // オブジェクト描画
+                player.draw();
+                ball.draw();
+
+                requestAnimationFrame(loop);
+            }
+
+            requestAnimationFrame(loop);
+        });
+    </script>
+</body>
+</html>
