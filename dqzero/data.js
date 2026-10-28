@@ -738,16 +738,16 @@ const Buffs = [
                 func: async(who, ares, data, buff) => {
                     let val = 5 * buff.time;
 
-                    let hasWood = Array.isArray(who.equips) &&
-                        who.equips.some(e => {
-                            try {
-                                return /木|wood/i.test(JSON.stringify(e));
-                            } catch {
-                                return false;
-                            }
-                        });
+                    // let hasWood = Array.isArray(who.equips) &&
+                    //     who.equips.some(e => {
+                    //         try {
+                    //             return /木|wood/i.test(JSON.stringify(e));
+                    //         } catch {
+                    //             return false;
+                    //         }
+                    //     });
 
-                    if(hasWood) val *= 2;
+                    // if(hasWood) val *= 2;
 
                     data["攻撃者"] = "火傷";
                     data["ダメージ"] = "効果";
@@ -1471,8 +1471,8 @@ let Charas = [
                 let idios = who.data.idios;
                 idios.change(who);
 
-                if(hit(98)) await logText(`${who.name}「べちょ」`);
-                else await logText(`べちょ「${who.name}」`);
+                if(hit(98)) await logText(`${who.name} は自身の体をたくさん分離させ、周囲にまき散らした！`);
+                else await logText(`${who.name} は...あー......なんかした！`)
 
                 let ares = await selectJodou(who, "are", 0, "random", 0); //最後の0は全体への証
                 for(let are of ares){
@@ -1647,9 +1647,10 @@ let Charas = [
         desc:'メカニック。工具を用いて割となんでも作れる。\nそのせいか助手には大きく慕われている。\n打たれ弱いので繊細にね',
         key:"n",
 
-        ks:'placeturret',
-        ns:'throwwrench',
-        ps:'solplaceturret',
+        // ks:'placeturret',
+        // ns:'throwwrench',
+        // ps:'solplaceturret',
+        
         stat:{
             atk:25,
             def:10,
@@ -1672,9 +1673,15 @@ let Charas = [
                     desc:'レンチを投げる準備をしている状態。次の攻撃与ダメ2倍',
                     efs:{
                         "attack_ing":{
-                            func:(who, are, data = {}, buff)=>{
-                                logText("レンチを装備したよっ！");
+                            func:async(who, are, data = {}, buff)=>{
+                                await logText("レンチを装備したよっ！");
                                 return `dmg変更:${data["dmg"]*2}`;
+                            }
+                        },
+                        "attack_ed":{
+                            func:async(who, are, data, buff)=>{
+                                buff.add(-1, data);
+                                return 0;
                             }
                         }
                     }
@@ -1694,9 +1701,15 @@ let Charas = [
         img:'clown',
         desc:'ピエロさん。ランダム要素多め。\n',
         key:"n",
-        ks:'trickyvaiavles',
-        ns:'gambler',
-        ps:'highsol',
+        // ks:'trickyvaiavles',
+        // ns:'gambler',
+        // ps:'highsol',
+
+        ps:{
+            name:"ハイリスクにはハイなリターンを",
+            efs:[],
+        },
+
         stat:{
             atk:20,
             def:0,
@@ -1741,9 +1754,9 @@ let Charas = [
         img:'magodituono',
         desc:'雷電魔術師。"帯電"を用いて戦う\n将軍ではない。誰だ将軍って言ったやつは',
         key:"n",
-        ks:'lightningstorm',
-        ns:'elecbarrier',
-        ps:'elecshock',
+        // ks:'lightningstorm',
+        // ns:'elecbarrier',
+        // ps:'elecshock',
         stat:{
             atk:10,
             def:0,
@@ -1764,126 +1777,6 @@ let Charas = [
     },
 ]
 
-
-/*
-
-function processDots(who){
-    let dots = {};
-    for(let buff of who.buffs){
-        let data = Buffs.find(a => a.name == buff.name);
-        if(data && hask(data, 'dot')){
-            let dot = data.dot;
-            let val = buff.value[dot];
-            if(typeof val == 'string' && val.endsWith('%')){
-                val = Math.round(who.maxhp * val.slice(0, -1) / 100);
-            }
-            if(!dots[dot]) dots[dot] = 0;
-            dots[dot] += val;
-        }
-    }
-    Object.keys(dots).forEach(key => {
-        let val = dots[key];
-        console.log(`[dot] ${who.name}に${val}ダメージ(${key})`);
-        who.hp -= val;
-        if(who.hp <= 0) return dead(0, who);
-    });
-
-    return 0;
-}
-
-async function turnNext(who){
-    // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
-    
-    // 行動不能系のチェックを先にやっちゃうね。動けないのにdotだけ食らうのは変だし！
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
-
-        if(buff.name == 'onslime'){
-            if(isCrit(buff.value)){
-                buffremove(who, 'onslime');
-                addtext('なんとかスライムを取り払った!!');
-            } else {
-                addtext('スライムが邪魔して動けない!!');
-                turnBye(who);
-                 // 動けないから次の人へパス
-                return;
-            }
-        }
-        if(buffHas(who, 'skip')){
-            await logText(`>> はい${who.name}、お前スキップ〜〜`);
-            turnBye(who);
-            return;
-        }
-        if(hask(buff.value, 'palsy')){
-            if(isCrit(buff.value.palsy)){
-                data.name != 'stan'
-                    ? addtext(`${who.cam}${who.me}は麻痺している..`)
-                    : addtext(`${who.cam}${who.me}はスタンしている....`);
-                turnBye(who);
-                return;
-            }
-        }
-        if(hask(buff.value, 'freeze')){
-            if(!isCrit(buff.value.freeze)){
-                addtext(`${who.name}は凍っている...`);
-                turnBye(who);
-                return;
-            }
-            await logText(`氷が溶けた！`);
-            buffremove(who, 'freeze');
-        }
-    }
-
-    // 前半のdotダメージ処理
-    processDots(who);
-    if(who.hp <= 0) return dead(0, who);
-
-    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
-
-    switch (who.cam){
-        case 'player':
-            playerturn(who);
-            break;
-        case 'enemie':
-            enemyturn(who);
-            break;
-    }
-}
-
-async function turnEnd(who, ares){
-    // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
-    
-    for(let i = who.buffs.length - 1; i >= 0; i--){
-        who.buffs[i].time -= 1;
-        if(who.buffs[i].time <= 0) who.buffs.splice(i, 1);
-    }
-    tekiou();
-
-    let extraTurn = false;
-    for(let buff of who.buffs){
-        let data = buffData(buff.name);
-        if(data && hask(data, 'luck')){
-            if(isCrit(data.luck)){
-                addtext('当たりが出たらもう一本！');
-                extraTurn = true;
-                break;
-            }
-        }
-    }
-
-    if(extraTurn){
-        if(who.cam == 'player') playerturn(who);
-        else enemyturn(who);
-        return;
-    }
-
-    processDots(who);
-    if(who.hp <= 0) return;
-
-    turnBye(who);
-}
-
-*/
 
 
 const Elements = [
@@ -2053,33 +1946,33 @@ const Monoze = [
 const Acts = [
     {
         name:'斬る',
-        desc:`対象に攻撃力の${this.voi}%のダメージを与える。`,
+        desc:`対象に攻撃力の60%のダメージを与える。`,
         flav:"別に必中ではないが、必中みたいな扱いで使いがち（作者談）",
         aim:100,
-        voi:60,
         mp:0,
         lv:1,
         tcam:'players',
         func:async function(who, data = {}){
             let are = await selectSyudou(1);
 
-            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
+            let voi = 60;
+            if(await attack(who, are, voi, 'ph', this.aim)) return 1;
             return 0;
         }
     },
     {
         name:'つばめ返し',
-        desc:`対象に攻撃力の${this.voi}%のダメージを2回与える。`,
+        desc:`対象に攻撃力の70%のダメージを2回与える。`,
         flav:"命中判定は毎回です。そのうち「ねずみざん」作りたいねぇ",
         aim: 85,
-        voi:70,
         mp:0,
         lv:1,
         func:async function(who, data = {}){
             let are = await selectSyudou(1);
 
-            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
-            if(await attack(who, are, this.voi, 'ph', this.aim)) return 1;
+            let voi = 70;
+            if(await attack(who, are, voi, 'ph', this.aim)) return 1;
+            if(await attack(who, are, voi, 'ph', this.aim)) return 1;
 
             return 0;
         }
@@ -2087,7 +1980,6 @@ const Acts = [
     {
         name:'踏み込み斬り',//まじん斬り も作りたいね 霹靂一閃も
         desc:'対象に攻撃力の300%のダメージを与える。',
-        voi: 300,
         aim: 40,
         mp:0,
         lv:1,
@@ -2095,10 +1987,12 @@ const Acts = [
             let are = await selectSyudou(1);
 
             let aim = this.aim;
-            let voi = this.voi;
-            if(who.data.ps.name == 'highsol'){
+            let voi = 300;
+            if(who.data.ps && who.data.ps.name == "ハイリスクにはハイなリターンを"){
                 aim -= 20;
                 voi *= 3;
+            }
+            if(who.data.ps.name == 'highsol'){
             }
 
             if(await attack(who, are, voi, 'ph', aim)) return 1;
@@ -2122,22 +2016,94 @@ const Acts = [
 
     {
         name:'小突く',
-        desc:`対象に攻撃力の${this.voi}%のダメージを与える。武器攻撃力を加算しない。`,
+        desc:`対象に攻撃力の50%のダメージを与える。武器攻撃力を加算しない。`,
         flav:"ぺちって感じ",
         aim:100,
-        voi:50,
         lv:1,
-        tcam:'players',
+        // tcam:'players',
         func:async function(who, data = {}){
             let are;
             if(data["are指定"]) are = data["are指定"];
             else are = await selectSyudou(1);
 
             data["素手"] = 1;
-            if(await attack(who, are, this.voi, "ph", this.aim, data)) return 1;
+            if(await attack(who, are, 50, "ph", this.aim, data)) return 1;
             return 0;
         }
     },
+    {
+        name: "粘液飛ばし",
+        desc: "自身の体の一部を小さく分離し、それを投げつける。自身の攻撃力の40%の物理ダメージを与える。",
+        tags: ["物理", "スライム"],
+        aim: 100,
+        lv: 1,
+        func: async function(who, data = {}){
+            let are = await selectSyudou(1);
+
+            if(await attack(who, are, 40, "ph", this.aim, data)) return 1;
+
+            return 0;
+        }
+    },
+    {
+        name: "ダブル粘液飛ばし",
+        desc: "自身の体の一部を2つ小さく分離し、それらを投げつける。自身の攻撃力の40%の物理ダメージを2回与える。",
+        tags: ["物理", "スライム"],
+        aim: 100,
+        lv: 17,
+        func: async function(who, data = {}){
+            let are = await selectSyudou(1);
+
+            if(await attack(who, are, 40, "ph", this.aim, data)) return 1;
+            if(await attack(who, are, 40, "ph", this.aim, data)) return 1;
+
+            return 0;
+        }
+    },
+    {
+        name: "スライムソード",
+        desc: "自身の体の一部を固め、剣のようにしてから飛びかかる。対象に自身の攻撃力の75%のダメージを与える。",
+        tags: ["物理", "スライム", "接触", "斬撃"],
+        aim: 100,
+        lv: 13,
+        func: async function(who, data = {}){
+            let are = await selectSyudou(1);
+
+            if(await attack(who, are, 75, "ph", this.aim, data)) return 1;
+
+            return 0;
+        }
+    },
+    {
+        name: "スライムレイ",
+        desc: "自身の体の一部を針のように突き出し、自身の攻撃力の110%の物理ダメージを与える。",
+        tags: ["物理", "スライム", "接触"],
+        aim: 100,
+        lv: 16,
+        func: async function(who, data = {}){
+            let are = await selectSyudou(1);
+
+            if(await attack(who, are, 110, "ph", this.aim, data)) return 1;
+
+            return 0;
+        }
+    },
+    {
+        name: "スライムレイン",
+        desc: "自身の体の一部を無数の針のように突き出し、自身の攻撃力の110%の物理ダメージを10回与える。",
+        tags: ["物理", "スライム", "接触"],
+        aim: 100,
+        lv: 42,
+        func: async function(who, data = {}){
+            let are = await selectSyudou(1);
+
+            for(let i=0; i<10; i++){
+                if(await attack(who, are, 110, "ph", this.aim, data)) return 1;
+            }
+
+            return 0;
+        }
+    }
 ]
 
 const Mags = [
@@ -2731,19 +2697,19 @@ const Equips = [
 
 const Tools = [
     {
-        name:'aspirin',
-        jpnm:'アスピリン',
+        name:'アスピリン',
         price:20,
         desc:'味方単体の体力を20%回復',
         flav:'おや、頭が痛いって？頭痛に効くのはアスピリン！',
         func:async function(who){
+            let are = await selectSyudou(1);
             if(await heal(who, are, "20%")) return 1;
+            who.saved["used_アスピリン"]
             return 0;
         }
     },
     {
-        name:'glucose',
-        jpnm:'ブドウ糖',
+        name:'ブドウ糖',
         price:20,
         desc:'味方単体の体力を15%回復し、攻撃倍率を少し上昇させる。',
         flav:'これで少しは頑張れそう',
@@ -2754,8 +2720,7 @@ const Tools = [
         }
     },
     {
-        name:'trypsin',
-        jpnm:'トリプシン',
+        name:'トリプシン',
         name:'trypsin',
         price:50,
         desc:'味方単体の体力を50%回復するが、', //何使っとんねん..たぶん何か副作用入れようとしたんだろうな
@@ -2766,8 +2731,7 @@ const Tools = [
         }
     },
     {
-        name:'lulu',
-        jpnm:'ルル',
+        name:'ルル',
         price:41,
         desc:'味方単体の体力を30%回復。50%の確率で再度40%回復。',
         flav:'sick sickな頭痛薬。\n毒が流るルルですね。',
@@ -2782,8 +2746,7 @@ const Tools = [
         }
     },
     {
-        name:'potion',
-        jpnm:'魔法薬',
+        name:'魔法薬',
         price:80,
         desc:'味方単体の体力を100%回復',
         flav:'投げつけたい。敵に（？）\n内部処理的にはHPを100%にセットしてます',
@@ -2794,8 +2757,7 @@ const Tools = [
         }
     },
     {
-        name:'throwknife',
-        jpnm:'投げナイフ',
+        name:'投げナイフ',
         price:15,
         desc:'指定した人単体の現在体力の5%分のダメージを与える',
         flav:'では、ナイフの錆にしてあげましょう',
@@ -2805,8 +2767,7 @@ const Tools = [
         }
     },
     {
-        name:'bottlegrenade',
-        jpnm:'ボトルグレネード',
+        name:'ボトルグレネード',
         price:60,
         desc:'敵単体に攻撃力の20%分の間接ダメージを与えたのち、敵全体に火傷(3t,2lv)を付与する。',
         flav:'なんだかんだ初期からずっと好きな人/nレッドウィンターの問題児にしては上出来すぎる',
@@ -2820,8 +2781,7 @@ const Tools = [
         }
     },
     {
-        name:'bomb',
-        jpnm:'爆弾',
+        name:'爆弾',
         price:100,
         desc:'指定した人単体に、その最大体力の100%の固定貫通間接ダメージを与える。',
         flav:'エクスプローージョン！！！\n敵を確殺します。嬉しいね',
@@ -2833,8 +2793,7 @@ const Tools = [
         }
     },
     {
-        name:'redcard',
-        jpnm:'レッドカード',
+        name:'レッドカード',
         price:60,
         desc:'この次の人のターンを強制的にスキップさせます。',
         flav:'特にファールとかをしていなくても、これを見せるだけで合法的に人を減らすことができます。うれしいね',
@@ -2845,8 +2804,7 @@ const Tools = [
         }
     },
     {
-        name:'bluecard',
-        jpnm:'ブルーカード',
+        name:'ブルーカード',
         price:60,
         desc:'トランプのJでも代用可。\nなぜか知らないけど青色のイメージが強い',
         func:async function(who){
@@ -2861,8 +2819,7 @@ const Tools = [
     },
 
     {
-        name: "crab_halve",
-        jpnm: "ざりがにハーブ",
+        name: "ざりがにハーブ",
         desc: "指定した敵単体の防御力を3ターンの間半減させる。",
         // flav: "浅めの海から産出される、なぜか硬い甲羅に覆われ生育している海藻"
         flav: "海に隣接した森で産出される赤色の葉っぱ。なぜか葉の表皮の一部が硬化している。",
@@ -2873,15 +2830,13 @@ const Tools = [
     },
     {
         no:1,
-        name:"unsoluble_hagi", //un(否定) + soluble(可溶の)の造語。と思ったら一時期使われてたらしい
-        jpnm:"ナンヨウ萩",
+        name:"ナンヨウ萩",
         desc:"指定した対象単体に「H2Oの影響を受けない」を3t付与する。これは中和反応や凍結だけでなく、発火にも影響する。",
         flav:"鮮やかな青と黄色で成る蝶のような見た目をした花。なぜか葉だけでなく根にも撥水性があるため、水をやっても無駄である。そのため、我々には未だ育てることは不可能である。…一説によると、茎内部で奇跡的に起きた中和反応によって細胞に水を届け続けることで花になる…?のだとか。"
     },
     {
         no:1,
-        name:"nitro_booster",
-        jpnm:"Nitro Booster",
+        name:"Nitro Booster",
         desc:`使用されたキャラクターはspd2倍、aim1.3倍を獲得する。戦闘終了時まで継続。
         [1] もし何らかの要因で発火が発生したならば、装備者はその現在体力の50%の自傷ダメージを受け、さらに「火傷」2tを付与されたのち、効果は解除される。`,
         flav:"Why dont we go to end of Infinity? （無限の終わりに一緒に行きませんか？）（敬語）（丁寧）（あの、すみませんバズさんー）（それは木の(状態)）"

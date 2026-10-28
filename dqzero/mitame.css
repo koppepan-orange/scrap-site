@@ -917,7 +917,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
                 position: relative;
                 overflow: hidden;
                 box-sizing: border-box;
-                &:active{
+                &:active:not(.none){
                     scale: 0.80;
                 }
 
@@ -972,12 +972,15 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     flex-shrink: 0;
     padding: 10px 5px;
     background: #fbfbfb;
-    border: 2px groove #b2b2b2;
+    border: 3px solid #b2b2b2;
     border-radius: 10px;
     position: relative;
     box-sizing: border-box;
     &.sl{
         background: #fff3c9;
+    }
+    &.showtime{
+        background: #ece4ff;
     }
 
     & .img{
@@ -2149,6 +2152,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         & .title{
             font-size: 14px;
         }
+
+        & .button{
+            display: block;
+            width: 100%;
+            height: 25px;
+        }
     }
 
     & .komock.targets{
@@ -2182,6 +2191,22 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         & .execute{
             display: block;
             width: 100%;
+        }
+    }
+
+    & .komock.eval{
+        & .title{
+            color: #ff6f6f;
+        }
+        & .row{
+            gap: 2px;
+        }
+        & .button.sayu{
+            width: 30px;
+        }
+        & .button.execute{
+            width: auto;
+            flex: 1;
         }
     }
 }

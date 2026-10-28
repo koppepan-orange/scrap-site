@@ -172,9 +172,9 @@ homF.start = async() => {
 
     makePlayer(name);
     batF.hasSet([
-        ["aspirin", 3],
-        ["throw_knife", 3],
-        ["aspirin", 3],
+        ["アスピリン", 3],
+        ["ルル", 1],
+        ["投げナイフ", 3],
     ])
 
     mainF.move('batt');
@@ -251,7 +251,7 @@ let batC = {
 batC.shokey = {
     acts: ['斬る', 'つばめ返し', '踏み込み斬り'],
     mags: ['heal', 'power', 'shell'],
-    tool: ['aspirin', 'throw knife', 'redcard'],
+    tool: ["アスピリン", "ルル", "投げナイフ"],
     booth: ["act", "mags", "tool", "run"],
 }
 batC.Events = [
@@ -471,9 +471,10 @@ class Human {
         if (!cam) return 0;
         this.cam = cam;
         this.name = name;
-        this.id = typeof humans !== 'undefined' ? humans.length : 0;
+        this.id = humans.length;
+        this.saved = {};
 
-        // 1. キャラクター/エネミーデータの取得
+        // データの取得
         if(cam == 'player'){
             let data0 = Charas;
             this.data = copy(data0.find(a => a.name == this.name));
@@ -514,16 +515,16 @@ class Human {
             else return "なんで何も重い処理起動してないのにファン回っとんねん殺すぞ";
         }
 
-        // 3. 共通の初期化
+        // 共通の初期化
         this.hp = this.maxhp;
         this.mp = this.maxmp;
         this.kp = 0;
         this.joutie = 1;
         this.buffs = [];
-        this.me = typeof humans !== 'undefined' ? humans.filter(a => a.cam == cam).length : 0;
+        this.me =humans.filter(a => a.cam == cam).length;
 
-        // 個別の初期化（プレイヤー / エネミー）
-        if (cam == 'player') {
+        // 個別の初期化
+        if(cam == 'player'){
             this.lv = 1;
             this.exp = 0;
             this.sp = 0;
@@ -545,7 +546,8 @@ class Human {
                 Style.batSt.aima = irohaMix(this.data.col["bor"], this.data.col["back"]);
                 Style.tekiou();
             }
-        } else if (cam == "enemie") {
+        }
+        if(cam == "enemie"){
             this.lv = random(1, 3);
             this.attr = this.data.attr ?? [];
             this.lasts = [];
@@ -703,6 +705,7 @@ batF.mapUpdate = () => {
             if(!img) img = images["systems"]["error"].cloneNode();
             
             let div = El("div", `card`, [label, img]);
+            if(mas.jpnm == "none") div.classList.add("none");
             div.addEventListener("click", async() => {
                 if(!ima) return 0;
                 if(mas.name == "none") return 0;
@@ -728,7 +731,7 @@ batF.mapBack = (code = 0) => {
 
 function encount(){
     // reset
-    batC.turn = 1;
+    batC.turn = 0;
 
     let enemiesD = batC.sesD["enemie"];
      enemiesD.innerHTML = "";
@@ -974,6 +977,7 @@ async function attack(who, ares, voi, tri, aim, data = {}){
 
         // 攻撃側の aim と 防御側の dod を加味して最終命中率をだす
         let atare = (aim+who.aim) - are.dod;
+        console.log(`命中率は${atare}%だかんね？？？？`)
         if(!hit(atare)){
             console.log(`[attack] ${who.name}の攻撃は外れた！(最終命中率: ${atare}%)`);
             tobiText(are.div, "miss", {back: "#b2b2b2"});
@@ -1748,13 +1752,13 @@ async function turnPlayer(who){
 
 
 async function turnEnemy(who){
-    let data = findEnemie(who.name);
+    let data = who.data;
 
     let are;
     if(data){
         let act = enemySelectAction(who);
 		let res = await act.func(who);
-         if(res == 1) return 1;
+        if(res == 1) return 1;
 		are = res.are;
     }
 	else{
@@ -1813,6 +1817,8 @@ function enemySelectAction(who){
 async function turnNext(who){
     // やりたいこと: dotダメージの処理, その後playerかenemieかでswitchで行動を促す
 
+    who.div.classList.add("showtime");
+
     let data = {};
     
     // turn_start
@@ -1824,6 +1830,7 @@ async function turnNext(who){
             data["内定:行動不可"] = 1;
         }
     }
+
     let canceled = 0;
     data["who"] = who;
     if(await wuzzat("turn_start", data, hanyo)) return 1;
@@ -1854,17 +1861,6 @@ async function turnNext(who){
 
 async function turnEnd(who, ares, data = {}){
     // やりたいこと: luck系の"再行動"の判定, dotダメージの処理
-    let extraTurn = false;
-    for(let buff of who.buffs){
-        let data = findBuff(buff.name);
-        if(data && hask(data, 'luck')){
-            if(isCrit(data.luck)){
-                await logText('当たりが出たらもう一本！');
-                extraTurn = true;
-                break;
-            }
-        }
-    }
 
     // turn_end
     let exTurn = 0;
@@ -1881,52 +1877,55 @@ async function turnEnd(who, ares, data = {}){
 
     if(who.hp <= 0) return;
     if(exTurn){
-        if(who.cam == 'player') turnPlayer(who);
+        if(who.cam == "player") turnPlayer(who);
         else turnEnemy(who);
         return;
     }
-
 
     turnBye(who);
 }
 
 function turnBye(who){
     // やりたいこと: もしbar最後の行動だったならturnNewを実行
+    who.div.classList.remove("showtime");
+    
     batC.acted += 1;
 
-    // 今回はbatC.actbarが配列だから、lengthと比較すれば一発だね
-    if(batC.acted >= batC.actbar.length){
+    // console.log(`[turnBye] (len) ${batC.actbar.length}  <=  ${batC.acted} (acted) | ${batC.actbar.length <= batC.acted}`)
+    if(batC.actbar.length <= batC.acted){
         turnNew();
     } else {
-        // まだ残ってるなら、次のインデックスの奴のターンを開始
-        let nextWho = batC.actbar[batC.acted];
-        turnNext(nextWho);
+        // まだ残ってるなら、次の人のターンを開始
+        let next = batC.actbar[batC.acted];
+        turnNext(cm(0, 0, next));
     }
 }
 
 function turnNew(code = 0){
     // やりたいこと: barを再建, 0番の行動開始
     batC.turn += 1;
+    tekiou();
 
     // 前作のソート処理をそのまま持ってきたよ
-    // batC.actbarには、前作みたいにcamとmeを分けるんじゃなくて、オブジェクトごと突っ込む配列にするのがイマドキ！
     let combined = humans.filter(a => a.joutie && a.hp > 0)
-        .sort((a, b) => {
-            if(b.spd == a.spd){
-                if(a.cam == b.cam){
-                    return a.me - b.me;
-                }
-                return a.cam == 'player' ? -1 : 1;
+    .sort((a, b) => {
+        if(b.spd == a.spd){
+            if(a.cam == b.cam){
+                return a.me - b.me;
             }
-            return b.spd - a.spd;
-        });
+            return a.cam == 'player' ? -1 : 1;
+        }
+        return b.spd - a.spd;
+    });
 
+    combined = combined.map(a => a.id);    
     batC.actbar = combined;
     batC.acted = 0;
 
-    // 新しいターンの、最初の奴の行動を開始！
+    // 新しいターンの、最初の奴の行動を開始
     if(batC.actbar.length > 0){
-        turnNext(batC.actbar[0]);
+        let who = cm(0, 0, batC.actbar[0]);
+        turnNext(who);
     }
 }
 
@@ -3169,9 +3168,13 @@ phoC.debugC = {
     Ds:{
         targets: phoC.debugD.querySelector(".komock.targets"),
         buffs: phoC.debugD.querySelector(".komock.buffs"),
+        eval: phoC.debugD.querySelector(".komock.eval"),
     },
 
-    ids:{}
+    ids:{},
+
+    evaled:[],
+    evalN:0,
 }
 phoC.debugF = {};
 
@@ -3220,6 +3223,49 @@ phoC.debugF.buffAdd = async() => {
     if(await buffAdd(who, are, nameD.value, +numD.value)) return 1;
 }
 phoC.debugC.Ds["buffs"].querySelector(".add .execute").addEventListener("click", phoC.debugF.buffAdd);
+
+phoC.debugF.eval = () => {
+    let evaD = phoC.debugC.Ds["eval"];
+    let input = evaD.querySelector("input");
+     let val = input.value;
+    phoC.debugC.evaled.unshift(val);
+    input.value = "";
+
+    if(!val) return 0;
+
+    let res = eval(val);
+    nicoText(res);
+}
+phoC.debugC.Ds["eval"].querySelector(".execute").addEventListener("click", phoC.debugF.eval);
+phoC.debugF.evalHanyo = () => {
+    // if(typeof phoC.debugC.evaled[phoC.debugC.evalN] == "undefined") return 0;
+    phoC.debugC.Ds["eval"].querySelector("input").value = phoC.debugC.evaled[phoC.debugC.evalN];
+}
+phoC.debugC.Ds["eval"].querySelector("input").addEventListener("keyup", (e) => {
+    let key = e.key.toLowerCase();
+    if(key == "arrowup"){
+        phoC.debugF.evalHanyo();
+        phoC.debugC.evalN += 1;
+    }
+    if(key == "arrowdown"){
+        if(phoC.debugC.evalN == 0) return 0;
+        phoC.debugF.evalHanyo();
+        phoC.debugC.evalN = Math.max(phoC.debugC.evalN-1, 0);
+    }
+    if(key == "enter"){
+        phoC.debugF.eval();
+        phoC.debugC.evalN = 0;
+    }
+});
+phoC.debugC.Ds["eval"].querySelector(".ue").addEventListener("click", () => {
+    phoC.debugF.evalHanyo();
+    phoC.debugC.evalN = Math.min(phoC.debugC.evalN+1, phoC.debugC.evaled.length-1);
+});
+phoC.debugC.Ds["eval"].querySelector(".shita").addEventListener("click", () => {
+    if(phoC.debugC.evalN == 0) return 0;
+    phoC.debugF.evalHanyo();
+    phoC.debugC.evalN = Math.max(phoC.debugC.evalN-1, 0);
+});
 
 // #endregion
 
