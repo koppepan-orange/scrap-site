@@ -165,19 +165,36 @@ phoC.apps = [
         jpnm:"マップ",
         D: phoD.querySelector(".app.map")
     },
-    {name:"error", jpnm:"error"},
     {
         name:"amon",
         jpnm:"Amonds!",
         D: phoD.querySelector(".app.amon")
     },
+    {
+        name:"uwub",
+        jpnm:"暇つぶジャック",
+        D: phoD.querySelector(".app.uwub")
+    },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
     {
-        name:"uwub",
-        jpnm:"暇つぶジャック", //こっちは普通のBJ。BJDはDoorの方
-        D: phoD.querySelector(".app.uwub")
+        name:"err0r",
+        jpnm:"error",   
+        D: phoD.querySelector(".app.debug"),
     },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
 ];
 
 phoF.tog = (code = "黙れ") => {
@@ -523,6 +540,115 @@ phoC.uwubF.dead = async(cam) => {
     // その後の展開は知りません
 }
 // #endregion
+
+
+// #region phone-debug
+phoC.debugD = phoC.apps.find(a => a.name == "err0r").D;
+phoC.debugC = {
+    Ds:{
+        targets: phoC.debugD.querySelector(".komock.targets"),
+        buffs: phoC.debugD.querySelector(".komock.buffs"),
+        eval: phoC.debugD.querySelector(".komock.eval"),
+    },
+
+    ids:{},
+
+    evaled:[],
+    evalN:0,
+}
+phoC.debugF = {};
+
+phoC.debugF.load = () => {
+    let tarD = phoC.debugC.Ds["targets"];
+    
+    let buffD = phoC.debugC.Ds["buffs"];
+    let bDl = buffD.querySelector(".add .name");
+    for(let buff of Buffs){
+        let div = El("option");
+        div.textContent = buff.name;
+        bDl.appendChild(div);
+    }
+
+}
+
+phoC.debugF.target = () => {
+    let tarD = phoC.debugC.Ds["targets"];
+    phoC.debugC.ids = {};
+    for(let which of ["who", "are"]){
+        let camD = tarD.querySelector(`.${which} .cam`);
+        let meD = tarD.querySelector(`.${which} .me`);
+        let who = cm(camD.value, meD.value);
+        if(!who){
+            tarD.querySelector(`.${which}`).classList.add("error");
+            nicoText(`[Targets] ${which} に不明な点があります。ご確認ください`);
+        }
+        else tarD.querySelector(`.${which}`).classList.remove("error");
+
+        tarD.querySelector(`.${which} .now`).textContent = who.name;
+        phoC.debugC.ids[which] = who.id;
+    }
+
+    console.log(`who:${phoC.debugC.ids["who"]} are:${phoC.debugC.ids["are"]}`);
+}
+phoC.debugC.Ds["targets"].querySelector(".apply").addEventListener("click", phoC.debugF.target)
+
+phoC.debugF.buffAdd = async() => {
+    let bufD = phoC.debugC.Ds["buffs"];
+    let who = cm(0, 0, phoC.debugC.ids["who"]);
+    let are = cm(0, 0, phoC.debugC.ids["are"]);
+
+    let nameD = bufD.querySelector(".add .name");
+    let numD = bufD.querySelector(".add .num");
+
+    if(await buffAdd(who, are, nameD.value, +numD.value)) return 1;
+}
+phoC.debugC.Ds["buffs"].querySelector(".add .execute").addEventListener("click", phoC.debugF.buffAdd);
+
+phoC.debugF.eval = () => {
+    let evaD = phoC.debugC.Ds["eval"];
+    let input = evaD.querySelector("input");
+     let val = input.value;
+    phoC.debugC.evaled.unshift(val);
+    input.value = "";
+
+    if(!val) return 0;
+
+    let res = eval(val);
+    nicoText(res);
+}
+phoC.debugC.Ds["eval"].querySelector(".execute").addEventListener("click", phoC.debugF.eval);
+phoC.debugF.evalHanyo = () => {
+    // if(typeof phoC.debugC.evaled[phoC.debugC.evalN] == "undefined") return 0;
+    phoC.debugC.Ds["eval"].querySelector("input").value = phoC.debugC.evaled[phoC.debugC.evalN];
+}
+phoC.debugC.Ds["eval"].querySelector("input").addEventListener("keyup", (e) => {
+    let key = e.key.toLowerCase();
+    if(key == "arrowup"){
+        phoC.debugF.evalHanyo();
+        phoC.debugC.evalN += 1;
+    }
+    if(key == "arrowdown"){
+        if(phoC.debugC.evalN == 0) return 0;
+        phoC.debugF.evalHanyo();
+        phoC.debugC.evalN = Math.max(phoC.debugC.evalN-1, 0);
+    }
+    if(key == "enter"){
+        phoC.debugF.eval();
+        phoC.debugC.evalN = 0;
+    }
+});
+phoC.debugC.Ds["eval"].querySelector(".ue").addEventListener("click", () => {
+    phoC.debugF.evalHanyo();
+    phoC.debugC.evalN = Math.min(phoC.debugC.evalN+1, phoC.debugC.evaled.length-1);
+});
+phoC.debugC.Ds["eval"].querySelector(".shita").addEventListener("click", () => {
+    if(phoC.debugC.evalN == 0) return 0;
+    phoC.debugF.evalHanyo();
+    phoC.debugC.evalN = Math.max(phoC.debugC.evalN-1, 0);
+});
+
+// #endregion
+
 
 // #endregion
 
