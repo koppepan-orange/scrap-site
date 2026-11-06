@@ -156,7 +156,7 @@ let homC = {
 let homF = {};
 
 homF.start = async() => {
-    if(homC.started) return mainF.move("batt");
+    if(homC.started) return mainF.move("rpgg");
     homC.started = 1;
     let charas = Charas.map(a => {
         return {
@@ -171,16 +171,16 @@ homF.start = async() => {
     console.log(`選ばれたのは、[${name}]でした`); //"選ばれたのは、[undefined]でした"
 
     makePlayer(name);
-    batF.hasSet([
+    rpgF.hasSet([
         ["アスピリン", 3],
         ["ルル", 1],
         ["投げナイフ", 3],
     ])
 
-    mainF.move('batt');
+    mainF.move('rpgg');
 
-    batF.mapmake();
-    batC.mapD.classList.add("show");
+    rpgF.mapmake();
+    rpgC.mapD.classList.add("show");
 
     // encount();
 }
@@ -214,20 +214,20 @@ homC.gamD.addEventListener('click', () => mainF.move('gamble'))
 // #endregion home
 
 
-// #region batt
-let batD = document.getElementById('batt');
-let batC = {
-    turnD: batD.querySelector(".upui .turn .num"),
-    killD: batD.querySelector(".upui .killen .num"),
+// #region rpgg
+let rpgD = document.getElementById('rpgg');
+let rpgC = {
+    turnD: rpgD.querySelector(".upui .turn .num"),
+    killD: rpgD.querySelector(".upui .killen .num"),
     sesD:{
-        enemie: batD.querySelector(".humans.enemies"),
-        player: batD.querySelector(".humans.players"),
+        enemie: rpgD.querySelector(".humans.enemies"),
+        player: rpgD.querySelector(".humans.players"),
     },
     bts:[
-        batD.querySelector(".bts .bt.bt0"),
-        batD.querySelector(".bts .bt.bt1"),
-        batD.querySelector(".bts .bt.bt2"),
-        batD.querySelector(".bts .bt.bt3"),
+        rpgD.querySelector(".bts .bt.bt0"),
+        rpgD.querySelector(".bts .bt.bt1"),
+        rpgD.querySelector(".bts .bt.bt2"),
+        rpgD.querySelector(".bts .bt.bt3"),
     ],
 
     stage: "草原",
@@ -241,20 +241,20 @@ let batC = {
     },
 
     map:[],
-    mapD:batD.querySelector(".map"),
+    mapD:rpgD.querySelector(".map"),
     mapC:{
         "len": 23,
         "boss": 7,
         now:0,
     },
 };
-batC.shokey = {
+rpgC.shokey = {
     acts: ['斬る', 'つばめ返し', '踏み込み斬り'],
     mags: ['heal', 'power', 'shell'],
     tool: ["アスピリン", "ルル", "投げナイフ"],
     booth: ["act", "mags", "tool", "run"],
 }
-batC.Events = [
+rpgC.Events = [
     {
         id: 0,
         name:"none",
@@ -338,45 +338,45 @@ batC.Events = [
         }
     }
 ]
-let batF = {};
+let rpgF = {};
 
 let humans = [];
 let has = [];
 let hasM = [...Tools.map(a => a.name), ...Equips.map(a => a.name)];
 
-batF.hasTekiou = () => {
+rpgF.hasTekiou = () => {
     has.sort((a, b) => hasM.indexOf(a) - hasM.indexOf(b));
 }
-batF.hasAdd = (name, n = 1) => {
+rpgF.hasAdd = (name, n = 1) => {
     console.log(`[has] hasに ${name} を${n}個追加しま〜す`);
     for(let i=0; i<n; i++) has.push(name);
     
-    batF.hasTekiou();
+    rpgF.hasTekiou();
 }
-batF.hasSet = (arr) => {
+rpgF.hasSet = (arr) => {
     // [[name, n], [name, n], ...]
     has = [];
     for(let v of arr){
         let [name, n] = v;
-        batF.hasAdd(name, n);
+        rpgF.hasAdd(name, n);
     }
 
-    batF.hasTekiou();
+    rpgF.hasTekiou();
 }
 
 function tekiou(){
-    batC.turnD.textContent = batC.turn;
+    rpgC.turnD.textContent = rpgC.turn;
 
     for(let human of humans){
         let cam = human.cam;
         let chokkin = cam.substring(0,1);
-        let div0 = batC.sesD[cam]
+        let div0 = rpgC.sesD[cam]
         let div = div0.querySelector(`.${cam}${human.me}`);
 
         let hd = human.data;
         let srca = null;
         if(cam == 'enemie'){
-            srca = `enemies/${batC.stage}/${hd.img ?? hd.name}.png`;
+            srca = `enemies/${rpgC.stage}/${hd.img ?? hd.name}.png`;
         }
         if(cam == 'player'){
             srca = `charas/${hd.img}.png`;
@@ -435,7 +435,7 @@ function tekiou(){
     }   
 }
 
-batF.speciaLoad = () => {
+rpgF.speciaLoad = () => {
     for(let chara of Charas){
         if(!chara.special) continue;
         
@@ -531,9 +531,9 @@ class Human {
             this.attr = [];
             this.equips = {};
             
-            this.acts = this.data.acts ?? batC.shokey.acts;
-            this.mags = this.data.mags ?? batC.shokey.mags;
-            this.tool = this.data.tool ?? batC.shokey.tool;
+            this.acts = this.data.acts ?? rpgC.shokey.acts;
+            this.mags = this.data.mags ?? rpgC.shokey.mags;
+            this.tool = this.data.tool ?? rpgC.shokey.tool;
 
             this.ex = this.data.ex;
             this.ns = this.data.ns;
@@ -560,7 +560,7 @@ class Human {
     }
 
     makeDOM = () => {
-        let sd = Stages.find(a => a.name == batC.stage) || { color: '#ffffff' };
+        let sd = Stages.find(a => a.name == rpgC.stage) || { color: '#ffffff' };
 
         let nameD = El('div', 'name');
         nameD.style.color = irohaMix('#b2b2b2', sd.color);
@@ -607,7 +607,7 @@ class Human {
 
         this.div = div;
 
-        let belong = batC.sesD[this.cam];
+        let belong = rpgC.sesD[this.cam];
         if (belong) {
             belong.appendChild(div);
         }
@@ -629,7 +629,7 @@ const makeEnemy  = (name = 0) => new Human('enemie', name);
 // #endregion
 
 // #region 道との遭遇
-batF.mapmake = () => {
+rpgF.mapmake = () => {
     /*
     想定:
     [
@@ -642,28 +642,28 @@ batF.mapmake = () => {
     
     ----
     
-    数字たちはbatC.Eventsに記載。a => a.idがそれ
+    数字たちはrpgC.Eventsに記載。a => a.idがそれ
 
     */
 
     let chose = (code = null) => {
-        if(code == null) return arrayGacha(batC.Events, batC.Events.map(a => a.p));
-        else return batC.Events.find(a => a.id == code);
+        if(code == null) return arrayGacha(rpgC.Events, rpgC.Events.map(a => a.p));
+        else return rpgC.Events.find(a => a.id == code);
     }
 
     let map = [];
-    // let len = random(Math.max(batC.mapC["len"]-2, 1), batC.mapC["len"]+2);
-    let len = batC.mapC["len"];
+    // let len = random(Math.max(rpgC.mapC["len"]-2, 1), rpgC.mapC["len"]+2);
+    let len = rpgC.mapC["len"];
     for(let i=0; i<len; i++){
         let arr = [];
-        console.log(`[${i}]`, i-1, (i)==(len-1), (i)%batC.mapC["boss"]==0);
+        console.log(`[${i}]`, i-1, (i)==(len-1), (i)%rpgC.mapC["boss"]==0);
         if(i == (len-1)){ //駅
             arr.push(chose(0));
             arr.push(chose(4));
             arr.push(chose(0));
         }
 
-        else if(i != 0 && (i) % batC.mapC["boss"] == 0){ //上司
+        else if(i != 0 && (i) % rpgC.mapC["boss"] == 0){ //上司
             arr.push(chose(0));
             arr.push(chose(3)); //ん不可避
             arr.push(chose(0));
@@ -679,25 +679,25 @@ batF.mapmake = () => {
     }
     console.log(map);
 
-    batC.map = map;
+    rpgC.map = map;
 
-    batC.mapC.now = 0;
-    batF.mapUpdate();
+    rpgC.mapC.now = 0;
+    rpgF.mapUpdate();
 
 }
-batF.mapUpdate = () => {
-    let div0 = batC.mapD.querySelector(".body");
+rpgF.mapUpdate = () => {
+    let div0 = rpgC.mapD.querySelector(".body");
      div0.innerHTML = "";
-    let len = batC.mapC["len"];
+    let len = rpgC.mapC["len"];
     for(let i=0; i<len; i++){
         let ima = 0;
-        if(batC.mapC.now == i) ima = 1;
+        if(rpgC.mapC.now == i) ima = 1;
 
         let flex = El("div", "row");
         if(ima) flex.classList.add("high");
         
         for(let i2=0; i2<3; i2++){
-            let mas = batC.map[i][i2];
+            let mas = rpgC.map[i][i2];
             let label = El("div", "label");
             if(mas.jpnm != "none") label.innerText = mas.jpnm;
             
@@ -710,7 +710,7 @@ batF.mapUpdate = () => {
                 if(!ima) return 0;
                 if(mas.name == "none") return 0;
 
-                batC.mapD.classList.remove("show");
+                rpgC.mapD.classList.remove("show");
                 if(mas.func) await mas.func();
             })
 
@@ -719,23 +719,23 @@ batF.mapUpdate = () => {
         div0.appendChild(flex);
     }
 }
-batF.mapBack = (code = 0) => {
+rpgF.mapBack = (code = 0) => {
     // code 1:進まずに戻る
-    let pre = batC.mapC.now;
-    if(code != 1) batC.mapC.now += 1;
+    let pre = rpgC.mapC.now;
+    if(code != 1) rpgC.mapC.now += 1;
 
-    console.log(`[map] ${pre}歩 => ${batC.mapC.now}歩 | どんどん進みましょう`);
-    batF.mapUpdate();
-    batC.mapD.classList.add("show");
+    console.log(`[map] ${pre}歩 => ${rpgC.mapC.now}歩 | どんどん進みましょう`);
+    rpgF.mapUpdate();
+    rpgC.mapD.classList.add("show");
 }
 
 function encount(){
     // reset
-    batC.turn = 0;
+    rpgC.turn = 0;
 
-    let enemiesD = batC.sesD["enemie"];
+    let enemiesD = rpgC.sesD["enemie"];
      enemiesD.innerHTML = "";
-    let playersD = batC.sesD["player"];
+    let playersD = rpgC.sesD["player"];
      playersD.innerHTML = "";
 
     humans = humans.filter(a => a.cam == "player");
@@ -755,7 +755,7 @@ function encount(){
 
     turnNew()
 }
-batC.turnD.addEventListener('click', encount)
+rpgC.turnD.addEventListener('click', encount)
 // #endregion
 
 let context = {}; //consoleで変数見る用。正式実装の予定はない
@@ -802,11 +802,11 @@ async function 昔のwuzzat(code, when, who = 0, ares = 0, data = {}){
             if(li[0] == "ターン数指定"){
                 switch(li[1]){
                     case "<":
-                        return submit(batC.turn < +li[2]);
+                        return submit(rpgC.turn < +li[2]);
                     case "=":
-                        return submit(batC.turn == +li[2]);
+                        return submit(rpgC.turn == +li[2]);
                     case ">":
-                        return submit(batC.turn > +li[2]);
+                        return submit(rpgC.turn > +li[2]);
                     default:
                         return submit(0);
                 }
@@ -1103,10 +1103,10 @@ async function attack(who, ares, voi, tri, aim, data = {}){
         
         if(await damage(who, are, dmg, tri)) return 1;
 
-        let kpadd = batC.kps["attack_ed"];
+        let kpadd = rpgC.kps["attack_ed"];
         if(data["基礎kp増加"]) kpadd += data["基礎kp増加"];
         await kpAdd(who, kpadd);
-        await kpAdd(are, batC.kps["be-attack_ed"]);
+        await kpAdd(are, rpgC.kps["be-attack_ed"]);
 
         // atatck_ed
         data["who"] = who;
@@ -1256,7 +1256,7 @@ async function win(cam){
         homC.started = 0;
     }
     if(cam == "player"){
-        batF.mapBack();
+        rpgF.mapBack();
     }
     return 1;
 }
@@ -1265,28 +1265,6 @@ async function win(cam){
 
 // #region buffとか
 
-/* 呼びだし例[turn_end]: 
-
-    let exTurn = 0;
-    for(let buff of who.buffs){
-        if(!buff.data.efs) continue;
-
-        if(exTurn && !hask(data, "内定:もう1度だ")) data["内定:もう1度だ"] = 1;
-
-        if(hask(buff.data.efs, "turn_end")){
-            let res = await buff.data.efs["turn_end"].func(who, ares, data);
-            if(res == 1) return 1;
-            if(res == "もう1度だ") exTurn = 1;
-        }
-    }
-    if(who.hp <= 0) return;
-    if(exTurn){
-        if(who.cam == 'player') turnPlayer(who);
-        else turnEnemy(who);
-        return;
-    }
-
-*/
 class Buff{
     constructor(name, num){
         if(!name || !num || typeof num != "number") return null;
@@ -1450,8 +1428,8 @@ function selectSyudou(code = 1){
 
             arrs.forEach(a => {
                 // console.log(a)
-                // let div0 = batC[`${a.substring(0, 1)}D`];
-                let div0 = batC.sesD[a.substring(0, 6)];
+                // let div0 = rpgC[`${a.substring(0, 1)}D`];
+                let div0 = rpgC.sesD[a.substring(0, 6)];
                 let div = div0.querySelector(`.${a}`);
                 
                 div.removeEventListener('click', handleClick);
@@ -1617,7 +1595,7 @@ function selectJodou(who, tar = "are", stat = "hp", hl = "low", spread = 1, data
 }
 // #endregion
 
-batF.acts = async(who, i) => {
+rpgF.acts = async(who, i) => {
     // who.acts[i]を実行するやつ
 
     let data = {};
@@ -1641,7 +1619,7 @@ batF.acts = async(who, i) => {
     turnEnd(who);
     return 0;
 }
-batF.mags = async(who, i) => {
+rpgF.mags = async(who, i) => {
     let name = who.mags[i];
     let mag = findMags(name);
      if(!mag) console.error(`${who.name}のmags[${i}]、${name}はガチ・存在しないらしいっす`)
@@ -1659,7 +1637,7 @@ batF.mags = async(who, i) => {
     turnEnd(who);
     return 0;
 }
-batF.tool = async(who, i) => {
+rpgF.tool = async(who, i) => {
     let name = who.tool[i];
     let tool = findTool(name);
      if(!tool) console.error(`${who.name}のtool[${i}]、${name}はガチ・存在しないらしいっす`)
@@ -1679,7 +1657,6 @@ async function runaway(){
 
     logText("未実装");
 }
-
 // #region Kスキル --のちのちこれより深いものが見つかる可能性があるから（作る予定はない）--
 async function kpAdd(who, num){
     if(typeof num == "string") num = +num;
@@ -1702,7 +1679,6 @@ async function Kfire(who){
 }
 // 一旦割り込みは無し。ターン中に発動して、ターン消費なしっていうふうに。敵はなし
 // #endregion
-
 // #region turnとかbarとかactedとか
 function selects(arr = []) {
     if(arr == 0){
@@ -1715,7 +1691,7 @@ function selects(arr = []) {
         return;
     }
 
-    let bts = batC.bts;
+    let bts = rpgC.bts;
     for(let k=0; k<4; k++) {
         let youso = arr[k];
         bts[k].innerText = youso[0];
@@ -1738,7 +1714,7 @@ function selects(arr = []) {
 async function turnPlayer(who){
     // console.log(who);
     const makeMenu = (type) => [ //who.acts[0].data.jpnm
-        ...[0,1,2].map(i => [who[type][i], () => batF[type](who, i)]),
+        ...[0,1,2].map(i => [who[type][i], () => rpgF[type](who, i)]),
         ["back", () => turnPlayer(who)]
     ];
 
@@ -1839,7 +1815,7 @@ async function turnNext(who){
     // ns
     if(who.data.ns && who.data.ns.type == "turn"){
         let ns = who.data.ns;
-        if(batC.turn % ns.time == 0){
+        if(rpgC.turn % ns.time == 0){
             let res = await ns.func(who);
             if(hanyo(res)) return 1;
         }
@@ -1847,7 +1823,7 @@ async function turnNext(who){
 
     if(canceled) return turnBye(who);
 
-    console.log(`(${batC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
+    console.log(`(${rpgC.turn}) 現在、[${who.cam}]${who.name}さんのターンです！`);
 
     switch(who.cam){
         case 'player':
@@ -1889,21 +1865,21 @@ function turnBye(who){
     // やりたいこと: もしbar最後の行動だったならturnNewを実行
     who.div.classList.remove("showtime");
     
-    batC.acted += 1;
+    rpgC.acted += 1;
 
-    // console.log(`[turnBye] (len) ${batC.actbar.length}  <=  ${batC.acted} (acted) | ${batC.actbar.length <= batC.acted}`)
-    if(batC.actbar.length <= batC.acted){
+    // console.log(`[turnBye] (len) ${rpgC.actbar.length}  <=  ${rpgC.acted} (acted) | ${rpgC.actbar.length <= rpgC.acted}`)
+    if(rpgC.actbar.length <= rpgC.acted){
         turnNew();
     } else {
         // まだ残ってるなら、次の人のターンを開始
-        let next = batC.actbar[batC.acted];
+        let next = rpgC.actbar[rpgC.acted];
         turnNext(cm(0, 0, next));
     }
 }
 
 function turnNew(code = 0){
     // やりたいこと: barを再建, 0番の行動開始
-    batC.turn += 1;
+    rpgC.turn += 1;
     tekiou();
 
     // 前作のソート処理をそのまま持ってきたよ
@@ -1919,19 +1895,30 @@ function turnNew(code = 0){
     });
 
     combined = combined.map(a => a.id);    
-    batC.actbar = combined;
-    batC.acted = 0;
+    rpgC.actbar = combined;
+    rpgC.acted = 0;
 
     // 新しいターンの、最初の奴の行動を開始
-    if(batC.actbar.length > 0){
-        let who = cm(0, 0, batC.actbar[0]);
+    if(rpgC.actbar.length > 0){
+        let who = cm(0, 0, rpgC.actbar[0]);
         turnNext(who);
     }
 }
 
 // #endregion
 
-// #endregion batt
+// はい戦闘部分終わり
+
+
+// 以下出来事
+rpgC.shoC = {
+    Ds:{
+        "D"
+    }
+}
+
+
+// #endregion rpgg
 
 
 //#region gamble
@@ -3269,6 +3256,7 @@ phoC.debugC.Ds["eval"].querySelector(".shita").addEventListener("click", () => {
 
 // #endregion
 
+// #endregion phone
 
 
 
@@ -3278,7 +3266,7 @@ function start(){
     OBS.load();
 
     mainF.load();
-     batF.speciaLoad();
+     rpgF.speciaLoad();
     gamF.load();
     phoF.load();
      phoC.uwubF.load();

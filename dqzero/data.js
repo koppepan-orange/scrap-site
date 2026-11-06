@@ -192,7 +192,7 @@ const Secrates = [
 
 const Spaces = [
     { name:'home', rank:2, back:'#f0f8ff', sho:1 },
-    { name:'batt', rank:2, back:'#faf0ff', sho:1 },
+    { name:'rpgg', rank:2, back:'#faf0ff', sho:1 },
     { name:'gamble', rank:2, back:'#b4ddb8', sho:1 },
 ];
 

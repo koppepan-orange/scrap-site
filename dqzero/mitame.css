@@ -823,12 +823,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 /* #endregion */
 
-/* #region battle */
-#batt{
-    content:"battle";
+/* #region rpggle */
+#rpgg{
+    content:"rpggle";
     gap: 40px;
 }
-#batt .upui{
+#rpgg .upui{
     /* あっぷい */
     display: flex;
     flex-direction: row;
@@ -840,7 +840,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     /* position: absolute; */
     z-index: 6;
 }
-#batt .upui .co{
+#rpgg .upui .co{
     display: flex;
     flex-direction: row;
     justify-content: center;
@@ -851,17 +851,17 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     border: #000000 3px solid;
     opacity: 0.8;
 }
-#batt .upui .co.turn{
+#rpgg .upui .co.turn{
     background: #a9d5ff;
     border-color: #2a98ff;
 }
-#batt .upui .co.killen{
+#rpgg .upui .co.killen{
     background: #ffaaaa;
     border-color: #ff4848;
 }
 
 /* #region map */
-#batt .map{
+#rpgg .map{
     display: none;
     flex-direction: column-reverse;
     justify-content: center;
@@ -946,7 +946,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 /* #endregion */
 
-#batt .humans{
+#rpgg .humans{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -961,7 +961,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     box-sizing: border-box;
     z-index: 3;
 }
-#batt .humans .human{
+#rpgg .humans .human{
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1035,7 +1035,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     100%{transform: translateX(0px)}
 }
 
-#batt .humans .human .lv{
+#rpgg .humans .human .lv{
     margin-top: 50px;
     display: block;
     width: 90%;
@@ -1045,7 +1045,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     text-align: right;
     box-sizing: border-box;
 }
-#batt .humans .human .name{
+#rpgg .humans .human .name{
     display: block;
     align-self: flex-start;
     height: 24px;
@@ -1057,7 +1057,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     font-family: kurobara;
     box-sizing: border-box;
 }
-#batt .humans .human .bars{
+#rpgg .humans .human .bars{
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -1066,7 +1066,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     width: 90%;
     height: fit-content;
 }
-#batt .humans .human .bars .bar0{
+#rpgg .humans .human .bars .bar0{
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1074,12 +1074,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     width: 100%;
     height: fit-content;
 }
-#batt .humans .human .bars .bar0 .text{
+#rpgg .humans .human .bars .bar0 .text{
     display: block;
     font-size: 7px;
     color: #2b2b2b;
 }
-#batt .humans .human .bars .bar0 .bar{
+#rpgg .humans .human .bars .bar0 .bar{
     display: block;
     width: 100%;
     height: 17px;
@@ -1090,7 +1090,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     position: relative;
     box-sizing: border-box;
 }
-#batt .humans .human .bars .bar0 .bar .inner{
+#rpgg .humans .human .bars .bar0 .bar .inner{
     display: block;
     width: 0;
     height: 100%;
@@ -1101,26 +1101,26 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     right: 0;
     transition: width 0.74s ease-in-out;
 }
-#batt .humans .human .bars .bar0.hp .bar .inner{
+#rpgg .humans .human .bars .bar0.hp .bar .inner{
     background: #7aff5c
 }
-#batt .humans .human.h-half .bars .bar0.hp .bar .inner{
+#rpgg .humans .human.h-half .bars .bar0.hp .bar .inner{
     background: #ffdd48;
 }
-#batt .humans .human.h-pinch .bars .bar0.hp .bar .inner{
+#rpgg .humans .human.h-pinch .bars .bar0.hp .bar .inner{
     background: #ff2b2b;
 }
-#batt .humans .human .bars .bar0.mp .bar .inner{
+#rpgg .humans .human .bars .bar0.mp .bar .inner{
     background: #5cb3ff
 }
-#batt .humans .human.m-half .bars .bar0.mp .bar .inner{
+#rpgg .humans .human.m-half .bars .bar0.mp .bar .inner{
     background: #ca60ff;
 }
-#batt .humans .human.m-pinch .bars .bar0.mp .bar .inner{
+#rpgg .humans .human.m-pinch .bars .bar0.mp .bar .inner{
     background: #ff9acb;
 }
 
-#batt .humans .human .buffs {
+#rpgg .humans .human .buffs {
     margin-top: 5px;
     display: flex;
     flex-direction: row;
@@ -1134,12 +1134,12 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     overflow-x: scroll;
     white-space: nowrap;
 }
-#batt .humans .human .buffs .buff{
+#rpgg .humans .human .buffs .buff{
     width: 20px;
     aspect-ratio: 1/1;
     flex-shrink: 0;
 }
-#batt .humans .human .buffs .buff img{
+#rpgg .humans .human .buffs .buff img{
     width: 100%;
     aspect-ratio: 1/1;
     object-fit: cover;
@@ -1147,7 +1147,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 }
 
 
-#batt .bts{
+#rpgg .bts{
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -1158,7 +1158,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     padding: 0 15px;
     box-sizing: border-box;
 }
-#batt .bts .bt{
+#rpgg .bts .bt{
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1167,16 +1167,16 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     border-radius: 0 15px;
     cursor: pointer;
 }
-#batt .bts .bt:hover{scale: 1.05;}
-#batt .bts .bt:active{scale: 0.95;}
-#batt .bts .bt.bt0{background: #ff8080}
-#batt .bts .bt.bt0:active{background: #b75c5c}
-#batt .bts .bt.bt1{background: #abffab}
-#batt .bts .bt.bt1:active{background: #7cba7c}
-#batt .bts .bt.bt2{background: #eded77}
-#batt .bts .bt.bt2:active{background: #d9d96e}
-#batt .bts .bt.bt3{background: #a6a6ff}
-#batt .bts .bt.bt3:active{background: #7676c9}
+#rpgg .bts .bt:hover{scale: 1.05;}
+#rpgg .bts .bt:active{scale: 0.95;}
+#rpgg .bts .bt.bt0{background: #ff8080}
+#rpgg .bts .bt.bt0:active{background: #b75c5c}
+#rpgg .bts .bt.bt1{background: #abffab}
+#rpgg .bts .bt.bt1:active{background: #7cba7c}
+#rpgg .bts .bt.bt2{background: #eded77}
+#rpgg .bts .bt.bt2:active{background: #d9d96e}
+#rpgg .bts .bt.bt3{background: #a6a6ff}
+#rpgg .bts .bt.bt3:active{background: #7676c9}
 
 
 /* #endregion */
