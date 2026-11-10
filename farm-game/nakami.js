@@ -147,6 +147,17 @@ const findRoaBuffs = (name) => findGeneric(RoaBuffs, "RoaBuffs", name);
 const findBuff = (name) => findGeneric(Buffs, "Buffs", name);
 const findRacer = (name) => findGeneric(Racers, "Racers", name);
 
+const findItems = (name) => {
+    // findGeneric(Items, "Item", name);
+    // 勝手にOresとFoodsをどっちも検索
+    let data = findGeneric(Items, "Item", name); //item
+    if(!data) data = findGeneric(Ores, "Ore", name); //ore
+    if(!data) data = findGeneric(Foods, "Food", name); //food
+    if(!data) return console.error(`[find] 「${name}」←これItem系に入ってないです `);
+    
+    return data;
+}
+
 
 // #region phone
 let phoD = document.getElementById("phone");
@@ -175,7 +186,9 @@ phoC.apps = [
         jpnm:"暇つぶジャック",
         D: phoD.querySelector(".app.uwub")
     },
-    {name:"error", jpnm:"error"},
+    {name:"kari", jpnm:"レシピ",
+        D: phoD.querySelector(".app.kari")
+    },
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
@@ -541,6 +554,51 @@ phoC.uwubF.dead = async(cam) => {
 }
 // #endregion
 
+// #region phone-kari
+phoC.kariF = {};
+
+phoC.kariF.tekiou = () => {
+    
+    cooC.Ds["recipes"].innerHTML = "";
+
+    // type:2のレシピだけ抽出
+    let arr = Foods.filter(a => a.type == 2);
+
+    for(let recipe of arr){
+        let title = El("div", "name");
+        title.textContent = recipe.name;
+
+        let act = El("div", "act");
+        act.textContent = `調理法: ${recipe.act ?? "不明"}`;
+
+        let sozais = El("div", "sozais");
+        let list = cooF.sozais(recipe);
+        if(list.length == 0){
+            list.push({name: "材料なし", num: 0})
+        }
+
+        for(let a of list){
+            let soza = findItems(a.name);
+            let have = cooF.itemNum(a.name);
+            let div2 = El("div", "soza");
+            div2.textContent = `${soza.name} x${a.num ?? 1}(${have})`;
+            sozais.appendChild(div2);
+        }
+
+        let output = El("div", "output");
+        if(recipe.san && 1 < recipe.san) output.textContent = `産出: x${(recipe.san)}`;
+
+        let possible = cooF.canMake(recipe);
+        let count = El("div", "count");
+        count.textContent = `作成可能数: ${possible}`;
+
+        let div = El("div", "recipe", [title, act, sozais, output, count]);
+        cooC.Ds["recipes"].appendChild(div);
+    }
+
+    if(arr.length == 0) nicoText("レシピがありません");
+}
+// #endregion
 
 // #region phone-debug
 phoC.debugD = phoC.apps.find(a => a.name == "err0r").D;
@@ -721,6 +779,108 @@ homC.Ds["stroll"].addEventListener("click", homF.goStroll);
 
 // #endregion
 
+//#region inventorys
+let inv = [];
+let invD = document.getElementById("inventory");
+let invC = {
+    tog: 0,
+    row: 9,
+    size: 4
+}
+let invF = {};
+invF.tog = (code = null) => {
+    if(code == 1) invC.tog = 1;
+    else if(code == 0) invC.tog = 0;
+    else invC.tog = fl(invC.tog);
+
+    if(invC.tog) invD.classList.add("show");
+    else invD.classList.remove("show");
+}
+// key:e
+document.addEventListener("keyup", e => {
+    let key = e.key.toLowerCase();
+    if(key == "e") invF.tog();
+})
+
+invF.load = () => {
+    // row*size
+    for(let i=0; i<invC.row*invC.size; i++){
+        let div = document.createElement("div");
+        div.className = `item i${i}`;
+        invD.querySelector(".main").appendChild(div);
+    }
+}
+invF.tekiou = () => {
+    for(let i=0; i<invC.row*invC.size; i++){
+        let div = invD.querySelector(`.item.i${i}`);
+        let data = inv[i];
+        if(!data){
+            div.classList.remove("on");
+            div.innerHTML = "";
+            continue;
+        }
+
+        div.classList.add("on");
+        div.innerHTML = "";
+        let icon;
+        if(images["items"] && images["items"][data.name]) icon = images["items"][data.name].cloneNode();
+        else icon = images["systems"]["error"].cloneNode(); //何があってもこれだけは絶対にあるわよ
+        div.appendChild(icon);
+        
+        let num = El("div", "num");
+        num.textContent = data.num;
+        div.appendChild(num);
+    }
+}
+
+invF.main = (type = 0, name = null, num) => {
+    let data = findItems(name);
+    if(!data) return console.log(`[inv] 「${name}」 ←これは無いです`);
+
+    if(type == 0){
+        if(name == null) return console.log(inv); //返すだけ
+        else if(typeof name == "string") return inv.filter(a => a.name == name);
+        else if(typeof name == "number") return inv[name];
+    }
+    if(type == "add"){
+        // console.log(`[inv] 「${name}」を${num}個追加しようかな`);
+
+        let already = inv.find(a => a.name == name && a.num < holC.maxItem);
+        if(!already){
+            let add = Math.min(num, holC.maxItem);
+            already = {name, num:add};
+            inv.push(already);
+
+            let rest = num - add;
+            if(rest > 0) return invF.main("add", name, rest);
+            invF.tekiou();
+            return 0;
+        }
+
+        if(holC.maxItem < already.num + num){
+            // すでにあるなら、それを最大にして再帰
+            let rest = (already.num + num) - holC.maxItem;
+            already.num = holC.maxItem;
+            invF.tekiou();
+            return invF.main("add", name, rest);
+        }
+
+        // 到達さえできなそうなら、普通に追加
+        already.num += num;
+        invF.tekiou();
+        return 0;
+    }
+
+    if(type == "dec"){
+        invF.tekiou();
+    }
+
+    if(type == "lost"){
+        // 全てを失い、その座標に印を残す。次にその印の箇所に行った際、失ったすべてのアイテムを取得する
+        invF.tekiou();
+    }
+}
+// #endregion
 
 
 
@@ -735,6 +895,127 @@ farF.load = () => {
     
 }
 
+// #endregion
+
+// #region cook
+let cooD = document.getElementById("cook");
+let cooC = {
+    Ds:{
+        "recipes": cooD.querySelector(".recipes"),
+    }
+}
+let cooF = {};
+
+// 初期化
+cooF.load = () => {
+    cooF.tekiou();
+}
+
+
+// 材料名を解析
+// wheat      → wheat 1個
+// wheat_3    → wheat 3個
+// sweet_potato → sweet_potato 1個
+cooF.parseFrom = (str) => {
+    let match = str.match(/_(\d+)$/);
+
+    if(match){
+        return {
+            name: str.slice(0, match.index),
+            num: Number(match[1]),
+        };
+    }
+
+    return {
+        name: str,
+        num: 1,
+    };
+}
+
+
+// レシピの材料一覧
+cooF.sozais = (data) => {
+    if(!data.from) return [];
+
+    return data.from.map(a => cooF.parseFrom(a));
+}
+
+
+// アイテムの所持数
+cooF.itemNum = (name) => {
+    let data = invF.main(0, name);
+
+    return data.reduce((sum, a) => sum + a.num, 0);
+}
+
+
+// 作成可能数
+cooF.canMake = (data) => {
+    let sozais = cooF.sozais(data);
+
+    if(sozais.length == 0) return 0;
+
+    let possible = Infinity;
+
+    for(let a of sozais){
+        let have = cooF.itemNum(a.name);
+        let count = Math.floor(have / a.num);
+
+        possible = Math.min(possible, count);
+    }
+
+    return possible;
+}
+
+
+// 料理実行
+cooF.make = (name, times = 1) => {
+    let data = Foods.find(a => a.name == name && a.type == 2);
+
+    if(!data){
+        return console.log(`[cook] 「${name}」というレシピはありません`);
+    }
+
+    times = Math.floor(Number(times));
+    if(!Number.isFinite(times) || times <= 0) return false;
+
+    // 材料確認
+    let possible = cooF.canMake(data);
+
+    if(possible < times){
+        console.log(`[cook] 材料が不足しています。作成可能数:${possible}`);
+        return false;
+    }
+
+    // 材料消費
+    let sozais = cooF.sozais(data);
+
+    for(let a of sozais){
+        let result = invF.main("dec", a.name, a.num * times);
+
+        if(!result) return false;
+    }
+
+    // 完成品
+    let output = (data.san ?? 1) * times;
+
+    invF.main("add", data.name, output);
+
+    console.log(`[cook] ${data.name}を${output}個作成しました`);
+
+    cooF.tekiou();
+    return true;
+}
+
+
+// 画面更新
+cooF.tekiou = () => {
+    phoC.kariF.tekiou();
+}
+
+
+// 初期読み込み
+cooF.load();
 // #endregion
 
 // #region road
@@ -2301,6 +2582,7 @@ function start(){
     OBS.load();
 
     mainF.load();
+    invF.load();
     phoF.load();
      phoC.uwubF.load();
     homF.load();

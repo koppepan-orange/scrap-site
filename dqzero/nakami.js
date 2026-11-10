@@ -1911,9 +1911,9 @@ function turnNew(code = 0){
 
 
 // 以下出来事
+rpgC.shoD = rpgD.querySelector(".event");
 rpgC.shoC = {
     Ds:{
-        "D"
     }
 }
 

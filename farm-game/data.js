@@ -89,11 +89,13 @@ const Fonts = [
     {src:'cube12', type:'ttf'},
     {src:'hangyaku', type:'ttf'},
     {src:'craft', type:'otf'},
+    {src:"kurundeco", type:"otf"},
+    {src:"kaisoutai", type:"ttf"},
 ];
 
 const Images = {
     systems:['error', "loby", "cryo", "cave", "jump", "forage", "heart", "heart_blank"],
-    apps:["map", "amon", "error", "uwub", "err0r"],
+    apps:["map", "amon", "error", "kari", "uwub", "err0r"],
     forages:["mush"]
 }
 
@@ -199,10 +201,11 @@ rimi: それをそのまま売った時の値段
 fromについては、材料名_nとすることで、n個必要になる
 */
 
+const Items = []
+
 const Foods = [
 	{
-		name:"wheat",
-		jpnm:"小麦",
+		name:"小麦",
         type:1,
 		appe:0.5,
 		rimi:0,
@@ -210,31 +213,27 @@ const Foods = [
 		flav:"",
 	},
     {
-        name:"flour",
-        jpnm:"小麦粉",
+        name:"小麦粉",
         san:10, //産出量。1の場合は無記入
         type:2,
-        from:["wheat"], //材料。複数可
+        from:["小麦"], //材料。複数可
         act:"grind" //調理法（原則1つ）
     },
     {
-        name:"dough_flour",
-        jpnm:"薄ベージュ色の生地",
+        name:"薄ベージュ色の生地",
         type:2,
-        from:["flour"],
+        from:["小麦粉"],
         act:"knead"
     },
     {
-        name:"bread",
-        jpnm:"パァン",
+        name:"パァン",
         type:2,
-        from:["flour"],
+        from:["小麦粉"],
         act: "bake",
         //need:"oven" //必要ならばの調理器具
     },
     {
-        name:"egg",
-        jpnm:"卵",
+        name:"卵",
         rimi:[200, 10],
         type:1,
         kind:"動物",
@@ -242,15 +241,13 @@ const Foods = [
         of:"chicken",
     },
     {
-        name:"dough_flouregg",
-        jpnm:"薄黄土色の生地",
+        name:"薄黄土色の生地",
         type:2,
-        from:["flour", "egg"],
+        from:["小麦粉", "卵"],
         act:"knead"
     },
 	{
-		name:"carrot",
-		jpnm:"にんじん",
+		name:"にんじん",
         rimi:[98, 3],
         type:1,
 		appe:0.5,
@@ -258,8 +255,7 @@ const Foods = [
 		flav:"",
 	},
 	{
-		name:"potato",
-		jpnm:"ばれいしょ",
+		name:"ばれいしょ",
         rimi:[126, 5],
         type:1,
 		appe:1.0,
@@ -267,8 +263,7 @@ const Foods = [
 		flav:"",
 	},
 	{
-		name:"sweet_potato",
-		jpnm:"さつまいも",
+		name:"さつまいも",
         rimi:126,
         type:1,
 		appe:1.0,
@@ -276,10 +271,9 @@ const Foods = [
 		flav:"",
 	},
     {
-        name:"baked_sweet_potato",
-        jpnm:"スイートポテト",
+        name:"スイートポテト",
         type:2,
-        from:["sweet_potato"],
+        from:["さつまいも"],
         act:"bake", //steamか...?
         
         
@@ -288,8 +282,7 @@ const Foods = [
 
 const Animals = [
     {
-        name:"chicken",
-        jpnm:"にわとり",
+        name:"にわとり",
         pet:["egg", "feather"], //撫でられた際に落とす素材
          cool:40, //撫でられてから次のアイテムを出すまでのクール
     }
@@ -730,3 +723,4 @@ const Buffs = [
 ]
 // #endregion
 
+const Ores = []
