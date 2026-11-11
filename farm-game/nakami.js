@@ -133,13 +133,13 @@ rimiF.cupF = () => {
 rimiC.cupD.addEventListener('click', rimiF.cupF);
 // #endregion
 
-function findGeneric(list, type, name, extraCheck = null){
+function findGeneric(list, type, name, extraCheck = null, notice = 1){
     let data;
     if(extraCheck) data = extraCheck(list, name);
      else data = list.find(a => a.name == name || a.jpnm == name);
     if(data) return data;
     
-    console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
+    if(notice) console.log(`[find] ${type}で、「${name}」っていうものはないらしいです`);
     return 0;
 }
 const findGomis = (name) => findGeneric(Gomis, "Gomis", name);
@@ -150,9 +150,9 @@ const findRacer = (name) => findGeneric(Racers, "Racers", name);
 const findItems = (name) => {
     // findGeneric(Items, "Item", name);
     // 勝手にOresとFoodsをどっちも検索
-    let data = findGeneric(Items, "Item", name); //item
-    if(!data) data = findGeneric(Ores, "Ore", name); //ore
-    if(!data) data = findGeneric(Foods, "Food", name); //food
+    let data = findGeneric(Items, "Item", name, null, 0); //item
+    if(!data) data = findGeneric(Ores, "Ore", name, null, 0); //ore
+    if(!data) data = findGeneric(Foods, "Food", name, null, 0); //food
     if(!data) return console.error(`[find] 「${name}」←これItem系に入ってないです `);
     
     return data;
