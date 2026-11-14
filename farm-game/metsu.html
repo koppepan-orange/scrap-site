@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @font-face {
+            font-family: comicsans;
+            src: url(dqzero/assets/fonts/comicsans.ttf);
+        }
+
+        #main{
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            width: 393px;
+            height: 100vh;
+            padding-top: 30px;
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            user-select: none;
+        }
+        #lever{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            height: fit-content;
+            padding: 20px 50px;
+            background: #f0f8ff;
+            border-radius: 20px;
+
+            & .per{
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: baseline;
+                gap: 5px;
+                padding: 0 10px;
+                border-bottom: 1px solid #2b2b2b;
+                font-family: comicsans;
+
+                & .num{
+                    font-size: 23px;
+                }
+                & .iran{
+                    font-size: 14px;
+                }
+            }
+            & .push{
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100px;
+                aspect-ratio: 5/2;
+                background: #b5d9ff;
+                border: 5px solid #cfe9ff;
+                border-radius: 2px;
+                font-size: 22px;
+                cursor: grab;
+                &:active{
+                    scale: 0.90;
+                    cursor: grabbing;
+                }
+            }
+        }
+    </style>
+    <title>掘りすぎて滅 のやつ</title>
+</head>
+<body>
+    <div id="main">
+        <div id="lever" class="unit">
+            <div class="per">
+                <div class="num"></div>
+                <div class="iran">%</div>
+            </div>
+            <div class="bt push" data-name="push">Push</div>
+        </div>
+    </div>
+
+    <script>
+        const mainD = document.getElementById("main");
+        const Ds = {
+            "per": mainD.querySelector("#lever .per"),
+            "per_num": mainD.querySelector("#lever .per .num"),
+            "push": mainD.querySelector("#lever .push"),
+        }
+
+        let per = 1;
+
+        function tekiou(){
+            Ds["per_num"].textContent = per;
+        }
+
+        function hit(num){
+            return +(Math.random()*100 <= num);
+            //例:num == 20 → randomが20以内なら1, elseなら0を返す
+        };
+
+        function push(why = 0, num = 1){
+            // さあ、判定！
+            let res = hit(per); //1なら死、0なら生
+            if(res) return miss(why);
+
+            per += 1;
+            tekiou();
+        }
+        for(let div of document.querySelectorAll(".bt")){
+            div.addEventListener("click", () => {
+                let name = div.dataset.name;
+                push(`${name} ボタンをクリック`)
+            });
+        }
+        document.addEventListener("keyup", (e) => {
+            let key = e.key.toLowerCase();
+            if(key == " ") key = space;
+            if(key == "escape") return 1;
+
+            push(`${key}キーを入力`);
+        });
+
+        function miss(why = 0){
+            // 死
+            let text = "";
+             if(why != 0) text = `プレイヤーは ${why} によって、 `;
+            let expr = "爆発";
+             if(hit(3)) expr = "ダイナミックにエクスプロード";
+            console.error(`[死] ${text}${per}% で ${expr} しました！`);
+
+            per = 0;
+            tekiou();
+
+            // ここで何かデメリット効果を作りたい
+
+            return 0;
+        }
+
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            tekiou();
+        })
+    </script>
+</body>
+</html>

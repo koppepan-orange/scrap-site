@@ -186,8 +186,8 @@ phoC.apps = [
         jpnm:"暇つぶジャック",
         D: phoD.querySelector(".app.uwub")
     },
-    {name:"kari", jpnm:"レシピ",
-        D: phoD.querySelector(".app.kari")
+    {name:"cook", jpnm:"Recicipp",
+        D: phoD.querySelector(".app.cook")
     },
     {name:"error", jpnm:"error"},
     {name:"error", jpnm:"error"},
@@ -554,10 +554,10 @@ phoC.uwubF.dead = async(cam) => {
 }
 // #endregion
 
-// #region phone-kari
-phoC.kariF = {};
+// #region phone-cook
+phoC.cookF = {};
 
-phoC.kariF.tekiou = () => {
+phoC.cookF.tekiou = () => {
     
     cooC.Ds["recipes"].innerHTML = "";
 
@@ -1010,7 +1010,7 @@ cooF.make = (name, times = 1) => {
 
 // 画面更新
 cooF.tekiou = () => {
-    phoC.kariF.tekiou();
+    phoC.cookF.tekiou();
 }
 
 
