@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>観測領域：Kurose PvPvE TPS</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #090b10;
+    color: #e2e8f0;
+    font-family: 'Inter', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #game-shell {
+    position: relative;
+    width: 393px;
+    height: 100vh;
+    max-height: 100vh;
+    background-color: #0d1117;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 1px rgba(207, 233, 255, 0.3);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    width: 393px;
+    height: 100%;
+  }
+  .ui-btn {
+    transition: transform 0.08s ease, box-shadow 0.12s ease;
+  }
+  .ui-btn:active {
+    transform: scale(0.94);
+  }
+  @keyframes pulseSlow {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+  }
+  .pulse-slow {
+    animation: pulseSlow 2.2s infinite ease-in-out;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-shell">
+  <!-- メイン描画キャンバス -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 上部ステータスバー（安全地帯・生存数・黒瀬望愛の観測ログ） -->
+  <div id="hud-top" class="hidden absolute top-0 left-0 w-full px-3 pt-2.5 pb-1 pointer-events-none flex flex-col gap-1.5 z-10">
+    <div class="flex justify-between items-center bg-slate-950/80 backdrop-blur-md border border-slate-700/60 rounded-xl px-3 py-1.5 shadow-lg">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+        <span class="text-xs font-semibold tracking-wider text-slate-300">生存</span>
+        <span id="alive-count" class="text-sm font-bold text-[#cfe9ff]">10 / 10</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-slate-400">安全領域</span>
+        <span id="zone-timer" class="text-xs font-mono font-bold text-amber-300">01:00</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-slate-400">撃破</span>
+        <span id="kill-count" class="text-sm font-bold text-rose-400">0</span>
+      </div>
+    </div>
+
+    <!-- 観測アナウンス（黒瀬望愛） -->
+    <div id="observer-log" class="bg-slate-900/75 border border-sky-900/50 rounded-lg px-2.5 py-1 text-[11px] text-sky-100/90 truncate shadow">
+      黒瀬望愛：「観測を開始いたします。生き残ってくださいね。」
+    </div>
+  </div>
+
+  <!-- 観戦モード用バナー -->
+  <div id="spectator-banner" class="hidden absolute top-20 left-3 right-3 bg-indigo-950/85 border border-indigo-400/50 rounded-xl px-3 py-2 text-center shadow-xl z-20 pointer-events-none">
+    <div class="text-xs font-bold text-indigo-200 tracking-wider">観戦モード（全視界開放・壁透過移動）</div>
+    <div class="text-[10px] text-indigo-300/80 mt-0.5">黒瀬望愛：「あなたの記録はここまでですね。残りの方々の行く末を見届けましょう。」</div>
+  </div>
+
+  <!-- インタラクトボタン（ドア開閉・武器拾得・重ならない位置に独立配置） -->
+  <div id="interact-wrap" class="hidden absolute bottom-28 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+    <button id="btn-interact" class="ui-btn bg-sky-500/90 hover:bg-sky-400 text-slate-950 font-bold text-xs px-4 py-2 rounded-full shadow-lg border border-sky-200 flex items-center gap-1.5">
+      <span id="interact-label">拾う / 開閉 [E]</span>
+    </button>
+  </div>
+
+  <!-- 画面下部UI（左下：武器 / 中央下：HPゲージ / 右下：食べ物回復） -->
+  <div id="hud-bottom" class="hidden absolute bottom-3 left-0 w-full px-3 flex items-end justify-between gap-2 z-20 pointer-events-none">
+    
+    <!-- 左下：丸形武器アイコン（タップ/クリックで発射） -->
+    <div class="flex flex-col items-center pointer-events-auto">
+      <div id="weapon-name" class="text-[10px] font-bold text-slate-200 bg-slate-950/85 px-2 py-0.5 rounded-full mb-1 border border-slate-700/70 truncate max-w-[82px]">
+        拳
+      </div>
+      <button id="btn-fire" class="ui-btn relative w-16 h-16 rounded-full bg-slate-900/90 border-2 border-[#cfe9ff]/80 shadow-[0_0_15px_rgba(207,233,255,0.25)] flex flex-col items-center justify-center overflow-hidden">
+        <canvas id="weaponIconCanvas" width="44" height="44" class="pointer-events-none"></canvas>
+        <span id="ammo-text" class="text-[10px] font-mono font-bold text-[#cfe9ff] leading-none mt-0.5">∞</span>
+        <!-- リロード進行オーバーレイ -->
+        <div id="reload-overlay" class="hidden absolute inset-0 bg-slate-950/80 flex items-center justify-center">
+          <span id="reload-text" class="text-[10px] font-bold text-amber-300">装填中</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- 中央下：HPゲージ（武器と食べ物に挟まれる位置） -->
+    <div class="flex-1 flex flex-col items-center justify-end pb-1 pointer-events-none">
+      <div class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl p-2 shadow-lg">
+        <div class="flex justify-between items-center text-[11px] mb-1">
+          <span class="font-bold text-slate-300">HP</span>
+          <span id="hp-text" class="font-mono font-bold text-[#cfe9ff]">100 / 100</span>
+        </div>
+        <div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden p-0.5">
+          <div id="hp-bar" class="h-full bg-gradient-to-r from-sky-400 to-[#cfe9ff] rounded-full transition-all duration-100" style="width: 100%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右下：丸形食べ物アイコン（3秒長押しまたはHキー3秒で30%回復） -->
+    <div class="flex flex-col items-center pointer-events-auto">
+      <div class="text-[10px] font-bold text-emerald-200 bg-slate-950/85 px-2 py-0.5 rounded-full mb-1 border border-emerald-800/70">
+        食料 x<span id="food-count">0</span>
+      </div>
+      <button id="btn-heal" class="ui-btn relative w-16 h-16 rounded-full bg-slate-900/90 border-2 border-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.2)] flex flex-col items-center justify-center overflow-hidden">
+        <canvas id="foodIconCanvas" width="40" height="40" class="pointer-events-none"></canvas>
+        <span class="text-[9px] font-bold text-emerald-300 leading-none mt-0.5">長押し[H]</span>
+        <!-- 回復3秒長押し進行ゲージ -->
+        <div id="heal-progress-ring" class="hidden absolute inset-0 bg-emerald-950/85 flex flex-col items-center justify-center">
+          <span id="heal-timer-text" class="text-xs font-mono font-bold text-emerald-300">3.0s</span>
+          <div class="w-10 h-1 bg-slate-800 rounded-full mt-1 overflow-hidden">
+            <div id="heal-progress-bar" class="h-full bg-emerald-400" style="width: 0%;"></div>
+          </div>
+        </div>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- タイトル・開始オーバーレイ画面 -->
+  <div id="screen-title" class="absolute inset-0 bg-slate-950/92 backdrop-blur-md flex flex-col justify-between p-6 z-30">
+    <div class="mt-4">
+      <div class="inline-block px-2.5 py-0.5 rounded-full bg-sky-950/80 border border-sky-500/40 text-[10px] tracking-widest text-sky-300 mb-2">
+        TACTICAL SURVIVAL OBSERVATION
+      </div>
+      <h1 class="text-2xl font-extrabold tracking-tight text-[#cfe9ff] leading-snug">
+        境界領域の観測戦
+      </h1>
+      <p class="text-xs text-slate-400 mt-1">
+        2D Top-Down PvPvE Battle Royale (10 Participants)
+      </p>
+    </div>
+
+    <div class="bg-slate-900/85 border border-slate-800 rounded-2xl p-4 space-y-2.5 text-xs text-slate-300 shadow-inner">
+      <div class="flex items-start gap-2.5">
+        <div class="w-7 h-7 rounded-full bg-[#cfe9ff]/20 border border-[#cfe9ff]/50 flex items-center justify-center shrink-0 text-[#cfe9ff] font-bold text-xs">
+          望愛
+        </div>
+        <p class="text-[11px] leading-relaxed text-sky-100/90">
+          「はじめまして、観測者の黒瀬望愛と申します。これからあなたを含めた10名の方々には、閉鎖施設にて最後の1名になるまで競い合っていただきます。視界は懐中電灯の光が届く範囲のみ。物陰と背後にはどうかお気をつけくださいね。」
+        </p>
+      </div>
+      <div class="border-t border-slate-800 pt-2.5 space-y-1 text-[11px] text-slate-400">
+        <div>・<span class="text-slate-200 font-semibold">移動</span>：WASDキー / 画面左半分ドラッグ</div>
+        <div>・<span class="text-slate-200 font-semibold">照準・攻撃</span>：マウス / 画面右ドラッグ / 左下武器ボタン</div>
+        <div>・<span class="text-slate-200 font-semibold">拾得・ドア</span>：Eキー / 中央インタラクトボタン</div>
+        <div>・<span class="text-slate-200 font-semibold">回復</span>：Hキーまたは右下食料ボタンを3秒長押し（移動不可）</div>
+      </div>
+    </div>
+
+    <div class="mb-4 space-y-2.5">
+      <button id="btn-start" class="ui-btn w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-400 to-[#cfe9ff] text-slate-950 font-extrabold text-sm tracking-wider shadow-[0_0_25px_rgba(207,233,255,0.4)]">
+        ゲーム開始
+      </button>
+    </div>
+  </div>
+
+  <!-- リザルト（勝利 / 決着）オーバーレイ -->
+  <div id="screen-result" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col justify-center items-center p-6 z-40 text-center">
+    <div id="result-badge" class="px-3 py-1 rounded-full text-xs font-bold tracking-widest mb-3 bg-sky-500/20 text-[#cfe9ff] border border-[#cfe9ff]/40">
+      OBSERVATION COMPLETE
+    </div>
+    <h2 id="result-title" class="text-3xl font-black text-[#cfe9ff] mb-2">第 1 位</h2>
+    <p id="result-quote" class="text-xs text-sky-100/90 bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 mb-5 leading-relaxed">
+      「お見事です。あなたが最後の1名として生き残りました。」
+    </p>
+    <div class="w-full bg-slate-900/80 border border-slate-800 rounded-xl p-3 mb-6 grid grid-cols-2 gap-2 text-xs">
+      <div class="bg-slate-950/60 rounded-lg p-2">
+        <div class="text-slate-400 text-[10px]">最終順位</div>
+        <div id="result-rank" class="text-base font-bold text-[#cfe9ff]">1 / 10 位</div>
+      </div>
+      <div class="bg-slate-950/60 rounded-lg p-2">
+        <div class="text-slate-400 text-[10px]">参加者撃破数</div>
+        <div id="result-kills" class="text-base font-bold text-rose-400">0 体</div>
+      </div>
+    </div>
+    <button id="btn-restart" class="ui-btn w-full py-3.5 rounded-2xl bg-[#cfe9ff] text-slate-950 font-extrabold text-sm tracking-wider shadow-lg">
+      新たな観測を開始する
+    </button>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// data.js 相当：画像リソース定義＆武器・モンスター・AI行動規範マスターデータ
+// ※制約遵守：const禁止(letのみ), ===/!==禁止, else if禁止, 1行if波括弧なし, */前後空白なし
+// ============================================================================
+
+let Images = {
+  systems: ['error.png'],
+  weapons: ['fist.png', 'smg.png', 'scar.png', 'dual.png', 'sg.png', 'knife.png', 'hammer.png'],
+  monsters: ['hound.png', 'spitter.png', 'bomber.png', 'leaper.png'],
+  items: ['food.png']
+};
+
+let LoadedImages = {};
+let ErrorImageObj = new Image();
+ErrorImageObj.src = 'assets/images/systems/error.png';
+
+function preloadAllImages(){
+  let folders = Object.keys(Images);
+  for(let i = 0; i < folders.length; i++){
+    let folder = folders[i];
+    let files = Images[folder];
+    for(let j = 0; j < files.length; j++){
+      let file = files[j];
+      let key = folder + '/' + file;
+      let img = new Image();
+      img.onerror = function(){
+        LoadedImages[key] = ErrorImageObj;
+      };
+      img.src = 'assets/images/' + key;
+      LoadedImages[key] = img;
+    }
+  }
+}
+
+let WEAPON_DATA = {
+  fist: {
+    id: 'fist', name: '拳', type: 'melee', damage: 12, rate: 0.35, range: 36, spread: 0.45,
+    pellets: 1, speed: 0, magSize: 0, reloadTime: 0, color: '#cfe9ff', knockback: 45, isClose: true
+  },
+  knife: {
+    id: 'knife', name: 'ナイフ', type: 'melee', damage: 28, rate: 0.25, range: 46, spread: 0.5,
+    pellets: 1, speed: 0, magSize: 0, reloadTime: 0, color: '#e2e8f0', knockback: 60, isClose: true
+  },
+  hammer: {
+    id: 'hammer', name: 'デカハンマー', type: 'melee', damage: 62, rate: 0.95, range: 58, spread: 0.85,
+    pellets: 1, speed: 0, magSize: 0, reloadTime: 0, color: '#f59e0b', knockback: 240, isClose: true
+  },
+  dual: {
+    id: 'dual', name: '二丁拳銃', type: 'gun', damage: 16, rate: 0.16, range: 340, spread: 0.14,
+    pellets: 1, speed: 680, magSize: 16, reloadTime: 1.4, color: '#38bdf8', knockback: 35, isClose: false
+  },
+  smg: {
+    id: 'smg', name: 'SMG', type: 'gun', damage: 13, rate: 0.09, range: 310, spread: 0.22,
+    pellets: 1, speed: 660, magSize: 35, reloadTime: 1.8, color: '#a78bfa', knockback: 25, isClose: false
+  },
+  scar: {
+    id: 'scar', name: 'SCAR-H', type: 'gun', damage: 26, rate: 0.18, range: 460, spread: 0.06,
+    pellets: 1, speed: 820, magSize: 25, reloadTime: 2.1, color: '#fbbf24', knockback: 55, isClose: false
+  },
+  sg: {
+    id: 'sg', name: 'ショットガン', type: 'gun', damage: 15, rate: 0.75, range: 210, spread: 0.38,
+    pellets: 6, speed: 620, magSize: 5, reloadTime: 2.4, color: '#fb7185', knockback: 130, isClose: true
+  }
+};
+
+let DROP_WEAPON_KEYS = ['knife', 'hammer', 'dual', 'smg', 'scar', 'sg'];
+
+let MONSTER_TYPES = [
+  { id: 'hound', name: '狂犬ハウンド', ai: 'melee', hp: 65, speed: 128, damage: 16, radius: 13, color: '#f97316', range: 28, rate: 0.8 },
+  { id: 'spitter', name: '酸液スピッター', ai: 'ranged', hp: 55, speed: 78, damage: 14, radius: 14, color: '#84cc16', range: 290, rate: 1.5 },
+  { id: 'bomber', name: '自爆ボマー', ai: 'bomber', hp: 45, speed: 138, damage: 58, radius: 14, color: '#ef4444', range: 44, rate: 0.5 },
+  { id: 'leaper', name: '跳躍リーパー', ai: 'leaper', hp: 75, speed: 105, damage: 24, radius: 15, color: '#c084fc', range: 170, rate: 1.8 }
+];
+
+let PERSONAS = [
+  { id: 'egoist', label: 'エゴイスト', color: '#f43f5e' },
+  { id: 'peasant', label: '百姓', color: '#eab308' },
+  { id: 'coward', label: '姑息', color: '#a855f7' },
+  { id: 'assassin', label: 'アサシン', color: '#14b8a6' },
+  { id: 'wrecker', label: 'レッカー車', color: '#f97316' },
+  { id: 'normal', label: '一般人A', color: '#60a5fa' }
+];
+
+let ENEMY_NAMES = [
+  '被験体02', '被験体03', '被験体04', '被験体05', '被験体06',
+  '被験体07', '被験体08', '被験体09', '被験体10'
+];
+
+// ============================================================================
+// ゲーム定数・状態変数
+// ============================================================================
+
+let WORLD_SIZE = 1800;
+let TILE_SIZE = 60;
+let GRID_COUNT = 30;
+let PLAYER_RADIUS = 13;
+let VISION_ANGLE = Math.PI*0.62;
+let VISION_DIST = 340;
+
+let canvas = document.getElementById('gameCanvas');
+let ctx = canvas.getContext('2d');
+let wIconCanvas = document.getElementById('weaponIconCanvas');
+let wIconCtx = wIconCanvas.getContext('2d');
+let fIconCanvas = document.getElementById('foodIconCanvas');
+let fIconCtx = fIconCanvas.getContext('2d');
+
+let gameState = 'title';
+let lastTime = 0;
+let gameTime = 0;
+
+let grid = [];
+let rooms = [];
+let walls = [];
+let doors = [];
+let participants = [];
+let monsters = [];
+let spawnWarnings = [];
+let lootItems = [];
+let bullets = [];
+let slashEffects = [];
+let particles = [];
+
+let player = null;
+let camera = { x: 900, y: 900 };
+
+let zone = {
+  x: 900, y: 900,
+  targetX: 900, targetY: 900,
+  radius: 1300,
+  targetRadius: 120,
+  shrinkDelay: 25,
+  damageTimer: 0
+};
+
+let weaponDropTimer = 0;
+let monsterSpawnTimer = 0;
+let observerLogTimer = 0;
+
+// 入力状態
+let keys = {};
+let mouse = { x: 196, y: 300, down: false, active: false };
+let touchMove = { active: false, id: -1, startX: 0, startY: 0, curX: 0, curY: 0, dx: 0, dy: 0 };
+let touchAim = { active: false, id: -1, startX: 0, startY: 0 };
+let fireButtonHeld = false;
+let healButtonHeld = false;
+
+// ============================================================================
+// ユーティリティ関数
+// ============================================================================
+
+function randRange(min, max){
+  return min + Math.random()*(max - min);
+}
+
+function randInt(min, max){
+  return Math.floor(min + Math.random()*(max - min + 1));
+}
+
+function dist(x1, y1, x2, y2){
+  let dx = x2 - x1;
+  let dy = y2 - y1;
+  return Math.sqrt(dx*dx + dy*dy);
+}
+
+function normalizeAngle(a){
+  while(a > Math.PI) a -= Math.PI*2;
+  while(a < -Math.PI) a += Math.PI*2;
+  return a;
+}
+
+function angleDiff(a, b){
+  return Math.abs(normalizeAngle(a - b));
+}
+
+function setObserverLog(msg){
+  let el = document.getElementById('observer-log');
+  if(el) el.textContent = '黒瀬望愛：「' + msg + '」';
+  observerLogTimer = 6;
+}
+
+// ============================================================================
+// マップ自動生成（部屋・廊下・ドア・壁）
+// ============================================================================
+
+function generateMap(){
+  grid = [];
+  rooms = [];
+  walls = [];
+  doors = [];
+
+  for(let y = 0; y < GRID_COUNT; y++){
+    let row = [];
+    for(let x = 0; x < GRID_COUNT; x++){
+      row.push(1);
+    }
+    grid.push(row);
+  }
+
+  // 複数の部屋を生成
+  let attempts = 0;
+  while(rooms.length < 13 && attempts < 160){
+    attempts++;
+    let rw = randInt(3, 5);
+    let rh = randInt(3, 5);
+    let rx = randInt(2, GRID_COUNT - rw - 2);
+    let ry = randInt(2, GRID_COUNT - rh - 2);
+
+    let overlap = false;
+    for(let i = 0; i < rooms.length; i++){
+      let r = rooms[i];
+      if(rx - 1 < r.x + r.w && rx + rw + 1 > r.x && ry - 1 < r.y + r.h && ry + rh + 1 > r.y){
+        overlap = true;
+      }
+    }
+
+    if(!overlap){
+      let roomObj = {
+        x: rx, y: ry, w: rw, h: rh,
+        cx: Math.floor(rx + rw/2),
+        cy: Math.floor(ry + rh/2)
+      };
+      rooms.push(roomObj);
+      for(let yy = ry; yy < ry + rh; yy++){
+        for(let xx = rx; xx < rx + rw; xx++){
+          grid[yy][xx] = 0;
+        }
+      }
+    }
+  }
+
+  // 部屋同士を廊下で接続
+  for(let i = 1; i < rooms.length; i++){
+    let prev = rooms[i - 1];
+    let curr = rooms[i];
+    let x1 = prev.cx;
+    let y1 = prev.cy;
+    let x2 = curr.cx;
+    let y2 = curr.cy;
+
+    if(Math.random() < 0.5){
+      carveHCorridor(x1, x2, y1);
+      carveVCorridor(y1, y2, x2);
+    }
+    if(Math.random() >= 0.5){
+      carveVCorridor(y1, y2, x1);
+      carveHCorridor(x1, x2, y2);
+    }
+  }
+
+  // 追加のループ廊下で回遊性を向上
+  if(rooms.length > 4){
+    let rA = rooms[0];
+    let rB = rooms[rooms.length - 1];
+    carveHCorridor(rA.cx, rB.cx, rA.cy);
+    carveVCorridor(rA.cy, rB.cy, rB.cx);
+  }
+
+  // 部屋の入り口（幅1マスの境界）にドアを生成
+  for(let i = 0; i < rooms.length; i++){
+    let r = rooms[i];
+    // 上辺と下辺の外周チェック
+    for(let xx = r.x; xx < r.x + r.w; xx++){
+      tryPlaceDoor(xx, r.y - 1, true);
+      tryPlaceDoor(xx, r.y + r.h, true);
+    }
+    // 左辺と右辺の外周チェック
+    for(let yy = r.y; yy < r.y + r.h; yy++){
+      tryPlaceDoor(r.x - 1, yy, false);
+      tryPlaceDoor(r.x + r.w, yy, false);
+    }
+  }
+
+  // 壁矩形リストを構築
+  for(let y = 0; y < GRID_COUNT; y++){
+    for(let x = 0; x < GRID_COUNT; x++){
+      if(grid[y][x] == 1){
+        walls.push({
+          x: x*TILE_SIZE,
+          y: y*TILE_SIZE,
+          w: TILE_SIZE,
+          h: TILE_SIZE
+        });
+      }
+    }
+  }
+}
+
+function carveHCorridor(x1, x2, y){
+  let start = Math.min(x1, x2);
+  let end = Math.max(x1, x2);
+  for(let x = start; x <= end; x++){
+    if(y > 0 && y < GRID_COUNT - 1) grid[y][x] = 0;
+  }
+}
+
+function carveVCorridor(y1, y2, x){
+  let start = Math.min(y1, y2);
+  let end = Math.max(y1, y2);
+  for(let y = start; y <= end; y++){
+    if(x > 0 && x < GRID_COUNT - 1) grid[y][x] = 0;
+  }
+}
+
+function tryPlaceDoor(gx, gy, horizontal){
+  if(gx <= 1 || gx >= GRID_COUNT - 2 || gy <= 1 || gy >= GRID_COUNT - 2) return;
+  if(grid[gy][gx] != 0) return;
+
+  // 既に近くにドアがあれば置かない
+  for(let i = 0; i < doors.length; i++){
+    if(Math.abs(doors[i].gx - gx) + Math.abs(doors[i].gy - gy) <= 2) return;
+  }
+
+  if(horizontal){
+    if(grid[gy][gx - 1] == 1 && grid[gy][gx + 1] == 1){
+      doors.push({
+        gx: gx, gy: gy,
+        x: gx*TILE_SIZE,
+        y: gy*TILE_SIZE + TILE_SIZE*0.38,
+        w: TILE_SIZE,
+        h: TILE_SIZE*0.24,
+        open: Math.random() < 0.35,
+        horizontal: true
+      });
+    }
+  }
+  if(!horizontal){
+    if(grid[gy - 1][gx] == 1 && grid[gy + 1][gx] == 1){
+      doors.push({
+        gx: gx, gy: gy,
+        x: gx*TILE_SIZE + TILE_SIZE*0.38,
+        y: gy*TILE_SIZE,
+        w: TILE_SIZE*0.24,
+        h: TILE_SIZE,
+        open: Math.random() < 0.35,
+        horizontal: false
+      });
+    }
+  }
+}
+
+function getRandomFloorPos(minDistFromOthers){
+  for(let t = 0; t < 200; t++){
+    let r = rooms[randInt(0, rooms.length - 1)];
+    let px = (r.x + 0.5 + Math.random()*(r.w - 1))*TILE_SIZE;
+    let py = (r.y + 0.5 + Math.random()*(r.h - 1))*TILE_SIZE;
+
+    let ok = true;
+    if(minDistFromOthers > 0){
+      for(let i = 0; i < participants.length; i++){
+        let p = participants[i];
+        if(p.alive && dist(px, py, p.x, p.y) < minDistFromOthers) ok = false;
+      }
+    }
+    if(ok) return { x: px, y: py };
+  }
+  let fallback = rooms[0];
+  return { x: (fallback.cx + 0.5)*TILE_SIZE, y: (fallback.cy + 0.5)*TILE_SIZE };
+}
+
+// ============================================================================
+// 衝突判定・視線遮蔽（レイキャスティング）
+// ============================================================================
+
+function circleRectCollide(cx, cy, cr, rx, ry, rw, rh){
+  let closestX = Math.max(rx, Math.min(cx, rx + rw));
+  let closestY = Math.max(ry, Math.min(cy, ry + rh));
+  let dx = cx - closestX;
+  let dy = cy - closestY;
+  return (dx*dx + dy*dy) < (cr*cr);
+}
+
+function resolveEntityCollisions(entity, ignoreWalls){
+  if(ignoreWalls){
+    entity.x = Math.max(20, Math.min(WORLD_SIZE - 20, entity.x));
+    entity.y = Math.max(20, Math.min(WORLD_SIZE - 20, entity.y));
+    return;
+  }
+
+  let gx = Math.floor(entity.x/TILE_SIZE);
+  let gy = Math.floor(entity.y/TILE_SIZE);
+
+  for(let yy = gy - 2; yy <= gy + 2; yy++){
+    for(let xx = gx - 2; xx <= gx + 2; xx++){
+      if(yy >= 0 && yy < GRID_COUNT && xx >= 0 && xx < GRID_COUNT){
+        if(grid[yy][xx] == 1){
+          pushOutCircleRect(entity, xx*TILE_SIZE, yy*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        }
+      }
+    }
+  }
+
+  for(let i = 0; i < doors.length; i++){
+    let d = doors[i];
+    if(!d.open){
+      pushOutCircleRect(entity, d.x, d.y, d.w, d.h);
+    }
+  }
+}
+
+function pushOutCircleRect(c, rx, ry, rw, rh){
+  let closestX = Math.max(rx, Math.min(c.x, rx + rw));
+  let closestY = Math.max(ry, Math.min(c.y, ry + rh));
+  let dx = c.x - closestX;
+  let dy = c.y - closestY;
+  let d2 = dx*dx + dy*dy;
+
+  if(d2 < c.radius*c.radius){
+    let d = Math.sqrt(d2);
+    if(d == 0){
+      c.x += c.radius;
+      return;
+    }
+    let overlap = c.radius - d;
+    c.x += (dx/d)*overlap;
+    c.y += (dy/d)*overlap;
+  }
+}
+
+function pointBlocked(x, y){
+  let gx = Math.floor(x/TILE_SIZE);
+  let gy = Math.floor(y/TILE_SIZE);
+  if(gx < 0 || gx >= GRID_COUNT || gy < 0 || gy >= GRID_COUNT) return true;
+  if(grid[gy][gx] == 1) return true;
+
+  for(let i = 0; i < doors.length; i++){
+    let d = doors[i];
+    if(!d.open){
+      if(x >= d.x && x <= d.x + d.w && y >= d.y && y <= d.y + d.h) return true;
+    }
+  }
+  return false;
+}
+
+function hasLineOfSight(x1, y1, x2, y2){
+  let d = dist(x1, y1, x2, y2);
+  let steps = Math.ceil(d/12);
+  if(steps <= 1) return true;
+  let dx = (x2 - x1)/steps;
+  let dy = (y2 - y1)/steps;
+  for(let i = 1; i < steps; i++){
+    if(pointBlocked(x1 + dx*i, y1 + dy*i)) return false;
+  }
+  return true;
+}
+
+function isInVisionCone(viewer, tx, ty, customDist, customAngle){
+  let maxD = customDist ? customDist : VISION_DIST;
+  let maxA = customAngle ? customAngle : VISION_ANGLE*0.5;
+  let d = dist(viewer.x, viewer.y, tx, ty);
+  if(d > maxD) return false;
+  if(d < 22) return hasLineOfSight(viewer.x, viewer.y, tx, ty);
+
+  let angToTarget = Math.atan2(ty - viewer.y, tx - viewer.x);
+  if(angleDiff(viewer.angle, angToTarget) > maxA) return false;
+  return hasLineOfSight(viewer.x, viewer.y, tx, ty);
+}
+
+function castRay(ox, oy, angle, maxDist){
+  let step = 8;
+  let cos = Math.cos(angle);
+  let sin = Math.sin(angle);
+  for(let d = 0; d <= maxDist; d += step){
+    let px = ox + cos*d;
+    let py = oy + sin*d;
+    if(pointBlocked(px, py)){
+      // 二分探索で壁面との正確な交点を取得
+      let lo = Math.max(0, d - step);
+      let hi = d;
+      for(let k = 0; k < 4; k++){
+        let mid = (lo + hi)*0.5;
+        if(pointBlocked(ox + cos*mid, oy + sin*mid)) hi = mid;
+        if(!pointBlocked(ox + cos*mid, oy + sin*mid)) lo = mid;
+      }
+      return { x: ox + cos*lo, y: oy + sin*lo };
+    }
+  }
+  return { x: ox + cos*maxDist, y: oy + sin*maxDist };
+}
+
+// ============================================================================
+// 参加者・武器・モンスター生成
+// ============================================================================
+
+function createParticipant(id, name, isPlayer, persona, pos){
+  return {
+    id: id,
+    name: name,
+    isPlayer: isPlayer,
+    persona: persona,
+    x: pos.x,
+    y: pos.y,
+    vx: 0,
+    vy: 0,
+    radius: PLAYER_RADIUS,
+    angle: randRange(-Math.PI, Math.PI),
+    hp: 100,
+    maxHp: 100,
+    speed: 145,
+    alive: true,
+    weapon: 'fist',
+    ammo: 0,
+    reloading: false,
+    reloadTimer: 0,
+    fireCooldown: 0,
+    lastShotTime: -99,
+    food: 0,
+    healing: false,
+    healTimer: 0,
+    kills: 0,
+    lastDamagedTime: -99,
+    // AI用状態メモリ
+    aiState: 'explore',
+    aiTarget: null,
+    aiLastSeenX: 0,
+    aiLastSeenY: 0,
+    aiLostTimer: 0,
+    aiWanderX: pos.x,
+    aiWanderY: pos.y,
+    aiWanderTimer: 0,
+    aiCampTimer: 0,
+    aiGlanceTimer: 0,
+    aiSweepPhase: randRange(0, 6.28),
+    aiDoorCooldown: 0
+  };
+}
+
+function initGame(){
+  generateMap();
+  participants = [];
+  monsters = [];
+  spawnWarnings = [];
+  lootItems = [];
+  bullets = [];
+  slashEffects = [];
+  particles = [];
+
+  gameTime = 0;
+  weaponDropTimer = 1.5;
+  monsterSpawnTimer = 3.0;
+
+  // 安全地帯初期化
+  let centerRoom = rooms[randInt(0, rooms.length - 1)];
+  zone.x = WORLD_SIZE*0.5;
+  zone.y = WORLD_SIZE*0.5;
+  zone.targetX = (centerRoom.cx + 0.5)*TILE_SIZE;
+  zone.targetY = (centerRoom.cy + 0.5)*TILE_SIZE;
+  zone.radius = 1280;
+  zone.targetRadius = 90;
+  zone.shrinkDelay = 20;
+  zone.damageTimer = 0;
+
+  // プレイヤー生成
+  let pPos = getRandomFloorPos(180);
+  player = createParticipant('player', 'あなた', true, null, pPos);
+  participants.push(player);
+  camera.x = player.x;
+  camera.y = player.y;
+
+  // エネミー9人生成（互いに離れた位置＆性格ランダム割り当て）
+  for(let i = 0; i < 9; i++){
+    let ePos = getRandomFloorPos(210);
+    let persona = PERSONAS[randInt(0, PERSONAS.length - 1)];
+    let enemy = createParticipant('cpu_' + i, ENEMY_NAMES[i], false, persona, ePos);
+    participants.push(enemy);
+  }
+
+  // 初期ドロップ武器をマップ各地に少し配置
+  for(let i = 0; i < 10; i++){
+    spawnRandomWeapon();
+  }
+
+  // 初期モンスター予兆を3体分配置
+  for(let i = 0; i < 3; i++){
+    scheduleMonsterSpawn();
+  }
+
+  gameState = 'playing';
+  document.getElementById('screen-title').classList.add('hidden');
+  document.getElementById('screen-result').classList.add('hidden');
+  document.getElementById('hud-top').classList.remove('hidden');
+  document.getElementById('hud-bottom').classList.remove('hidden');
+  document.getElementById('spectator-banner').classList.add('hidden');
+
+  setObserverLog('観測を開始いたします。武器を拾い、生き残ってくださいね。');
+  updateHUD();
+}
+
+function spawnRandomWeapon(){
+  if(lootItems.length > 32) return;
+  let pos = getRandomFloorPos(0);
+  let wKey = DROP_WEAPON_KEYS[randInt(0, DROP_WEAPON_KEYS.length - 1)];
+  lootItems.push({
+    kind: 'weapon',
+    weaponId: wKey,
+    x: pos.x + randRange(-14, 14),
+    y: pos.y + randRange(-14, 14),
+    radius: 12
+  });
+}
+
+function scheduleMonsterSpawn(){
+  if(monsters.length + spawnWarnings.length >= 14) return;
+  // マップ端の部屋、または中央付近の部屋を選択（参加者の目の前は避ける）
+  let candidateRooms = [];
+  for(let i = 0; i < rooms.length; i++){
+    let r = rooms[i];
+    let rx = (r.cx + 0.5)*TILE_SIZE;
+    let ry = (r.cy + 0.5)*TILE_SIZE;
+    let tooClose = false;
+    for(let j = 0; j < participants.length; j++){
+      let p = participants[j];
+      if(p.alive && dist(rx, ry, p.x, p.y) < 230) tooClose = true;
+    }
+    if(!tooClose) candidateRooms.push(r);
+  }
+
+  if(candidateRooms.length == 0) return;
+  let chosen = candidateRooms[randInt(0, candidateRooms.length - 1)];
+  let sx = (chosen.cx + 0.5)*TILE_SIZE + randRange(-20, 20);
+  let sy = (chosen.cy + 0.5)*TILE_SIZE + randRange(-20, 20);
+  let mType = MONSTER_TYPES[randInt(0, MONSTER_TYPES.length - 1)];
+
+  spawnWarnings.push({
+    x: sx,
+    y: sy,
+    timer: 1.6,
+    mType: mType
+  });
+}
+
+function spawnMonsterFromWarning(w){
+  let t = w.mType;
+  monsters.push({
+    id: 'mon_' + Math.random(),
+    typeId: t.id,
+    name: t.name,
+    ai: t.ai,
+    x: w.x,
+    y: w.y,
+    vx: 0,
+    vy: 0,
+    hp: t.hp,
+    maxHp: t.hp,
+    speed: t.speed,
+    damage: t.damage,
+    radius: t.radius,
+    color: t.color,
+    range: t.range,
+    rate: t.rate,
+    cooldown: 0.6,
+    angle: randRange(-Math.PI, Math.PI),
+    leapTimer: 0,
+    fuseTimer: -1
+  });
+}
+
+// ============================================================================
+// 戦闘・武器発射・リロード・回復処理
+// ============================================================================
+
+function equipWeapon(p, weaponId){
+  let w = WEAPON_DATA[weaponId];
+  p.weapon = weaponId;
+  p.ammo = w.magSize;
+  p.reloading = false;
+  p.reloadTimer = 0;
+  p.fireCooldown = 0.15;
+}
+
+function startReload(p){
+  let w = WEAPON_DATA[p.weapon];
+  if(w.magSize <= 0) return;
+  if(p.reloading) return;
+  if(p.ammo >= w.magSize) return;
+  p.reloading = true;
+  p.reloadTimer = w.reloadTime;
+}
+
+function tryAttack(p){
+  if(!p.alive) return;
+  if(p.healing) return;
+  if(p.reloading) return;
+  if(p.fireCooldown > 0) return;
+
+  let w = WEAPON_DATA[p.weapon];
+
+  if(w.magSize > 0 && p.ammo <= 0){
+    startReload(p);
+    return;
+  }
+
+  p.fireCooldown = w.rate;
+  p.lastShotTime = gameTime;
+
+  if(w.magSize > 0){
+    p.ammo--;
+    if(p.ammo <= 0){
+      startReload(p);
+    }
+  }
+
+  if(w.type == 'melee'){
+    slashEffects.push({
+      x: p.x,
+      y: p.y,
+      angle: p.angle,
+      range: w.range,
+      spread: w.spread,
+      color: w.color,
+      timer: 0.16,
+      maxTimer: 0.16
+    });
+
+    // 近接範囲内の参加者へダメージ
+    for(let i = 0; i < participants.length; i++){
+      let target = participants[i];
+      if(target.id != p.id && target.alive){
+        let d = dist(p.x, p.y, target.x, target.y);
+        if(d <= w.range + target.radius){
+          let ang = Math.atan2(target.y - p.y, target.x - p.x);
+          if(angleDiff(p.angle, ang) <= w.spread + 0.35){
+            if(hasLineOfSight(p.x, p.y, target.x, target.y)){
+              applyDamageToParticipant(target, w.damage, p, p.angle, w.knockback);
+            }
+          }
+        }
+      }
+    }
+
+    // 近接範囲内のモンスターへダメージ
+    for(let i = 0; i < monsters.length; i++){
+      let m = monsters[i];
+      if(m.hp > 0){
+        let d = dist(p.x, p.y, m.x, m.y);
+        if(d <= w.range + m.radius){
+          let ang = Math.atan2(m.y - p.y, m.x - p.x);
+          if(angleDiff(p.angle, ang) <= w.spread + 0.35){
+            if(hasLineOfSight(p.x, p.y, m.x, m.y)){
+              applyDamageToMonster(m, w.damage, p, p.angle, w.knockback);
+            }
+          }
+        }
+      }
+    }
+    return;
+  }
+
+  // 銃器発射
+  for(let i = 0; i < w.pellets; i++){
+    let shotAngle = p.angle + randRange(-w.spread, w.spread);
+    bullets.push({
+      ownerId: p.id,
+      ownerIsMonster: false,
+      x: p.x + Math.cos(p.angle)*(p.radius + 6),
+      y: p.y + Math.sin(p.angle)*(p.radius + 6),
+      vx: Math.cos(shotAngle)*w.speed,
+      vy: Math.sin(shotAngle)*w.speed,
+      damage: w.damage,
+      rangeLeft: w.range,
+      color: w.color,
+      knockback: w.knockback
+    });
+  }
+}
+
+function startHealing(p){
+  if(!p.alive) return;
+  if(p.healing) return;
+  if(p.food <= 0) return;
+  if(p.hp >= p.maxHp) return;
+  p.healing = true;
+  p.healTimer = 3.0;
+}
+
+function cancelHealing(p){
+  p.healing = false;
+  p.healTimer = 0;
+}
+
+function applyDamageToParticipant(target, dmg, attacker, hitAngle, knockback){
+  if(!target.alive) return;
+  target.hp -= dmg;
+  target.lastDamagedTime = gameTime;
+
+  if(target.healing) cancelHealing(target);
+
+  if(knockback > 0){
+    target.vx += Math.cos(hitAngle)*knockback;
+    target.vy += Math.sin(hitAngle)*knockback;
+  }
+
+  spawnHitParticles(target.x, target.y, '#f43f5e', 5);
+
+  if(target.hp <= 0){
+    target.hp = 0;
+    target.alive = false;
+    spawnHitParticles(target.x, target.y, '#ef4444', 16);
+
+    // 死亡時所持武器・食料をドロップ
+    if(target.weapon != 'fist'){
+      lootItems.push({ kind: 'weapon', weaponId: target.weapon, x: target.x, y: target.y, radius: 12 });
+    }
+    for(let f = 0; f < target.food; f++){
+      lootItems.push({
+        kind: 'food',
+        x: target.x + randRange(-16, 16),
+        y: target.y + randRange(-16, 16),
+        radius: 10
+      });
+    }
+
+    if(attacker && !attacker.isMonster){
+      attacker.kills++;
+    }
+
+    let aliveList = getAliveParticipants();
+    if(target.isPlayer){
+      setObserverLog('あなたは脱落いたしました。観戦モードへ移行します。');
+      document.getElementById('spectator-banner').classList.remove('hidden');
+      document.getElementById('interact-wrap').classList.add('hidden');
+    }
+    if(!target.isPlayer){
+      let killerName = attacker ? attacker.name : '安全領域';
+      setObserverLog(target.name + ' が ' + killerName + ' により排除されました。（残り' + aliveList.length + '名）');
+    }
+
+    checkMatchEnd();
+  }
+}
+
+function applyDamageToMonster(m, dmg, attacker, hitAngle, knockback){
+  if(m.hp <= 0) return;
+  m.hp -= dmg;
+  if(knockback > 0){
+    m.vx += Math.cos(hitAngle)*knockback;
+    m.vy += Math.sin(hitAngle)*knockback;
+  }
+  spawnHitParticles(m.x, m.y, m.color, 4);
+
+  if(m.hp <= 0){
+    m.hp = 0;
+    // 食べ物ドロップ
+    lootItems.push({
+      kind: 'food',
+      x: m.x,
+      y: m.y,
+      radius: 10
+    });
+    spawnHitParticles(m.x, m.y, '#34d399', 10);
+  }
+}
+
+function spawnHitParticles(x, y, color, count){
+  for(let i = 0; i < count; i++){
+    let a = randRange(-Math.PI, Math.PI);
+    let spd = randRange(40, 160);
+    particles.push({
+      x: x, y: y,
+      vx: Math.cos(a)*spd,
+      vy: Math.sin(a)*spd,
+      color: color,
+      life: randRange(0.2, 0.45),
+      maxLife: 0.45
+    });
+  }
+}
+
+function getAliveParticipants(){
+  let list = [];
+  for(let i = 0; i < participants.length; i++){
+    if(participants[i].alive) list.push(participants[i]);
+  }
+  return list;
+}
+
+function checkMatchEnd(){
+  if(gameState != 'playing') return;
+  let alive = getAliveParticipants();
+  if(alive.length <= 1){
+    gameState = 'result';
+    let winner = alive.length == 1 ? alive[0] : null;
+    let playerWon = winner && winner.isPlayer;
+
+    let resScreen = document.getElementById('screen-result');
+    let resTitle = document.getElementById('result-title');
+    let resQuote = document.getElementById('result-quote');
+    let resRank = document.getElementById('result-rank');
+    let resKills = document.getElementById('result-kills');
+
+    resScreen.classList.remove('hidden');
+    resKills.textContent = player.kills + ' 体';
+
+    if(playerWon){
+      resTitle.textContent = '第 1 位（観測完了）';
+      resQuote.textContent = '「お見事です。すべての脅威を退け、あなたが最後の1名として生き残りました。素晴らしい記録が採れましたよ。」';
+      resRank.textContent = '1 / 10 位';
+    }
+    if(!playerWon){
+      let wName = winner ? winner.name : '生存者なし';
+      resTitle.textContent = '観測終了';
+      resQuote.textContent = '「今回の勝者は ' + wName + ' となりました。また次の機会に、あなたの生存戦略を拝見させてくださいね。」';
+      resRank.textContent = '観戦終了';
+    }
+  }
+}
+
+// ============================================================================
+// エネミーAI（CPU 9人・6種の行動規範＆視界＋10秒憶測追跡）
+// ============================================================================
+
+function updateEnemyAI(cpu, dt){
+  if(!cpu.alive) return;
+
+  cpu.aiDoorCooldown = Math.max(0, cpu.aiDoorCooldown - dt);
+  let aliveAll = getAliveParticipants();
+  let isFinalPhase = aliveAll.length <= 2;
+
+  // 1. 最優先：安全地帯外または収縮エリア外に出そうな場合は内側へ移動
+  let distToZone = dist(cpu.x, cpu.y, zone.x, zone.y);
+  if(distToZone > zone.radius - 35){
+    if(cpu.healing) cancelHealing(cpu);
+    let angToZone = Math.atan2(zone.y - cpu.y, zone.x - cpu.x);
+    moveCPU(cpu, angToZone, 1.0, dt);
+    cpu.angle = angToZone;
+    return;
+  }
+
+  // 2. 回復判定（HP15%未満は強制回復、非戦闘時かつHP90%未満でも回復）
+  let inCombat = (gameTime - cpu.lastDamagedTime) < 4.5 || cpu.aiTarget != null;
+  let mustHeal = cpu.hp < cpu.maxHp*0.15;
+  let safeHeal = !inCombat && cpu.hp < cpu.maxHp*0.90;
+
+  if(cpu.food > 0 && (mustHeal || safeHeal) && !isFinalPhase){
+    if(!cpu.healing) startHealing(cpu);
+    return;
+  }
+  if(cpu.healing){
+    return;
+  }
+
+  // 3. 視界内の参加者・モンスター・アイテムをスキャン
+  let visibleEnemies = [];
+  for(let i = 0; i < aliveAll.length; i++){
+    let other = aliveAll[i];
+    if(other.id != cpu.id){
+      if(isInVisionCone(cpu, other.x, other.y, VISION_DIST, VISION_ANGLE*0.55)){
+        visibleEnemies.push(other);
+      }
+    }
+  }
+
+  let visibleMonsters = [];
+  for(let i = 0; i < monsters.length; i++){
+    let m = monsters[i];
+    if(m.hp > 0){
+      if(isInVisionCone(cpu, m.x, m.y, VISION_DIST, VISION_ANGLE*0.55)){
+        visibleMonsters.push(m);
+      }
+    }
+  }
+
+  let visibleLoot = [];
+  for(let i = 0; i < lootItems.length; i++){
+    let item = lootItems[i];
+    if(isInVisionCone(cpu, item.x, item.y, VISION_DIST*0.9, VISION_ANGLE*0.6)){
+      visibleLoot.push(item);
+    }
+  }
+
+  // 目の前の落ちているアイテムを自動拾得
+  for(let i = lootItems.length - 1; i >= 0; i--){
+    let item = lootItems[i];
+    if(dist(cpu.x, cpu.y, item.x, item.y) < cpu.radius + item.radius + 12){
+      if(item.kind == 'food'){
+        cpu.food++;
+        lootItems.splice(i, 1);
+      }
+      if(item.kind == 'weapon'){
+        let take = false;
+        if(cpu.weapon == 'fist') take = true;
+        if(cpu.persona.id == 'assassin' && WEAPON_DATA[item.weaponId].isClose) take = true;
+        if(cpu.persona.id != 'assassin' && !WEAPON_DATA[item.weaponId].isClose && WEAPON_DATA[cpu.weapon].isClose) take = true;
+        if(take){
+          if(cpu.weapon != 'fist'){
+            lootItems.push({ kind: 'weapon', weaponId: cpu.weapon, x: cpu.x, y: cpu.y, radius: 12 });
+          }
+          equipWeapon(cpu, item.weaponId);
+          lootItems.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  // 4. 行動規範（6種）によるターゲット決定＆行動分岐
+  let pId = isFinalPhase ? 'egoist' : cpu.persona.id;
+  let desiredMoveAngle = null;
+  let moveSpeedFactor = 0.85;
+  let shouldAttack = false;
+
+  // ターゲットの視認更新と10秒憶測追跡タイマー管理
+  if(cpu.aiTarget && !cpu.aiTarget.alive){
+    cpu.aiTarget = null;
+    cpu.aiLostTimer = 0;
+  }
+
+  // --- 規範1：エゴイスト（とにかくキル・参加者優先で凸る） ---
+  if(pId == 'egoist'){
+    if(visibleEnemies.length > 0){
+      cpu.aiTarget = visibleEnemies[0];
+      cpu.aiLastSeenX = cpu.aiTarget.x;
+      cpu.aiLastSeenY = cpu.aiTarget.y;
+      cpu.aiLostTimer = 0;
+    }
+    if(visibleEnemies.length == 0 && cpu.aiTarget){
+      cpu.aiLostTimer += dt;
+      if(cpu.aiLostTimer > 10.0) cpu.aiTarget = null;
+    }
+
+    if(cpu.aiTarget){
+      let tx = visibleEnemies.length > 0 ? cpu.aiTarget.x : cpu.aiLastSeenX;
+      let ty = visibleEnemies.length > 0 ? cpu.aiTarget.y : cpu.aiLastSeenY;
+      let ang = Math.atan2(ty - cpu.y, tx - cpu.x);
+      cpu.angle = ang;
+      let d = dist(cpu.x, cpu.y, tx, ty);
+      let idealRange = WEAPON_DATA[cpu.weapon].isClose ? 32 : 170;
+      if(d > idealRange) desiredMoveAngle = ang;
+      if(visibleEnemies.length > 0 && d <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+    if(!cpu.aiTarget && visibleMonsters.length > 0){
+      let m = visibleMonsters[0];
+      let ang = Math.atan2(m.y - cpu.y, m.x - cpu.x);
+      cpu.angle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) > WEAPON_DATA[cpu.weapon].range*0.8) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+  }
+
+  // --- 規範2：百姓（食料7以上かつ武器所持までモンスター狩り＆逃避＋振り返り） ---
+  if(pId == 'peasant'){
+    let readyToFight = cpu.food >= 7 && cpu.weapon != 'fist';
+    if(!readyToFight && visibleEnemies.length > 0){
+      let threat = visibleEnemies[0];
+      let awayAng = Math.atan2(cpu.y - threat.y, cpu.x - threat.x);
+      desiredMoveAngle = awayAng;
+      moveSpeedFactor = 1.0;
+      cpu.aiGlanceTimer += dt;
+      if(cpu.aiGlanceTimer > 1.8){
+        // 一瞬後ろを振り返る
+        cpu.angle = Math.atan2(threat.y - cpu.y, threat.x - cpu.x);
+        if(cpu.aiGlanceTimer > 2.15) cpu.aiGlanceTimer = 0;
+      }
+      if(cpu.aiGlanceTimer <= 1.8){
+        cpu.angle = awayAng;
+      }
+    }
+    if(readyToFight && visibleEnemies.length > 0){
+      let target = visibleEnemies[0];
+      let ang = Math.atan2(target.y - cpu.y, target.x - cpu.x);
+      cpu.angle = ang;
+      if(dist(cpu.x, cpu.y, target.x, target.y) > WEAPON_DATA[cpu.weapon].range*0.75) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, target.x, target.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+    if(desiredMoveAngle == null && visibleMonsters.length > 0){
+      let m = visibleMonsters[0];
+      let ang = Math.atan2(m.y - cpu.y, m.x - cpu.x);
+      cpu.angle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) > WEAPON_DATA[cpu.weapon].range*0.8) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+  }
+
+  // --- 規範3：姑息（基本逃避、HP50%未満かモンスターと交戦中の参加者を漁夫る） ---
+  if(pId == 'coward'){
+    let prey = null;
+    for(let i = 0; i < visibleEnemies.length; i++){
+      let e = visibleEnemies[i];
+      let lowHp = e.hp < e.maxHp*0.5;
+      let fightingMonster = false;
+      for(let j = 0; j < monsters.length; j++){
+        if(monsters[j].hp > 0 && dist(e.x, e.y, monsters[j].x, monsters[j].y) < 160) fightingMonster = true;
+      }
+      if(cpu.weapon != 'fist' && (lowHp || fightingMonster)) prey = e;
+    }
+
+    if(prey){
+      let ang = Math.atan2(prey.y - cpu.y, prey.x - cpu.x);
+      cpu.angle = ang;
+      moveSpeedFactor = 1.0;
+      if(dist(cpu.x, cpu.y, prey.x, prey.y) > WEAPON_DATA[cpu.weapon].range*0.7) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, prey.x, prey.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+    if(!prey && visibleEnemies.length > 0){
+      let threat = visibleEnemies[0];
+      let awayAng = Math.atan2(cpu.y - threat.y, cpu.x - threat.x);
+      cpu.angle = awayAng;
+      desiredMoveAngle = awayAng;
+      moveSpeedFactor = 0.98;
+    }
+  }
+
+  // --- 規範4：アサシン（近接好み、ドア裏潜伏、至近距離奇襲、30秒で部屋移動） ---
+  if(pId == 'assassin'){
+    let injuredOrHit = cpu.hp < cpu.maxHp*0.4 || (gameTime - cpu.lastDamagedTime) < 1.5;
+    if(injuredOrHit && visibleEnemies.length > 0){
+      let threat = visibleEnemies[0];
+      let awayAng = Math.atan2(cpu.y - threat.y, cpu.x - threat.x);
+      cpu.angle = Math.atan2(threat.y - cpu.y, threat.x - cpu.x);
+      desiredMoveAngle = awayAng;
+      if(dist(cpu.x, cpu.y, threat.x, threat.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+    if(!injuredOrHit && visibleEnemies.length > 0){
+      let target = visibleEnemies[0];
+      let d = dist(cpu.x, cpu.y, target.x, target.y);
+      if(d < 68){
+        // 至近距離に入った瞬間に奇襲！
+        let ang = Math.atan2(target.y - cpu.y, target.x - cpu.x);
+        cpu.angle = ang;
+        desiredMoveAngle = ang;
+        moveSpeedFactor = 1.05;
+        if(d <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+      }
+      if(d >= 68){
+        // 視界の端ではじっと息を潜める
+        cpu.angle = Math.atan2(target.y - cpu.y, target.x - cpu.x);
+        desiredMoveAngle = null;
+        moveSpeedFactor = 0;
+      }
+    }
+    if(visibleEnemies.length == 0 && cpu.weapon != 'fist'){
+      cpu.aiCampTimer += dt;
+      if(cpu.aiCampTimer < 30.0){
+        // 部屋角やドア付近で待機
+        moveSpeedFactor = 0;
+      }
+      if(cpu.aiCampTimer >= 30.0){
+        cpu.aiCampTimer = 0;
+        let nextRoom = rooms[randInt(0, rooms.length - 1)];
+        cpu.aiWanderX = (nextRoom.cx + 0.5)*TILE_SIZE;
+        cpu.aiWanderY = (nextRoom.cy + 0.5)*TILE_SIZE;
+        cpu.aiWanderTimer = 8.0;
+      }
+    }
+  }
+
+  // --- 規範5：レッカー車（モンスターを狩りつつ、参加者遭遇時はモンスターの元へ誘導し三つ巴） ---
+  if(pId == 'wrecker'){
+    if(visibleEnemies.length > 0){
+      let threat = visibleEnemies[0];
+      // 近くのモンスターがいればその方向へ逃げて合流させる
+      let lureMonster = null;
+      for(let i = 0; i < monsters.length; i++){
+        if(monsters[i].hp > 0 && dist(cpu.x, cpu.y, monsters[i].x, monsters[i].y) < 420){
+          lureMonster = monsters[i];
+        }
+      }
+      if(lureMonster){
+        let angToMon = Math.atan2(lureMonster.y - cpu.y, lureMonster.x - cpu.x);
+        desiredMoveAngle = angToMon;
+        cpu.angle = Math.atan2(threat.y - cpu.y, threat.x - cpu.x);
+        if(dist(cpu.x, cpu.y, lureMonster.x, lureMonster.y) < 120){
+          // 三つ巴の乱戦開始
+          if(dist(cpu.x, cpu.y, threat.x, threat.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+        }
+      }
+      if(!lureMonster){
+        let awayAng = Math.atan2(cpu.y - threat.y, cpu.x - threat.x);
+        desiredMoveAngle = awayAng;
+        cpu.angle = awayAng;
+      }
+    }
+    if(visibleEnemies.length == 0 && visibleMonsters.length > 0){
+      let m = visibleMonsters[0];
+      let ang = Math.atan2(m.y - cpu.y, m.x - cpu.x);
+      cpu.angle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) > WEAPON_DATA[cpu.weapon].range*0.8) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+  }
+
+  // --- 規範6：一般人A（武器＋食料3確保、左右クリアリング、有利なら交戦、HP50%未満で退避） ---
+  if(pId == 'normal'){
+    if(visibleEnemies.length > 0){
+      let foe = visibleEnemies[0];
+      let lowHp = cpu.hp < cpu.maxHp*0.5;
+      let advantageous = !lowHp && cpu.weapon != 'fist' && (foe.weapon == 'fist' || cpu.hp >= foe.hp);
+
+      if(advantageous){
+        let ang = Math.atan2(foe.y - cpu.y, foe.x - cpu.x);
+        cpu.angle = ang;
+        if(dist(cpu.x, cpu.y, foe.x, foe.y) > WEAPON_DATA[cpu.weapon].range*0.75) desiredMoveAngle = ang;
+        if(dist(cpu.x, cpu.y, foe.x, foe.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+      }
+      if(!advantageous){
+        let awayAng = Math.atan2(cpu.y - foe.y, cpu.x - foe.x);
+        cpu.angle = awayAng;
+        desiredMoveAngle = awayAng;
+        moveSpeedFactor = 0.95;
+      }
+    }
+    if(visibleEnemies.length == 0 && visibleMonsters.length > 0 && cpu.food < 3){
+      let m = visibleMonsters[0];
+      let ang = Math.atan2(m.y - cpu.y, m.x - cpu.x);
+      cpu.angle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) > WEAPON_DATA[cpu.weapon].range*0.8) desiredMoveAngle = ang;
+      if(dist(cpu.x, cpu.y, m.x, m.y) <= WEAPON_DATA[cpu.weapon].range) shouldAttack = true;
+    }
+  }
+
+  // 5. 落ちている武器・食料が見えていれば回収に向かう
+  if(desiredMoveAngle == null && visibleLoot.length > 0 && moveSpeedFactor > 0){
+    let targetLoot = visibleLoot[0];
+    let needLoot = targetLoot.kind == 'food' || cpu.weapon == 'fist';
+    if(needLoot){
+      let ang = Math.atan2(targetLoot.y - cpu.y, targetLoot.x - cpu.x);
+      cpu.angle = ang;
+      desiredMoveAngle = ang;
+    }
+  }
+
+  // 6. 上記以外の通常探索移動（一般人Aは左右クリアリング首振り）
+  if(desiredMoveAngle == null && moveSpeedFactor > 0){
+    cpu.aiWanderTimer -= dt;
+    if(cpu.aiWanderTimer <= 0 || dist(cpu.x, cpu.y, cpu.aiWanderX, cpu.aiWanderY) < 35){
+      let r = rooms[randInt(0, rooms.length - 1)];
+      cpu.aiWanderX = (r.x + 0.5 + Math.random()*(r.w - 1))*TILE_SIZE;
+      cpu.aiWanderY = (r.y + 0.5 + Math.random()*(r.h - 1))*TILE_SIZE;
+      cpu.aiWanderTimer = randRange(4.0, 8.0);
+    }
+    let wAng = Math.atan2(cpu.aiWanderY - cpu.y, cpu.aiWanderX - cpu.x);
+    desiredMoveAngle = wAng;
+
+    if(pId == 'normal'){
+      cpu.aiSweepPhase += dt*3.2;
+      cpu.angle = wAng + Math.sin(cpu.aiSweepPhase)*0.55;
+    }
+    if(pId != 'normal'){
+      cpu.angle = wAng;
+    }
+  }
+
+  if(desiredMoveAngle != null && moveSpeedFactor > 0){
+    moveCPU(cpu, desiredMoveAngle, moveSpeedFactor, dt);
+  }
+
+  if(shouldAttack){
+    tryAttack(cpu);
+  }
+}
+
+function moveCPU(cpu, angle, speedFactor, dt){
+  let spd = cpu.speed*speedFactor;
+  cpu.x += Math.cos(angle)*spd*dt;
+  cpu.y += Math.sin(angle)*spd*dt;
+
+  // 進行方向の閉じたドアを自動開閉
+  if(cpu.aiDoorCooldown <= 0){
+    for(let i = 0; i < doors.length; i++){
+      let d = doors[i];
+      if(!d.open){
+        let dcx = d.x + d.w*0.5;
+        let dcy = d.y + d.h*0.5;
+        if(dist(cpu.x, cpu.y, dcx, dcy) < 42){
+          d.open = true;
+          cpu.aiDoorCooldown = 0.8;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// モンスターAI＆スポーン予兆更新
+// ============================================================================
+
+function updateMonsters(dt){
+  // スポーン予兆の更新
+  for(let i = spawnWarnings.length - 1; i >= 0; i--){
+    let w = spawnWarnings[i];
+    w.timer -= dt;
+    if(w.timer <= 0){
+      spawnMonsterFromWarning(w);
+      spawnWarnings.splice(i, 1);
+    }
+  }
+
+  let aliveList = getAliveParticipants();
+
+  for(let i = monsters.length - 1; i >= 0; i--){
+    let m = monsters[i];
+    if(m.hp <= 0){
+      monsters.splice(i, 1);
+      continue;
+    }
+
+    m.cooldown = Math.max(0, m.cooldown - dt);
+
+    // 速度減衰適用
+    m.x += m.vx*dt;
+    m.y += m.vy*dt;
+    m.vx *= 0.85;
+    m.vy *= 0.85;
+
+    // 最も近い視認可能な参加者を探索
+    let nearestTarget = null;
+    let nearestDist = 310;
+    for(let j = 0; j < aliveList.length; j++){
+      let p = aliveList[j];
+      let d = dist(m.x, m.y, p.x, p.y);
+      if(d < nearestDist && hasLineOfSight(m.x, m.y, p.x, p.y)){
+        nearestDist = d;
+        nearestTarget = p;
+      }
+    }
+
+    if(nearestTarget){
+      let ang = Math.atan2(nearestTarget.y - m.y, nearestTarget.x - m.x);
+      m.angle = ang;
+
+      // 1. 近距離突撃型（ハウンド）
+      if(m.ai == 'melee'){
+        if(nearestDist > m.range){
+          m.x += Math.cos(ang)*m.speed*dt;
+          m.y += Math.sin(ang)*m.speed*dt;
+        }
+        if(nearestDist <= m.range && m.cooldown <= 0){
+          m.cooldown = m.rate;
+          applyDamageToParticipant(nearestTarget, m.damage, { name: m.name, isMonster: true }, ang, 80);
+        }
+      }
+
+      // 2. 遠距離射撃型（スピッター）
+      if(m.ai == 'ranged'){
+        if(nearestDist > m.range*0.75){
+          m.x += Math.cos(ang)*m.speed*dt;
+          m.y += Math.sin(ang)*m.speed*dt;
+        }
+        if(nearestDist <= m.range && m.cooldown <= 0){
+          m.cooldown = m.rate;
+          bullets.push({
+            ownerId: m.id,
+            ownerName: m.name,
+            ownerIsMonster: true,
+            x: m.x + Math.cos(ang)*(m.radius + 5),
+            y: m.y + Math.sin(ang)*(m.radius + 5),
+            vx: Math.cos(ang)*360,
+            vy: Math.sin(ang)*360,
+            damage: m.damage,
+            rangeLeft: m.range + 40,
+            color: m.color,
+            knockback: 30
+          });
+        }
+      }
+
+      // 3. 自爆型（ボマー）
+      if(m.ai == 'bomber'){
+        m.x += Math.cos(ang)*m.speed*dt;
+        m.y += Math.sin(ang)*m.speed*dt;
+        if(nearestDist <= m.range && m.fuseTimer < 0){
+          m.fuseTimer = 0.55;
+        }
+      }
+
+      // 4. 飛び込み近距離型（リーパー）
+      if(m.ai == 'leaper'){
+        if(nearestDist > 42){
+          m.x += Math.cos(ang)*m.speed*dt;
+          m.y += Math.sin(ang)*m.speed*dt;
+        }
+        if(nearestDist <= m.range && nearestDist > 55 && m.cooldown <= 0){
+          m.cooldown = m.rate;
+          m.vx += Math.cos(ang)*440;
+          m.vy += Math.sin(ang)*440;
+        }
+        if(nearestDist <= 42 && m.cooldown <= 0.4){
+          m.cooldown = m.rate;
+          applyDamageToParticipant(nearestTarget, m.damage, { name: m.name, isMonster: true }, ang, 120);
+        }
+      }
+    }
+
+    // 自爆カウントダウン処理
+    if(m.fuseTimer >= 0){
+      m.fuseTimer -= dt;
+      if(m.fuseTimer <= 0){
+        spawnHitParticles(m.x, m.y, '#ef4444', 24);
+        slashEffects.push({
+          x: m.x, y: m.y, angle: 0, range: 78, spread: Math.PI,
+          color: '#ef4444', timer: 0.25, maxTimer: 0.25
+        });
+        for(let j = 0; j < aliveList.length; j++){
+          let p = aliveList[j];
+          if(dist(m.x, m.y, p.x, p.y) <= 78){
+            let bangAng = Math.atan2(p.y - m.y, p.x - m.x);
+            applyDamageToParticipant(p, m.damage, { name: m.name, isMonster: true }, bangAng, 180);
+          }
+        }
+        m.hp = 0;
+      }
+    }
+
+    resolveEntityCollisions(m, false);
+  }
+}
+
+// ============================================================================
+// プレイヤー入力・移動・インタラクト更新
+// ============================================================================
+
+function updatePlayer(dt){
+  if(!player) return;
+
+  // 入力ベクトルの計算（キーボード WASD + 左画面タッチスティック）
+  let ix = 0;
+  let iy = 0;
+  if(keys['KeyW'] || keys['ArrowUp']) iy -= 1;
+  if(keys['KeyS'] || keys['ArrowDown']) iy += 1;
+  if(keys['KeyA'] || keys['ArrowLeft']) ix -= 1;
+  if(keys['KeyD'] || keys['ArrowRight']) ix += 1;
+
+  if(touchMove.active){
+    ix += touchMove.dx;
+    iy += touchMove.dy;
+  }
+
+  let len = Math.sqrt(ix*ix + iy*iy);
+  if(len > 1){
+    ix /= len;
+    iy /= len;
+  }
+
+  // 死亡後の観戦モード（半透明・壁透過自由移動・行動不可）
+  if(!player.alive){
+    let specSpeed = 260;
+    player.x += ix*specSpeed*dt;
+    player.y += iy*specSpeed*dt;
+    resolveEntityCollisions(player, true);
+    if(len > 0.05) player.angle = Math.atan2(iy, ix);
+    camera.x = player.x;
+    camera.y = player.y;
+    return;
+  }
+
+  // 回復長押し（Hキーまたは右下ボタン）
+  let wantHeal = keys['KeyH'] || healButtonHeld;
+  if(wantHeal && player.food > 0 && player.hp < player.maxHp){
+    if(!player.healing) startHealing(player);
+  }
+  if(!wantHeal && player.healing){
+    cancelHealing(player);
+  }
+
+  // 回復中は移動不可
+  if(!player.healing){
+    player.x += ix*player.speed*dt;
+    player.y += iy*player.speed*dt;
+  }
+
+  // 照準角度の更新（PCマウス優先、タッチ時は右ドラッグまたは移動方向）
+  if(mouse.active){
+    let worldMouseX = camera.x - canvas.width*0.5 + mouse.x;
+    let worldMouseY = camera.y - canvas.height*0.5 + mouse.y;
+    player.angle = Math.atan2(worldMouseY - player.y, worldMouseX - player.x);
+  }
+  if(!mouse.active && !touchAim.active && len > 0.15){
+    player.angle = Math.atan2(iy, ix);
+  }
+
+  // 攻撃入力（左クリックまたは左下武器アイコン押下）
+  if(mouse.down || fireButtonHeld){
+    tryAttack(player);
+  }
+
+  // 近くのドア・武器のインタラクトUI表示判定
+  let nearInteract = findNearestInteractable(player);
+  let wrap = document.getElementById('interact-wrap');
+  let label = document.getElementById('interact-label');
+  if(nearInteract){
+    wrap.classList.remove('hidden');
+    if(nearInteract.type == 'weapon'){
+      label.textContent = WEAPON_DATA[nearInteract.item.weaponId].name + ' を拾う [E]';
+    }
+    if(nearInteract.type == 'door'){
+      label.textContent = nearInteract.door.open ? 'ドアを閉める [E]' : 'ドアを開ける [E]';
+    }
+  }
+  if(!nearInteract){
+    wrap.classList.add('hidden');
+  }
+
+  // 近くの「食べ物」は触れるだけで自動回収
+  for(let i = lootItems.length - 1; i >= 0; i--){
+    let item = lootItems[i];
+    if(item.kind == 'food'){
+      if(dist(player.x, player.y, item.x, item.y) <= player.radius + item.radius + 8){
+        player.food++;
+        lootItems.splice(i, 1);
+      }
+    }
+  }
+
+  camera.x = player.x;
+  camera.y = player.y;
+}
+
+function findNearestInteractable(p){
+  if(!p || !p.alive) return null;
+
+  // 近くの武器チェック
+  for(let i = 0; i < lootItems.length; i++){
+    let item = lootItems[i];
+    if(item.kind == 'weapon'){
+      if(dist(p.x, p.y, item.x, item.y) <= 42){
+        return { type: 'weapon', item: item, index: i };
+      }
+    }
+  }
+
+  // 近くのドアチェック
+  for(let i = 0; i < doors.length; i++){
+    let d = doors[i];
+    let dcx = d.x + d.w*0.5;
+    let dcy = d.y + d.h*0.5;
+    if(dist(p.x, p.y, dcx, dcy) <= 48){
+      return { type: 'door', door: d };
+    }
+  }
+
+  return null;
+}
+
+function triggerPlayerInteract(){
+  if(!player || !player.alive) return;
+  let target = findNearestInteractable(player);
+  if(!target) return;
+
+  if(target.type == 'weapon'){
+    let picked = target.item.weaponId;
+    lootItems.splice(target.index, 1);
+    if(player.weapon != 'fist'){
+      lootItems.push({
+        kind: 'weapon',
+        weaponId: player.weapon,
+        x: player.x,
+        y: player.y,
+        radius: 12
+      });
+    }
+    equipWeapon(player, picked);
+    updateHUD();
+  }
+
+  if(target.type == 'door'){
+    target.door.open = !target.door.open;
+  }
+}
+
+// ============================================================================
+// メインシミュレーション更新ループ
+// ============================================================================
+
+function updateSimulation(dt){
+  gameTime += dt;
+
+  // 定期武器ドロップ＆モンスタースポーン
+  weaponDropTimer -= dt;
+  if(weaponDropTimer <= 0){
+    spawnRandomWeapon();
+    weaponDropTimer = randRange(4.5, 8.5);
+  }
+
+  monsterSpawnTimer -= dt;
+  if(monsterSpawnTimer <= 0){
+    scheduleMonsterSpawn();
+    monsterSpawnTimer = randRange(5.5, 10.0);
+  }
+
+  // 安全地帯の収縮処理
+  if(zone.shrinkDelay > 0){
+    zone.shrinkDelay -= dt;
+  }
+  if(zone.shrinkDelay <= 0 && zone.radius > zone.targetRadius){
+    zone.radius = Math.max(zone.targetRadius, zone.radius - 11.5*dt);
+    zone.x += (zone.targetX - zone.x)*0.02*dt;
+    zone.y += (zone.targetY - zone.y)*0.02*dt;
+  }
+
+  // 安全地帯外のスリップダメージ（1秒ごとに最大HPの5%）
+  zone.damageTimer += dt;
+  if(zone.damageTimer >= 1.0){
+    zone.damageTimer -= 1.0;
+    for(let i = 0; i < participants.length; i++){
+      let p = participants[i];
+      if(p.alive && dist(p.x, p.y, zone.x, zone.y) > zone.radius){
+        applyDamageToParticipant(p, p.maxHp*0.05, null, 0, 0);
+      }
+    }
+  }
+
+  // プレイヤー更新
+  updatePlayer(dt);
+
+  // 全参加者の物理・リロード・回復進行更新
+  for(let i = 0; i < participants.length; i++){
+    let p = participants[i];
+    if(!p.alive) continue;
+
+    if(!p.isPlayer){
+      updateEnemyAI(p, dt);
+    }
+
+    p.fireCooldown = Math.max(0, p.fireCooldown - dt);
+
+    // ノックバック速度反映
+    p.x += p.vx*dt;
+    p.y += p.vy*dt;
+    p.vx *= 0.84;
+    p.vy *= 0.84;
+
+    resolveEntityCollisions(p, false);
+
+    // 自動リロード（最後に撃ってから5秒経過、または装填中カウントダウン）
+    let w = WEAPON_DATA[p.weapon];
+    if(w.magSize > 0 && !p.reloading && p.ammo < w.magSize){
+      if((gameTime - p.lastShotTime) >= 5.0){
+        startReload(p);
+      }
+    }
+
+    if(p.reloading){
+      p.reloadTimer -= dt;
+      if(p.reloadTimer <= 0){
+        p.reloading = false;
+        p.ammo = w.magSize;
+      }
+    }
+
+    // 回復3秒完了判定
+    if(p.healing){
+      p.healTimer -= dt;
+      if(p.healTimer <= 0){
+        p.healing = false;
+        p.healTimer = 0;
+        if(p.food > 0){
+          p.food--;
+          p.hp = Math.min(p.maxHp, p.hp + p.maxHp*0.30);
+          spawnHitParticles(p.x, p.y, '#34d399', 10);
+        }
+      }
+    }
+  }
+
+  // モンスター更新
+  updateMonsters(dt);
+
+  // 弾丸の移動＆命中判定
+  for(let i = bullets.length - 1; i >= 0; i--){
+    let b = bullets[i];
+    let stepX = b.vx*dt;
+    let stepY = b.vy*dt;
+    let stepD = Math.sqrt(stepX*stepX + stepY*stepY);
+    b.x += stepX;
+    b.y += stepY;
+    b.rangeLeft -= stepD;
+
+    if(b.rangeLeft <= 0 || pointBlocked(b.x, b.y)){
+      spawnHitParticles(b.x, b.y, b.color, 3);
+      bullets.splice(i, 1);
+      continue;
+    }
+
+    let hit = false;
+    // 参加者への命中チェック
+    for(let j = 0; j < participants.length; j++){
+      let target = participants[j];
+      if(target.alive && target.id != b.ownerId){
+        if(dist(b.x, b.y, target.x, target.y) <= target.radius + 4){
+          let ang = Math.atan2(b.vy, b.vx);
+          let attackerObj = findAttackerById(b.ownerId, b.ownerName, b.ownerIsMonster);
+          applyDamageToParticipant(target, b.damage, attackerObj, ang, b.knockback);
+          hit = true;
+          break;
+        }
+      }
+    }
+
+    // モンスターへの命中チェック（プレイヤー・CPUからの弾のみ）
+    if(!hit && !b.ownerIsMonster){
+      for(let j = 0; j < monsters.length; j++){
+        let m = monsters[j];
+        if(m.hp > 0 && dist(b.x, b.y, m.x, m.y) <= m.radius + 4){
+          let ang = Math.atan2(b.vy, b.vx);
+          let attackerObj = findAttackerById(b.ownerId, b.ownerName, false);
+          applyDamageToMonster(m, b.damage, attackerObj, ang, b.knockback);
+          hit = true;
+          break;
+        }
+      }
+    }
+
+    if(hit){
+      bullets.splice(i, 1);
+    }
+  }
+
+  // 斬撃・爆発エフェクト更新
+  for(let i = slashEffects.length - 1; i >= 0; i--){
+    slashEffects[i].timer -= dt;
+    if(slashEffects[i].timer <= 0) slashEffects.splice(i, 1);
+  }
+
+  // パーティクル更新
+  for(let i = particles.length - 1; i >= 0; i--){
+    let pt = particles[i];
+    pt.x += pt.vx*dt;
+    pt.y += pt.vy*dt;
+    pt.life -= dt;
+    if(pt.life <= 0) particles.splice(i, 1);
+  }
+
+  updateHUD();
+}
+
+function findAttackerById(id, fallbackName, isMonster){
+  if(isMonster) return { name: fallbackName, isMonster: true };
+  for(let i = 0; i < participants.length; i++){
+    if(participants[i].id == id) return participants[i];
+  }
+  return null;
+}
+
+// ============================================================================
+// 描画システム（レイキャスティング懐中電灯視界・暗闇視界外マスク）
+// ============================================================================
+
+function render(){
+  let cw = canvas.width;
+  let ch = canvas.height;
+  ctx.clearRect(0, 0, cw, ch);
+
+  if(gameState == 'title' || !player){
+    ctx.fillStyle = '#090b10';
+    ctx.fillRect(0, 0, cw, ch);
+    return;
+  }
+
+  let camLeft = camera.x - cw*0.5;
+  let camTop = camera.y - ch*0.5;
+  let isSpectating = !player.alive;
+
+  ctx.save();
+  ctx.translate(-camLeft, -camTop);
+
+  // 1. 地形（床・グリッド・部屋・壁・ドア）のベース描画（視界外でもうっすら見える構造）
+  drawTerrain(camLeft, camTop, cw, ch);
+
+  // 2. 動的オブジェクトの描画（視界内にあるもの、または観戦モード時はすべて表示）
+  drawDynamicEntities(isSpectating);
+
+  // 3. 安全地帯の境界リング描画
+  drawSafeZone();
+
+  ctx.restore();
+
+  // 4. プレイヤー生存時のみ「懐中電灯コーン視界」と「視界外ダークマスク」を適用
+  if(!isSpectating){
+    drawVisionMask(cw, ch, camLeft, camTop);
+  }
+
+  // 5. プレイヤー自身とUIインジケーター（視界マスクの上にも明確に描画）
+  ctx.save();
+  ctx.translate(-camLeft, -camTop);
+  drawParticipantBody(player, isSpectating);
+  drawTouchJoystick();
+  ctx.restore();
+}
+
+function drawTerrain(camLeft, camTop, cw, ch){
+  // 背景暗部
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(camLeft, camTop, cw, ch);
+
+  let startGx = Math.max(0, Math.floor(camLeft/TILE_SIZE) - 1);
+  let endGx = Math.min(GRID_COUNT - 1, Math.ceil((camLeft + cw)/TILE_SIZE) + 1);
+  let startGy = Math.max(0, Math.floor(camTop/TILE_SIZE) - 1);
+  let endGy = Math.min(GRID_COUNT - 1, Math.ceil((camTop + ch)/TILE_SIZE) + 1);
+
+  for(let gy = startGy; gy <= endGy; gy++){
+    for(let gx = startGx; gx <= endGx; gx++){
+      let tx = gx*TILE_SIZE;
+      let ty = gy*TILE_SIZE;
+      if(grid[gy][gx] == 0){
+        ctx.fillStyle = '#1e2633';
+        ctx.fillRect(tx, ty, TILE_SIZE, TILE_SIZE);
+        ctx.strokeStyle = '#283344';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tx, ty, TILE_SIZE, TILE_SIZE);
+      }
+      if(grid[gy][gx] == 1){
+        ctx.fillStyle = '#090d14';
+        ctx.fillRect(tx, ty, TILE_SIZE, TILE_SIZE);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(tx + 1, ty + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+      }
+    }
+  }
+
+  // ドアの描画（地形要素なので常に構造として視認可能）
+  for(let i = 0; i < doors.length; i++){
+    let d = doors[i];
+    if(d.open){
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+      ctx.setLineDash([4, 4]);
+      ctx.strokeRect(d.x, d.y, d.w, d.h);
+      ctx.setLineDash([]);
+    }
+    if(!d.open){
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(d.x, d.y, d.w, d.h);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(d.x, d.y, d.w, d.h);
+    }
+  }
+}
+
+function drawDynamicEntities(isSpectating){
+  // 落ちているアイテム（武器・食べ物）
+  for(let i = 0; i < lootItems.length; i++){
+    let item = lootItems[i];
+    let canSee = isSpectating || isInVisionCone(player, item.x, item.y, VISION_DIST, VISION_ANGLE*0.54);
+    if(!canSee) continue;
+
+    if(item.kind == 'food'){
+      ctx.fillStyle = '#10b981';
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, 8, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#a7f3d0';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    if(item.kind == 'weapon'){
+      let w = WEAPON_DATA[item.weaponId];
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(item.x, item.y, 12, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = w.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = w.color;
+      ctx.font = 'bold 9px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(w.name.slice(0, 3), item.x, item.y + 3);
+    }
+  }
+
+  // モンスタースポーン予兆マーク
+  for(let i = 0; i < spawnWarnings.length; i++){
+    let sw = spawnWarnings[i];
+    let canSee = isSpectating || isInVisionCone(player, sw.x, sw.y, VISION_DIST, VISION_ANGLE*0.54);
+    if(!canSee) continue;
+
+    let pulse = 1 + Math.sin(gameTime*16)*0.2;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(sw.x, sw.y, 18*pulse, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fca5a5';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('!', sw.x, sw.y + 4);
+  }
+
+  // モンスター本体
+  for(let i = 0; i < monsters.length; i++){
+    let m = monsters[i];
+    if(m.hp <= 0) continue;
+    let canSee = isSpectating || isInVisionCone(player, m.x, m.y, VISION_DIST, VISION_ANGLE*0.54);
+    if(!canSee) continue;
+
+    // 記号的モンスター描画（ひし形＋向き）
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    ctx.rotate(m.angle);
+    ctx.fillStyle = m.color;
+    ctx.beginPath();
+    ctx.moveTo(m.radius + 4, 0);
+    ctx.lineTo(0, m.radius);
+    ctx.lineTo(-m.radius, 0);
+    ctx.lineTo(0, -m.radius);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // 名前とHPバー
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(m.name, m.x, m.y - m.radius - 10);
+
+    let barW = 28;
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(m.x - barW*0.5, m.y - m.radius - 7, barW, 3);
+    ctx.fillStyle = m.color;
+    ctx.fillRect(m.x - barW*0.5, m.y - m.radius - 7, barW*(m.hp/m.maxHp), 3);
+  }
+
+  // 他参加者（エネミー9体）
+  for(let i = 0; i < participants.length; i++){
+    let other = participants[i];
+    if(other.isPlayer || !other.alive) continue;
+    let canSee = isSpectating || isInVisionCone(player, other.x, other.y, VISION_DIST, VISION_ANGLE*0.54);
+    if(!canSee) continue;
+
+    drawParticipantBody(other, false);
+  }
+
+  // 弾丸描画
+  for(let i = 0; i < bullets.length; i++){
+    let b = bullets[i];
+    let canSee = isSpectating || isInVisionCone(player, b.x, b.y, VISION_DIST*1.1, VISION_ANGLE*0.65);
+    if(!canSee) continue;
+
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, 3.5, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // 近接斬撃・爆風エフェクト
+  for(let i = 0; i < slashEffects.length; i++){
+    let s = slashEffects[i];
+    let canSee = isSpectating || isInVisionCone(player, s.x, s.y, VISION_DIST, VISION_ANGLE*0.65);
+    if(!canSee) continue;
+
+    let alpha = s.timer/s.maxTimer;
+    ctx.save();
+    ctx.globalAlpha = alpha*0.65;
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y);
+    ctx.arc(s.x, s.y, s.range, s.angle - s.spread, s.angle + s.spread);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // パーティクル
+  for(let i = 0; i < particles.length; i++){
+    let pt = particles[i];
+    let canSee = isSpectating || isInVisionCone(player, pt.x, pt.y, VISION_DIST, VISION_ANGLE*0.65);
+    if(!canSee) continue;
+
+    ctx.fillStyle = pt.color;
+    ctx.globalAlpha = Math.max(0, pt.life/pt.maxLife);
+    ctx.fillRect(pt.x - 2, pt.y - 2, 4, 4);
+    ctx.globalAlpha = 1.0;
+  }
+}
+
+function drawParticipantBody(p, isGhost){
+  ctx.save();
+  if(isGhost) ctx.globalAlpha = 0.45;
+
+  // 向いている方向を示す懐中電灯コーンの淡いビーム（他参加者用）
+  if(!p.isPlayer){
+    ctx.fillStyle = 'rgba(248, 250, 252, 0.06)';
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.arc(p.x, p.y, 110, p.angle - 0.35, p.angle + 0.35);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // 向きインジケーター（三角形ポインター＋武器ライン）
+  let dirX = p.x + Math.cos(p.angle)*(p.radius + 7);
+  let dirY = p.y + Math.sin(p.angle)*(p.radius + 7);
+  ctx.strokeStyle = p.isPlayer ? '#cfe9ff' : '#f8fafc';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+  ctx.lineTo(dirX, dirY);
+  ctx.stroke();
+
+  // 本体丸形描画（プレイヤーは #cfe9ff）
+  ctx.fillStyle = p.isPlayer ? '#cfe9ff' : (p.persona ? p.persona.color : '#f43f5e');
+  ctx.beginPath();
+  ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 頭上の名前・性格・HPバー表示
+  if(!p.isPlayer){
+    let tag = p.name + ' [' + p.persona.label + ']';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tag, p.x, p.y - p.radius - 11);
+
+    let bw = 28;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(p.x - bw*0.5, p.y - p.radius - 8, bw, 3);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(p.x - bw*0.5, p.y - p.radius - 8, bw*(p.hp/p.maxHp), 3);
+  }
+
+  ctx.restore();
+}
+
+function drawSafeZone(){
+  // 安全地帯の外側を赤みのある警告色で薄く表示
+  ctx.save();
+  ctx.strokeStyle = 'rgba(244, 63, 94, 0.85)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2);
+  ctx.stroke();
+
+  // 次の収縮目標円を点線で表示
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.setLineDash([6, 6]);
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(zone.targetX, zone.targetY, zone.targetRadius, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function drawVisionMask(cw, ch, camLeft, camTop){
+  // レイキャスティングでプレイヤーの懐中電灯ポリゴンを生成
+  let rayCount = 72;
+  let startAngle = player.angle - VISION_ANGLE*0.5;
+  let angleStep = VISION_ANGLE/rayCount;
+
+  let points = [];
+  for(let i = 0; i <= rayCount; i++){
+    let a = startAngle + angleStep*i;
+    let hit = castRay(player.x, player.y, a, VISION_DIST);
+    points.push({ x: hit.x - camLeft, y: hit.y - camTop });
+  }
+
+  let pxScreen = player.x - camLeft;
+  let pyScreen = player.y - camTop;
+
+  // 視界外を暗く覆う（地形・壁の輪郭がかろうじて見える半透明ダークレイヤー）
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, cw, ch);
+
+  // 懐中電灯コーン＋プレイヤー周囲の極小円（足元視界）を切り抜く
+  ctx.moveTo(pxScreen, pyScreen);
+  for(let i = points.length - 1; i >= 0; i--){
+    ctx.lineTo(points[i].x, points[i].y);
+  }
+  ctx.closePath();
+
+  ctx.fillStyle = 'rgba(5, 8, 14, 0.82)';
+  ctx.fill('evenodd');
+
+  // 足元360度の微弱な視界確保（壁に密着した時の閉塞感防止）
+  let grad = ctx.createRadialGradient(pxScreen, pyScreen, 12, pxScreen, pyScreen, 44);
+  grad.addColorStop(0, 'rgba(207, 233, 255, 0.14)');
+  grad.addColorStop(1, 'rgba(207, 233, 255, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(pxScreen, pyScreen, 44, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawTouchJoystick(){
+  if(!touchMove.active) return;
+  let camLeft = camera.x - canvas.width*0.5;
+  let camTop = camera.y - canvas.height*0.5;
+  let sx = camLeft + touchMove.startX;
+  let sy = camTop + touchMove.startY;
+  let cx = camLeft + touchMove.curX;
+  let cy = camTop + touchMove.curY;
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(207, 233, 255, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(sx, sy, 36, 0, Math.PI*2);
+  ctx.stroke();
+
+  ctx.fillStyle = 'rgba(207, 233, 255, 0.6)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI*2);
+  ctx.fill();
+  ctx.restore();
+}
+
+// ============================================================================
+// HUD・UIアイコン更新
+// ============================================================================
+
+function updateHUD(){
+  if(!player) return;
+
+  let alive = getAliveParticipants();
+  document.getElementById('alive-count').textContent = alive.length + ' / 10';
+  document.getElementById('kill-count').textContent = player.kills;
+
+  // 安全地帯タイマー表示
+  let zSec = Math.max(0, Math.ceil(zone.shrinkDelay));
+  if(zSec > 0){
+    document.getElementById('zone-timer').textContent = '猶予 ' + zSec + 's';
+  }
+  if(zSec <= 0){
+    document.getElementById('zone-timer').textContent = '収縮中 ' + Math.round(zone.radius) + 'm';
+  }
+
+  // HPバー更新
+  let hpVal = Math.max(0, Math.ceil(player.hp));
+  document.getElementById('hp-text').textContent = hpVal + ' / ' + player.maxHp;
+  let pct = (hpVal/player.maxHp)*100;
+  let bar = document.getElementById('hp-bar');
+  bar.style.width = pct + '%';
+  if(pct <= 25) bar.className = 'h-full bg-rose-500 rounded-full transition-all duration-100';
+  if(pct > 25) bar.className = 'h-full bg-gradient-to-r from-sky-400 to-[#cfe9ff] rounded-full transition-all duration-100';
+
+  // 武器UI更新
+  let w = WEAPON_DATA[player.weapon];
+  document.getElementById('weapon-name').textContent = w.name;
+  if(w.magSize <= 0){
+    document.getElementById('ammo-text').textContent = '∞';
+  }
+  if(w.magSize > 0){
+    document.getElementById('ammo-text').textContent = player.ammo + '/' + w.magSize;
+  }
+
+  let reloadOv = document.getElementById('reload-overlay');
+  if(player.reloading){
+    reloadOv.classList.remove('hidden');
+    document.getElementById('reload-text').textContent = player.reloadTimer.toFixed(1) + 's';
+  }
+  if(!player.reloading){
+    reloadOv.classList.add('hidden');
+  }
+
+  drawWeaponIcon(w);
+
+  // 食べ物・回復長押しUI更新
+  document.getElementById('food-count').textContent = player.food;
+  let healRing = document.getElementById('heal-progress-ring');
+  if(player.healing){
+    healRing.classList.remove('hidden');
+    document.getElementById('heal-timer-text').textContent = Math.max(0, player.healTimer).toFixed(1) + 's';
+    let hPct = ((3.0 - player.healTimer)/3.0)*100;
+    document.getElementById('heal-progress-bar').style.width = Math.min(100, Math.max(0, hPct)) + '%';
+  }
+  if(!player.healing){
+    healRing.classList.add('hidden');
+  }
+  drawFoodIcon();
+}
+
+function drawWeaponIcon(w){
+  wIconCtx.clearRect(0, 0, 44, 44);
+  wIconCtx.save();
+  wIconCtx.translate(22, 22);
+  wIconCtx.strokeStyle = w.color;
+  wIconCtx.fillStyle = w.color;
+  wIconCtx.lineWidth = 2.5;
+
+  if(w.id == 'fist'){
+    wIconCtx.beginPath();
+    wIconCtx.arc(0, 0, 9, 0, Math.PI*2);
+    wIconCtx.fill();
+  }
+  if(w.id == 'knife'){
+    wIconCtx.rotate(-0.7);
+    wIconCtx.fillRect(-12, -2, 24, 4);
+  }
+  if(w.id == 'hammer'){
+    wIconCtx.rotate(-0.6);
+    wIconCtx.fillRect(-2, -12, 4, 24);
+    wIconCtx.fillRect(-9, -14, 18, 8);
+  }
+  if(w.type == 'gun'){
+    wIconCtx.rotate(-0.35);
+    wIconCtx.fillRect(-13, -3, 26, 6);
+    wIconCtx.fillRect(-8, 2, 5, 8);
+  }
+  wIconCtx.restore();
+}
+
+function drawFoodIcon(){
+  fIconCtx.clearRect(0, 0, 40, 40);
+  fIconCtx.save();
+  fIconCtx.translate(20, 20);
+  fIconCtx.fillStyle = '#10b981';
+  fIconCtx.beginPath();
+  fIconCtx.arc(0, 2, 10, 0, Math.PI*2);
+  fIconCtx.fill();
+  fIconCtx.strokeStyle = '#a7f3d0';
+  fIconCtx.lineWidth = 2;
+  fIconCtx.stroke();
+  fIconCtx.fillStyle = '#34d399';
+  fIconCtx.fillRect(-2, -12, 4, 6);
+  fIconCtx.restore();
+}
+
+// ============================================================================
+// リサイズ＆イベントリスナー登録（PCマウス・キーボード＆スマホタッチ）
+// ============================================================================
+
+function resizeCanvas(){
+  let shell = document.getElementById('game-shell');
+  canvas.width = 393;
+  canvas.height = shell.clientHeight;
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+window.addEventListener('keydown', function(e){
+  keys[e.code] = true;
+  if(e.code == 'KeyE') triggerPlayerInteract();
+});
+
+window.addEventListener('keyup', function(e){
+  keys[e.code] = false;
+});
+
+canvas.addEventListener('mousemove', function(e){
+  let rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+  mouse.active = true;
+});
+
+canvas.addEventListener('mousedown', function(e){
+  if(e.button == 0){
+    mouse.down = true;
+    mouse.active = true;
+  }
+});
+
+window.addEventListener('mouseup', function(e){
+  if(e.button == 0) mouse.down = false;
+});
+
+// スマホマルチタッチ操作（左半分：仮想スティック移動、右半分：照準＆射撃）
+canvas.addEventListener('touchstart', function(e){
+  e.preventDefault();
+  mouse.active = false;
+  let rect = canvas.getBoundingClientRect();
+
+  for(let i = 0; i < e.changedTouches.length; i++){
+    let t = e.changedTouches[i];
+    let tx = t.clientX - rect.left;
+    let ty = t.clientY - rect.top;
+
+    if(tx < 196 && !touchMove.active){
+      touchMove.active = true;
+      touchMove.id = t.identifier;
+      touchMove.startX = tx;
+      touchMove.startY = ty;
+      touchMove.curX = tx;
+      touchMove.curY = ty;
+      touchMove.dx = 0;
+      touchMove.dy = 0;
+    }
+    if(tx >= 196 && !touchAim.active){
+      touchAim.active = true;
+      touchAim.id = t.identifier;
+      touchAim.startX = tx;
+      touchAim.startY = ty;
+      if(player && player.alive){
+        let wx = camera.x - canvas.width*0.5 + tx;
+        let wy = camera.y - canvas.height*0.5 + ty;
+        player.angle = Math.atan2(wy - player.y, wx - player.x);
+      }
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', function(e){
+  e.preventDefault();
+  let rect = canvas.getBoundingClientRect();
+
+  for(let i = 0; i < e.changedTouches.length; i++){
+    let t = e.changedTouches[i];
+    let tx = t.clientX - rect.left;
+    let ty = t.clientY - rect.top;
+
+    if(touchMove.active && t.identifier == touchMove.id){
+      let rawDx = tx - touchMove.startX;
+      let rawDy = ty - touchMove.startY;
+      let maxR = 36;
+      let d = Math.sqrt(rawDx*rawDx + rawDy*rawDy);
+      if(d > maxR){
+        rawDx = (rawDx/d)*maxR;
+        rawDy = (rawDy/d)*maxR;
+      }
+      touchMove.curX = touchMove.startX + rawDx;
+      touchMove.curY = touchMove.startY + rawDy;
+      touchMove.dx = rawDx/maxR;
+      touchMove.dy = rawDy/maxR;
+    }
+
+    if(touchAim.active && t.identifier == touchAim.id){
+      if(player && player.alive){
+        let wx = camera.x - canvas.width*0.5 + tx;
+        let wy = camera.y - canvas.height*0.5 + ty;
+        player.angle = Math.atan2(wy - player.y, wx - player.x);
+      }
+    }
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', function(e){
+  for(let i = 0; i < e.changedTouches.length; i++){
+    let t = e.changedTouches[i];
+    if(touchMove.active && t.identifier == touchMove.id){
+      touchMove.active = false;
+      touchMove.dx = 0;
+      touchMove.dy = 0;
+    }
+    if(touchAim.active && t.identifier == touchAim.id){
+      touchAim.active = false;
+    }
+  }
+});
+
+// 下部丸形UIボタン（左下武器・右下食料長押し・インタラクト）
+let btnFire = document.getElementById('btn-fire');
+btnFire.addEventListener('mousedown', function(){ fireButtonHeld = true; });
+btnFire.addEventListener('mouseup', function(){ fireButtonHeld = false; });
+btnFire.addEventListener('mouseleave', function(){ fireButtonHeld = false; });
+btnFire.addEventListener('touchstart', function(e){ e.preventDefault(); fireButtonHeld = true; }, { passive: false });
+btnFire.addEventListener('touchend', function(e){ e.preventDefault(); fireButtonHeld = false; }, { passive: false });
+
+let btnHeal = document.getElementById('btn-heal');
+btnHeal.addEventListener('mousedown', function(){ healButtonHeld = true; });
+btnHeal.addEventListener('mouseup', function(){ healButtonHeld = false; });
+btnHeal.addEventListener('mouseleave', function(){ healButtonHeld = false; });
+btnHeal.addEventListener('touchstart', function(e){ e.preventDefault(); healButtonHeld = true; }, { passive: false });
+btnHeal.addEventListener('touchend', function(e){ e.preventDefault(); healButtonHeld = false; }, { passive: false });
+
+document.getElementById('btn-interact').addEventListener('click', triggerPlayerInteract);
+document.getElementById('btn-start').addEventListener('click', initGame);
+document.getElementById('btn-restart').addEventListener('click', initGame);
+
+// ============================================================================
+// メインアニメーションループ起動
+// ============================================================================
+
+function gameLoop(timestamp){
+  let dt = Math.min(0.05, (timestamp - lastTime)/1000);
+  lastTime = timestamp;
+
+  if(gameState == 'playing'){
+    updateSimulation(dt);
+  }
+  render();
+  requestAnimationFrame(gameLoop);
+}
+
+window.onload = function(){
+  preloadAllImages();
+  resizeCanvas();
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>

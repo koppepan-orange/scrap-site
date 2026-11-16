@@ -16,7 +16,7 @@ mainF.move = (to) => {
     document.getElementById(to).classList.add('show');
     mainC.spa = to;
 
-    history.replaceState(null, "", `?${to}`);
+    try{history.replaceState(null, "", `?${to}`)}catch(err){console.warn("ページ履歴を更新できませんでした",err)}
 }
 
 mainF.load = () => {

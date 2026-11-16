@@ -1541,16 +1541,16 @@ OBS.KeysR = (e) => {
 };
 
 OBS.PonD = (e) => {
-    if(e.button == 0) OBS.cling = 1;
-    if(e.button == 2) OBS.cring = 1;
+    if(e.buttons == 0) OBS.cling = 1;
+    if(e.buttons == 2) OBS.cring = 1;
 };
 OBS.PonU = (e) => {
-    if(e.button == 0) OBS.cling = 0;
-    if(e.button == 2) OBS.cring = 0;
+    if(e.buttons == 0) OBS.cling = 0;
+    if(e.buttons == 2) OBS.cring = 0;
 };
 OBS.ponC = (e) => {
-    if(e.button == 0) OBS.cling = 0;
-    if(e.button == 2) OBS.cring = 0;
+    if(e.buttons == 0) OBS.cling = 0;
+    if(e.buttons == 2) OBS.cring = 0;
 };
 OBS.PonB = () => {
     OBS.cling = 0;

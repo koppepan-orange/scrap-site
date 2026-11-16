@@ -91,6 +91,9 @@ const Fonts = [
 
 const Images = {
     systems:['error'],
+    weapons:['smg','scar','dual_pistols','shotgun','knife','hammer'],
+    monsters:['knocker','lamp_eye','burst_seed','skipper'],
+    foods:['food'],
 }
 
 const Sounds = {
