@@ -1,0 +1,32 @@
+:root{--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2420;--sub:#7a6e63;--line:#ddd2c1;--acc:#a8321f;--ok:#2f7d4f;--ng:#b3261e;--okbg:#e3f2e8;--ngbg:#f8e1df}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1917;--card:#26211e;--ink:#efe8dd;--sub:#a1968a;--line:#3d352f;--acc:#e0705a;--ok:#6cc08a;--ng:#ee7f77;--okbg:#1f3a2a;--ngbg:#42231f}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;line-height:1.7;padding:16px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.5rem;margin:8px 0 16px;letter-spacing:.1em;color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+.hidden{display:none}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+button,select{font:inherit;color:inherit}
+.tab,.cnt{flex:1;padding:8px;border:1px solid var(--line);background:var(--card);border-radius:8px;cursor:pointer}
+.tab.on,.cnt.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.row{margin:14px 0}
+.row label{display:block;color:var(--sub);font-size:.85rem;margin-bottom:6px}
+.counts{display:flex;gap:8px}
+select{width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--card)}
+.go{width:100%;padding:12px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-size:1.05rem;cursor:pointer}
+.prog{color:var(--sub);font-size:.85rem}
+.q{font-size:1.8rem;text-align:center;margin:18px 0}
+.choices{display:grid;gap:8px}
+.choice{padding:12px;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:8px;cursor:pointer}
+.choice:disabled{cursor:default}
+.choice.ok{background:var(--okbg);border-color:var(--ok)}
+.choice.ng{background:var(--ngbg);border-color:var(--ng)}
+.next{margin-top:12px}
+.score{font-size:2rem;text-align:center;margin:8px 0}
+ul.list{list-style:none;padding:0;margin:0}
+ul.list li{padding:8px 0;border-bottom:1px solid var(--line)}
+ul.list li:last-child{border:0}
+.k{font-weight:bold}.note{color:var(--sub);font-size:.85rem}
+.ch{color:var(--acc);margin:14px 0 4px;font-size:.9rem}

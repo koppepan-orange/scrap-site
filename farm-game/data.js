@@ -189,6 +189,48 @@ const Spaces = [
     { name:'door', rank:2, back:'#ffe4be' },
 ];
 
+const Apps = [
+    {
+        name:"map",
+        jpnm:"マップ",
+        D: document.querySelector("#phone .app.map")
+    },
+    {
+        name:"amon",
+        jpnm:"Amonds!",
+        D: document.querySelector("#phone .app.amon")
+    },
+    {
+        name:"uwub",
+        jpnm:"暇つぶジャック",
+        D: document.querySelector("#phone .app.uwub")
+    },
+    {
+        name:"cook",
+        jpnm:"Resisig",
+        D: document.querySelector("#phone .app.cook")
+    },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {
+        name:"err0r",
+        jpnm:"error",   
+        D: document.querySelector("#phone .app.debug"),
+    },
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+    {name:"error", jpnm:"error"},
+];
+
 // #region farm-cool
 
 /*

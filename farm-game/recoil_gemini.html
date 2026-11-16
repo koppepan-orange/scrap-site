@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js Recoil Sample</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            margin-left: -5px;
+            margin-top: -5px;
+            background-color: white;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="crosshair"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 照明
+        let light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 10, 7);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        // 簡易的なステージ（床と的）
+        let floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.MeshBasicMaterial({color: 0x333333, side: THREE.DoubleSide})
+        );
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        let target = new THREE.Mesh(
+            new THREE.BoxGeometry(6, 6, 0.5),
+            new THREE.MeshBasicMaterial({color: 0xff0000})
+        );
+        target.position.set(0, 3, -25);
+        scene.add(target);
+
+        // カメラ初期位置
+        camera.position.set(0, 2, 5);
+
+        // リコイル関連の状態変数
+        let currentShot = 0;
+        let isShooting = false;
+        let recoilPitch = 0; // 上下のブレ
+        let recoilYaw = 0;   // 左右のブレ
+        let targetRecoilPitch = 0;
+        let targetRecoilYaw = 0;
+
+        // 武器ごとのリコイルパターン（10発分）
+        // x: 左右のブレ（プラスが右、マイナスが左）, y: 上下のブレ
+        const recoilPattern = [
+            {x: 0.00, y: 0.06}, // 1発目：上
+            {x: 0.01, y: 0.05}, // 2発目：上・ちょっと右
+            {x: 0.03, y: 0.04}, // 3発目：右へ流れる
+            {x: 0.05, y: 0.03}, // 4発目：さらに右
+            {x: 0.02, y: 0.02}, // 5発目：少し右
+            {x: -0.03, y: 0.02},// 6発目：左へ切り返す
+            {x: -0.07, y: 0.02},// 7発目：大きく左
+            {x: -0.04, y: 0.01},// 8発目：左
+            {x: 0.01, y: 0.01}, // 9発目：ちょっと右へ戻る
+            {x: 0.03, y: 0.01}  // 10発目：右で落ち着く
+        ];
+
+        const maxMag = recoilPattern.length;
+
+        // マウスダウンで射撃開始
+        window.addEventListener("mousedown", () => {
+            if(isShooting == false){
+                isShooting = true;
+                shoot();
+            }
+        });
+
+        // マウスアップで射撃停止
+        window.addEventListener("mouseup", () => {
+            isShooting = false;
+        });
+
+        function shoot(){
+            if(isShooting == true){
+                if(currentShot < maxMag){
+                    // パターンから次の反動量を取り出して目標値に加算
+                    let recoil = recoilPattern[currentShot];
+                    targetRecoilYaw -= recoil.x;
+                    targetRecoilPitch += recoil.y;
+                    currentShot++;
+
+                    // 連射速度（ミリ秒単位：例として120ms）
+                    setTimeout(shoot, 120);
+                }
+            }
+        }
+
+        // アニメーションループ
+        function animate(){
+            requestAnimationFrame(animate);
+
+            // 射撃していないときは目標反動を0に戻していく（リコイル回復）
+            if(isShooting == false){
+                targetRecoilYaw *= 0.85;
+                targetRecoilPitch *= 0.85;
+                if(currentShot > 0 && Math.abs(targetRecoilPitch) < 0.001){
+                    currentShot = 0;
+                }
+            }
+
+            // スムーズに目標反動へ向かうように補間（Lerp）
+            recoilYaw += (targetRecoilYaw - recoilYaw) * 0.25;
+            recoilPitch += (targetRecoilPitch - recoilPitch) * 0.25;
+
+            // カメラの回転に反動を反映
+            camera.rotation.y = recoilYaw;
+            camera.rotation.x = recoilPitch;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // ウィンドウリサイズ対応
+        window.addEventListener("resize", () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

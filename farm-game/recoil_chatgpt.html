@@ -1,0 +1,265 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Recoil Pattern Test</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #111;
+    color: white;
+    font-family: sans-serif;
+  }
+  #info {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    pointer-events: none;
+    line-height: 1.8;
+  }
+  #crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    border: 1px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="info">
+  クリック：射撃・視点操作<br>
+  R：リロード<br>
+  <span id="ammo">30 / 30</span>
+</div>
+<div id="crosshair"></div>
+
+<script type="module">
+import * as THREE from
+'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+
+// --- 基本設定 ---
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x222831);
+
+const camera = new THREE.PerspectiveCamera(
+  75, window.innerWidth / window.innerHeight, 0.1, 1000
+);
+camera.position.set(0, 1.6, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// --- フィールド ---
+
+scene.add(new THREE.GridHelper(100, 100));
+
+const light = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+scene.add(light);
+
+// --- 銃モデル ---
+
+const gun = new THREE.Group();
+camera.add(gun);
+gun.position.set(0.35, -0.3, -0.7);
+
+const body = new THREE.Mesh(
+  new THREE.BoxGeometry(0.2, 0.2, 0.6),
+  new THREE.MeshStandardMaterial({ color: 0x444444 })
+);
+gun.add(body);
+
+const barrel = new THREE.Mesh(
+  new THREE.BoxGeometry(0.07, 0.07, 0.5),
+  new THREE.MeshStandardMaterial({ color: 0x222222 })
+);
+barrel.position.z = -0.45;
+gun.add(barrel);
+
+scene.add(camera);
+
+// --- 武器設定 ---
+
+const weapon = {
+  magazine: 30,
+  ammo: 30,
+  fireRate: 100,
+
+  // 1発ごとの照準位置 [左右, 上下]
+  // 単位は度
+  pattern: [
+    [0.0, 0.3],
+    [0.2, 0.6],
+    [0.5, 0.9],
+    [0.8, 1.2],
+    [1.0, 1.5],
+
+    [0.7, 1.8],
+    [0.3, 2.1],
+    [-0.2, 2.4],
+    [-0.6, 2.7],
+    [-0.9, 3.0],
+
+    [-0.7, 3.3],
+    [-0.3, 3.6],
+    [0.2, 3.9],
+    [0.7, 4.2],
+    [1.1, 4.5],
+
+    [0.8, 4.8],
+    [0.3, 5.1],
+    [-0.3, 5.4],
+    [-0.8, 5.7],
+    [-1.1, 6.0],
+
+    [-0.8, 6.3],
+    [-0.4, 6.6],
+    [0.1, 6.9],
+    [0.6, 7.2],
+    [1.0, 7.5],
+
+    [0.7, 7.8],
+    [0.2, 8.1],
+    [-0.3, 8.4],
+    [-0.7, 8.7],
+    [-1.0, 9.0]
+  ]
+};
+
+// --- 反動管理 ---
+
+let recoil = new THREE.Vector2(0, 0);
+let recoilTarget = new THREE.Vector2(0, 0);
+
+let mouse = new THREE.Vector2(0, 0);
+let shooting = false;
+let lastShot = 0;
+let shotIndex = 0;
+
+const ammoText = document.getElementById("ammo");
+
+// --- 射撃 ---
+
+function fire() {
+  if (weapon.ammo <= 0) return;
+
+  const p = weapon.pattern[shotIndex];
+
+  if (p) {
+    recoilTarget.set(p[0], p[1]);
+  }
+
+  weapon.ammo--;
+  shotIndex++;
+
+  // 銃の後退
+  gun.position.z = -0.7 + 0.12;
+
+  ammoText.textContent =
+    `${weapon.ammo} / ${weapon.magazine}`;
+
+  if (weapon.ammo === 0) {
+    shooting = false;
+  }
+}
+
+// --- マウス操作 ---
+
+renderer.domElement.addEventListener("click", () => {
+  renderer.domElement.requestPointerLock();
+});
+
+document.addEventListener("mousemove", e => {
+  if (document.pointerLockElement !== renderer.domElement) return;
+
+  mouse.x -= e.movementX * 0.002;
+  mouse.y -= e.movementY * 0.002;
+});
+
+document.addEventListener("mousedown", e => {
+  if (e.button !== 0) return;
+  shooting = true;
+});
+
+document.addEventListener("mouseup", e => {
+  if (e.button === 0) shooting = false;
+});
+
+// --- リロード ---
+
+document.addEventListener("keydown", e => {
+  if (e.key.toLowerCase() !== "r") return;
+
+  weapon.ammo = weapon.magazine;
+  shotIndex = 0;
+  recoilTarget.set(0, 0);
+  recoil.set(0, 0);
+
+  ammoText.textContent =
+    `${weapon.ammo} / ${weapon.magazine}`;
+});
+
+// --- メインループ ---
+
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const delta = clock.getDelta();
+  const now = performance.now();
+
+  // 連射
+  if (
+    shooting &&
+    now - lastShot >= weapon.fireRate
+  ) {
+    fire();
+    lastShot = now;
+  }
+
+  // 反動を滑らかに追従
+  recoil.lerp(recoilTarget, 1 - Math.exp(-12 * delta));
+
+  // 銃の反動を徐々に戻す
+  recoilTarget.lerp(
+    new THREE.Vector2(0, 0),
+    1 - Math.exp(-0.8 * delta)
+  );
+
+  // 視点に反動を適用
+  camera.rotation.order = "YXZ";
+  camera.rotation.y = mouse.x +
+    THREE.MathUtils.degToRad(recoil.x);
+
+  camera.rotation.x = mouse.y -
+    THREE.MathUtils.degToRad(recoil.y);
+
+  // 銃の後退を戻す
+  gun.position.z +=
+    (-0.7 - gun.position.z) * 12 * delta;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// --- リサイズ ---
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

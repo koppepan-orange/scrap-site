@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>漢文 単語クイズ</title>
+<link rel="stylesheet" href="mitame.css">
+</head>
+<body>
+<main>
+  <h1>〜漢文ノート〜</h1>
+  <div class="tabs">
+    <button class="tab on" id="tabQuiz">単語クイズ</button>
+    <button class="tab" id="tabGram">文法一覧</button>
+  </div>
+
+  <section id="start" class="card">
+    <div class="row"><label>範囲</label><select id="chSel"></select></div>
+    <div class="row"><label>問題数</label>
+      <div class="counts" id="counts">
+        <button class="cnt on" data-n="5">5</button>
+        <button class="cnt" data-n="10">10</button>
+        <button class="cnt" data-n="20">20</button>
+      </div>
+    </div>
+    <button class="go" id="goBtn">スタート</button>
+  </section>
+
+  <section id="quiz" class="card hidden">
+    <div class="prog" id="prog"></div>
+    <div class="q" id="qText"></div>
+    <div class="choices" id="choices"></div>
+    <button class="go next hidden" id="nextBtn">次へ</button>
+  </section>
+
+  <section id="result" class="card hidden">
+    <div class="score" id="score"></div>
+    <div id="wrongBox"></div>
+    <button class="go next" id="retryBtn">もう一度</button>
+  </section>
+
+  <section id="gram" class="card hidden"></section>
+</main>
+<script src="data.js"></script>
+<script src="nakami.js"></script>
+</body>
+</html>

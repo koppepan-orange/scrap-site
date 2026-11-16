@@ -170,45 +170,6 @@ let phoC = {
     now:0,
 }
 let phoF = {};
-phoC.apps = [
-    {
-        name:"map",
-        jpnm:"マップ",
-        D: phoD.querySelector(".app.map")
-    },
-    {
-        name:"amon",
-        jpnm:"Amonds!",
-        D: phoD.querySelector(".app.amon")
-    },
-    {
-        name:"uwub",
-        jpnm:"暇つぶジャック",
-        D: phoD.querySelector(".app.uwub")
-    },
-    {name:"cook", jpnm:"Recicipp",
-        D: phoD.querySelector(".app.cook")
-    },
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {
-        name:"err0r",
-        jpnm:"error",   
-        D: phoD.querySelector(".app.debug"),
-    },
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-    {name:"error", jpnm:"error"},
-];
 
 phoF.tog = (code = "黙れ") => {
     if(!isNaN(+code)) phoC.tog = code;
@@ -231,7 +192,7 @@ phoD.addEventListener("click", (e) => {
 });
 
 phoF.load = () => {
-    for(let ap of phoC.apps){
+    for(let ap of Apps){
         let div = document.createElement("div");
         div.className = `ap ${ap.name}`;
 
@@ -260,9 +221,9 @@ phoF.load = () => {
 phoF.activate = (name) => {
     console.log(`[app] ${name} を起動した4`);
     
-    let arr = phoC.apps;
-     for(let ap of phoC.apps.filter(a => a.name != "error")) ap.D.classList.remove("carryout");
-    let tarD = phoC.apps.find(a => a.name == name || a.jpnm == name);
+    let arr = Apps;
+     for(let ap of Apps.filter(a => a.name != "error")) ap.D.classList.remove("carryout");
+    let tarD = Apps.find(a => a.name == name || a.jpnm == name);
      tarD.D.classList.add("carryout");
     phoC.now = name;
     
@@ -273,7 +234,7 @@ phoF.activate = (name) => {
 }
 phoF.home = () => {
     let name = phoC.now;
-    let tarD = phoC.apps.find(a => a.name == name || a.jpnm == name);
+    let tarD = Apps.find(a => a.name == name || a.jpnm == name);
      tarD.D.classList.remove("carryout");
 }
 
@@ -291,7 +252,7 @@ phoC.mapF = {
 // #endregion
 
 // #region phone-uwub
-phoC.uwubD = phoC.apps.find(a => a.name == "uwub").D;
+phoC.uwubD = Apps.find(a => a.name == "uwub").D;
 phoC.uwubC = {
     Ds:{
         dere: phoC.uwubD.querySelector(".area.dealer"),
@@ -556,10 +517,14 @@ phoC.uwubF.dead = async(cam) => {
 
 // #region phone-cook
 phoC.cookF = {};
+phoC.cookC = {
+    Ds:{
+        "recipes": phoD.querySelector(".app.cook .recipes"),
+    }
+}
 
 phoC.cookF.tekiou = () => {
-    
-    cooC.Ds["recipes"].innerHTML = "";
+    phoC.cookC.Ds["recipes"].innerHTML = "";
 
     // type:2のレシピだけ抽出
     let arr = Foods.filter(a => a.type == 2);
@@ -593,7 +558,7 @@ phoC.cookF.tekiou = () => {
         count.textContent = `作成可能数: ${possible}`;
 
         let div = El("div", "recipe", [title, act, sozais, output, count]);
-        cooC.Ds["recipes"].appendChild(div);
+        phoC.cookC.Ds["recipes"].appendChild(div);
     }
 
     if(arr.length == 0) nicoText("レシピがありません");
@@ -601,7 +566,7 @@ phoC.cookF.tekiou = () => {
 // #endregion
 
 // #region phone-debug
-phoC.debugD = phoC.apps.find(a => a.name == "err0r").D;
+phoC.debugD = Apps.find(a => a.name == "err0r").D;
 phoC.debugC = {
     Ds:{
         targets: phoC.debugD.querySelector(".komock.targets"),
@@ -1012,10 +977,6 @@ cooF.make = (name, times = 1) => {
 cooF.tekiou = () => {
     phoC.cookF.tekiou();
 }
-
-
-// 初期読み込み
-cooF.load();
 // #endregion
 
 // #region road
@@ -2586,6 +2547,7 @@ function start(){
     phoF.load();
      phoC.uwubF.load();
     homF.load();
+    cooF.load();
     dooF.load();
     dooC.forF.update();
 

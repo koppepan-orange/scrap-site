@@ -1058,6 +1058,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     position: absolute;
     inset: 0;
     transition: scale 0.3s;
+    overflow-y: scroll;
     box-sizing: border-box;
     scale: 0;
 
@@ -1275,7 +1276,9 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
 
 #phone .app.cook{
     width: 100%;
+    padding: 100px 0;
     background: #000000;
+
     & .recipes{
         padding-top: 5px;
         border-top: 2px solid #b2b2b2;
@@ -1285,7 +1288,7 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
         align-items: flex-start;
         gap: 10px;
         width: 90%;
-        color: #2b2b2b;
+        color: #cecece;
         font-family: kaisoutai;
 
         & .recipe{

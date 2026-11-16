@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>Three.js 武器別リコイルパターン サンプル</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #111; font-family: sans-serif; user-select: none; }
+    /* 中央のクロスヘア（照準） */
+    #crosshair {
+      position: fixed; top: 50%; left: 50%;
+      width: 6px; height: 6px; background: #0f0;
+      border-radius: 50%; transform: translate(-50%, -50%);
+      pointer-events: none; box-shadow: 0 0 4px #000;
+    }
+    /* HUD情報 */
+    #hud {
+      position: fixed; bottom: 20px; left: 20px; color: #fff;
+      background: rgba(0,0,0,0.6); padding: 15px 20px; border-radius: 8px;
+      pointer-events: none; line-height: 1.6;
+    }
+    #hud h2 { margin: 0 0 5px 0; font-size: 18px; color: #4af; }
+    /* クリックして開始するオーバーレイ */
+    #overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      color: #fff; cursor: pointer; z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="crosshair"></div>
+  <div id="hud">
+    <h2 id="weapon-name">Weapon</h2>
+    <div>弾数: <span id="ammo-display">0 / 0</span></div>
+    <div style="font-size: 12px; color: #ccc; margin-top: 8px;">
+      [左クリック長押し] 射撃 / [R] リロード / [1][2] 武器切替 / [ESC] 解除
+    </div>
+  </div>
+  <div id="overlay">
+    <h1>クリックして射撃テスト開始</h1>
+    <p>白い壁に向かって左クリック長押ししてみてください（マウスを動かさずに撃つとパターンが見えます）</p>
+  </div>
+
+  <!-- Three.js をCDNから読み込み -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+
+    // ==========================================
+    // 1. 武器ごとの「規則的な反動パターン」定義
+    // [横のズレ(右が+, 左が-), 縦の跳ね上がり(上が+)] ※単位は「度(deg)」
+    // ==========================================
+    const WEAPONS = {
+      1: {
+        name: "1: アサルトライフル (上→右→左→右)",
+        fireRate: 0.1,        // 発射間隔（秒）
+        recoverySpeed: 8.0,   // 撃つのをやめた時の戻り速度
+        color: 0xff3333,      // 弾痕の色
+        // 1マガジン24発の固定パターン！
+        pattern: [
+          // 序盤: 上に行きながらちょっと右 (1〜6発目)
+          [0.2, 1.4], [0.3, 1.5], [0.4, 1.5], [0.5, 1.4], [0.5, 1.3], [0.4, 1.2],
+          // 中盤: しばらく左へ流れる (7〜17発目)
+          [-0.4, 0.9], [-0.7, 0.8], [-0.9, 0.7], [-1.0, 0.6], [-0.9, 0.6],
+          [-0.8, 0.5], [-0.7, 0.5], [-0.6, 0.4], [-0.5, 0.4], [-0.3, 0.4], [-0.2, 0.3],
+          // 終盤: ちょっと右に戻って1マガジン終わり！ (18〜24発目)
+          [0.4, 0.4], [0.7, 0.4], [0.8, 0.4], [0.7, 0.3], [0.5, 0.3], [0.3, 0.2], [0.2, 0.2]
+        ]
+      },
+      2: {
+        name: "2: サブマシンガン (高速ジグザグ)",
+        fireRate: 0.065,
+        recoverySpeed: 12.0,
+        color: 0x33aaff,
+        pattern: [
+          [0.0, 1.0], [0.2, 1.1], [-0.2, 1.1], [0.5, 1.0], [0.8, 0.9], [0.9, 0.8],
+          [0.5, 0.7], [-0.5, 0.7], [-0.9, 0.7], [-1.0, 0.6], [-0.8, 0.6], [-0.4, 0.5],
+          [0.4, 0.5], [0.9, 0.5], [1.0, 0.4], [0.8, 0.4], [0.2, 0.4], [-0.6, 0.4],
+          [-0.9, 0.3], [-0.8, 0.3], [-0.3, 0.3], [0.5, 0.3], [0.8, 0.2], [0.6, 0.2],
+          [0.0, 0.2], [-0.5, 0.2], [-0.7, 0.2], [-0.4, 0.2], [0.2, 0.2], [0.5, 0.2]
+        ]
+      }
+    };
+
+    // ==========================================
+    // 2. Three.js 基本セットアップ
+    // ==========================================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x22252a);
+
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    // ★重要: FPSカメラは回転順序を 'YXZ' にしないと斜めに傾いてしまう！
+    camera.rotation.order = 'YXZ';
+    camera.position.set(0, 1.7, 0);
+    scene.add(camera);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // ライト
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 10, 5);
+    scene.add(dirLight);
+
+    // 床とターゲット用の壁
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(50, 50),
+      new THREE.MeshStandardMaterial({ color: 0x333842 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    const targetWall = new THREE.Mesh(
+      new THREE.BoxGeometry(24, 16, 0.5),
+      new THREE.MeshStandardMaterial({ color: 0xdddddd })
+    );
+    targetWall.position.set(0, 8, -15);
+    scene.add(targetWall);
+
+    // 壁に方眼グリッドを貼る（反動の軌跡を見やすくするため）
+    const wallGrid = new THREE.GridHelper(24, 24, 0x888888, 0xbbbbbb);
+    wallGrid.rotation.x = Math.PI / 2;
+    wallGrid.position.set(0, 8, -14.74);
+    scene.add(wallGrid);
+
+    // 簡易的な銃モデル（カメラにくっつける）
+    const gunGroup = new THREE.Group();
+    const gunBody = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.16, 0.6),
+      new THREE.MeshStandardMaterial({ color: 0x222222 })
+    );
+    gunGroup.add(gunBody);
+    gunGroup.position.set(0.25, -0.22, -0.45);
+    camera.add(gunGroup);
+
+    // ==========================================
+    // 3. 視点操作とリコイル制御の変数
+    // ==========================================
+    // プレイヤー自身のマウス操作による視点（ラジアン）
+    let baseYaw = 0;
+    let basePitch = 0.08; // 少し壁の中央あたりを向く初期値
+
+    // 反動によるオフセット（現在値 と 目標値）
+    let currentRecoilYaw = 0;
+    let currentRecoilPitch = 0;
+    let targetRecoilYaw = 0;
+    let targetRecoilPitch = 0;
+
+    // 武器の状態
+    let currentWeaponId = 1;
+    let currentWeapon = WEAPONS[currentWeaponId];
+    let shotIndex = 0; // 今何発目を撃っているか（＝配列のインデックス）
+    let fireTimer = 0;
+    let isFiring = false;
+    let gunKickback = 0; // 銃モデルが手前に下がる演出用
+
+    // 弾痕管理用
+    const raycaster = new THREE.Raycaster();
+    const bulletHoles = [];
+    const MAX_HOLES = 150;
+
+    function updateHUD() {
+      const magSize = currentWeapon.pattern.length;
+      document.getElementById('weapon-name').textContent = currentWeapon.name;
+      document.getElementById('ammo-display').textContent = `${magSize - shotIndex} / ${magSize}`;
+    }
+
+    function switchWeapon(id) {
+      if (!WEAPONS[id]) return;
+      currentWeaponId = id;
+      currentWeapon = WEAPONS[id];
+      reload();
+    }
+
+    function reload() {
+      shotIndex = 0;
+      targetRecoilYaw = 0;
+      targetRecoilPitch = 0;
+      updateHUD();
+    }
+
+    // 発砲処理
+    function fireShot() {
+      const magSize = currentWeapon.pattern.length;
+      if (shotIndex >= magSize) {
+        // 弾切れ（撃ち終わり）
+        isFiring = false;
+        return;
+      }
+
+      // ★ここが核心：パターン配列から今回の反動量を取り出す！
+      const [degX, degY] = currentWeapon.pattern[shotIndex];
+      targetRecoilYaw += THREE.MathUtils.degToRad(degX);
+      targetRecoilPitch += THREE.MathUtils.degToRad(degY);
+
+      shotIndex++;
+      gunKickback = 0.08; // 銃を手前にガツンと引く
+      updateHUD();
+
+      // レイキャストで画面中央の先に弾痕をつける
+      // ※カメラの向きに反動が乗っているので、(0,0)に飛ばすだけで軌跡が描ける！
+      // （厳密には反動の反映を即時または次フレームにするかで変わりますが視覚的に分かりやすくするためカメラを仮更新）
+      applyCameraRotation();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      const intersects = raycaster.intersectObject(targetWall);
+
+      if (intersects.length > 0) {
+        const hit = intersects[0];
+        const hole = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 8, 8),
+          new THREE.MeshBasicMaterial({ color: currentWeapon.color })
+        );
+        hole.position.copy(hit.point);
+        scene.add(hole);
+        bulletHoles.push(hole);
+
+        // 古い弾痕を消す
+        if (bulletHoles.length > MAX_HOLES) {
+          const old = bulletHoles.shift();
+          scene.remove(old);
+        }
+      }
+    }
+
+    function applyCameraRotation() {
+      // Three.jsでは +Y回転が「左向き」なので、右向き(+)の反動を引く（マイナスする）
+      camera.rotation.y = baseYaw - currentRecoilYaw;
+      // +X回転は「上向き」なのでそのまま足す
+      camera.rotation.x = THREE.MathUtils.clamp(basePitch + currentRecoilPitch, -1.4, 1.4);
+    }
+
+    // ==========================================
+    // 4. 入力イベント（PointerLock・射撃・キー）
+    // ==========================================
+    const overlay = document.getElementById('overlay');
+    overlay.addEventListener('click', () => {
+      document.body.requestPointerLock();
+    });
+
+    document.addEventListener('pointerlockchange', () => {
+      const isLocked = document.pointerLockElement === document.body;
+      overlay.style.display = isLocked ? 'none' : 'flex';
+      if (!isLocked) isFiring = false;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (document.pointerLockElement !== document.body) return;
+      const sensitivity = 0.002;
+      baseYaw -= e.movementX * sensitivity;
+      basePitch -= e.movementY * sensitivity;
+      basePitch = THREE.MathUtils.clamp(basePitch, -1.4, 1.4);
+    });
+
+    document.addEventListener('mousedown', (e) => {
+      if (document.pointerLockElement !== document.body) return;
+      if (e.button === 0) {
+        isFiring = true;
+        // クリックした瞬間の1発目を即座に出すためタイマーを0以下に
+        if (fireTimer <= 0) {
+          fireShot();
+          fireTimer = currentWeapon.fireRate;
+        }
+      }
+    });
+
+    document.addEventListener('mouseup', (e) => {
+      if (e.button === 0) isFiring = false;
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyR') reload();
+      if (e.code === 'Digit1') switchWeapon(1);
+      if (e.code === 'Digit2') switchWeapon(2);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ==========================================
+    // 5. メインループ
+    // ==========================================
+    const clock = new THREE.Clock();
+    updateHUD();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+
+      // フルオート射撃のタイマー処理
+      if (fireTimer > 0) fireTimer -= dt;
+      if (isFiring && fireTimer <= 0) {
+        fireShot();
+        fireTimer = currentWeapon.fireRate;
+      }
+
+      // 撃っていない時は「目標の反動値」を少しずつゼロに戻す（リコイルリカバリー）
+      if (!isFiring || shotIndex >= currentWeapon.pattern.length) {
+        const recov = 1 - Math.exp(-currentWeapon.recoverySpeed * dt);
+        targetRecoilYaw = THREE.MathUtils.lerp(targetRecoilYaw, 0, recov);
+        targetRecoilPitch = THREE.MathUtils.lerp(targetRecoilPitch, 0, recov);
+
+        // 十分戻ったら射撃カウントもリセット（タップ撃ち対応）
+        if (Math.abs(targetRecoilPitch) < 0.005 && shotIndex < currentWeapon.pattern.length) {
+          shotIndex = 0;
+          updateHUD();
+        }
+      }
+
+      // 現在の反動値を目標値へ滑らかに近づける（補間）
+      const snapSpeed = 1 - Math.exp(-25 * dt);
+      currentRecoilYaw = THREE.MathUtils.lerp(currentRecoilYaw, targetRecoilYaw, snapSpeed);
+      currentRecoilPitch = THREE.MathUtils.lerp(currentRecoilPitch, targetRecoilPitch, snapSpeed);
+
+      // 銃モデルのキックバックアニメーションを元に戻す
+      gunKickback = THREE.MathUtils.lerp(gunKickback, 0, 1 - Math.exp(-15 * dt));
+      gunGroup.position.z = -0.45 + gunKickback;
+
+      applyCameraRotation();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
