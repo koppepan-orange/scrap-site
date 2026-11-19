@@ -155,6 +155,41 @@ let homC = {
 };
 let homF = {};
 
+homF.load = () => {
+    for(let chara of Charas){
+        let img;
+        if(images["charas"] && images["charas"][chara.name]) img = images["charas"][chara.name].cloneNode();
+         else img = images["systems"]["error"].cloneNode();
+
+        let name = El("div", "name");
+         name.textContent = chara.name;
+        let jpnm = El("div", "name");
+         jpnm.textContent = chara.jpnm;
+        let namae = El("div", "namae", [name, jpnm]);
+        
+        let desc = El("div", "desc");
+         desc.innerText = chara.desc;
+        
+        let sks = El("div", "skills");
+        for(let s of ["ks", "ns", "ps"]){
+            let skill =  chara[s];
+            if(!skill) continue;
+            let nm = El("div", "nm");
+             nm.textContent = skill.name ?? "{名称未定}";
+            let dc = El("div", "dc");
+             dc.textContent = skill.desc ?? "(少女執筆中...)";
+            let ss = El("div", s, [nm, dc]);
+            sks.appendChild(ss);
+        };
+
+        // ステの開示はどうしようね
+        let ste = El("div", "stats");
+
+        let div = El("div", "page", [img, namae, desc, sks, ste]);
+        homD.querySelector(".book").appendChild(div);
+    }
+}
+
 homF.start = async() => {
     if(homC.started) return mainF.move("rpgg");
     homC.started = 1;
@@ -3267,6 +3302,7 @@ function start(){
 
     mainF.load();
      rpgF.speciaLoad();
+    homF.load();
     gamF.load();
     phoF.load();
      phoC.uwubF.load();

@@ -821,6 +821,76 @@ input[type="range"].slider::-webkit-slider-thumb:hover{
     background: #a9cbff;
     border: 4px solid #3794e5;
 }
+#home .book {
+    /* 本全体のサイズとか見開きレイアウト */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 90%;
+    max-width: 900px;
+    height: 600px;
+    margin: 40px auto;
+    background: #fdfbf7;
+    border-radius: 6px;
+    /* 本の厚みと全体の影 */
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.2),
+        0 0 0 1px #d6d0c4,
+        /* 右と下のページの重なり表現 */
+        4px 4px 0 #f4f1ea,
+        5px 5px 0 #c9c2b2,
+        8px 8px 0 #ebe7de,
+        9px 9px 0 #bfb7a6;
+    perspective: 1500px;
+
+    & .page {
+        position: relative;
+        padding: 32px;
+        background: #fdfbf7;
+        color: #2c2a29;
+        overflow-y: auto;
+        box-sizing: border-box;
+        line-height: 1.8;
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+
+        /* 左ページ（奇数番目）のスタイル */
+        &:nth-child(odd) {
+            border-right: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 6px 0 0 6px;
+            /* 中央の綴じ目（ノド）に向かう影 */
+            background: linear-gradient(
+                to right,
+                #fdfbf7 85%,
+                #f2eee6 96%,
+                #e2ddd2 100%
+            );
+        }
+
+        /* 右ページ（偶数番目）のスタイル */
+        &:nth-child(even) {
+            border-radius: 0 6px 6px 0;
+            /* 中央の綴じ目（ノド）からの影 */
+            background: linear-gradient(
+                to left,
+                #fdfbf7 85%,
+                #f2eee6 96%,
+                #e2ddd2 100%
+            );
+        }
+
+        /* ページめくりアニメーション用のクラス（必要なら使って！） */
+        &.flipped {
+            transform: rotateY(-180deg);
+        }
+
+        & img{
+            width: 70%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            object-position: top;
+            box-sizing: border-box;
+        }
+    }
+}
 /* #endregion */
 
 /* #region rpggle */
