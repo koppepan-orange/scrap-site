@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Simple Code Pad</title>
+<style>
+  html, body, textarea {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: #141619;
+    color: #e6edf3;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  textarea {
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 32px;
+    tab-size: 4;
+  }
+</style>
+</head>
+<body>
+<textarea id="editor" spellcheck="false" placeholder="Write code here..."></textarea>
+<script>
+  const editor = document.getElementById("editor");
+  editor.addEventListener("keydown", (e) => {
+    if (e.key === "Tab" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const spaces = "    ";
+      editor.setRangeText(spaces, start, end, "end");
+    }
+  });
+</script>
+</body>
+</html>
