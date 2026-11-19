@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <title>Simple Code Pad</title>
 <style>
-  html, body, textarea {
+  @font-face {
+    font-family: "hackgen";
+    src: url(fonts/assets/fonts/hackgen.ttf);
+  }
+  html, body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -12,32 +16,182 @@
     box-sizing: border-box;
     background: #141619;
     color: #e6edf3;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: hackgen;
     font-size: 16px;
     line-height: 1.6;
   }
-  textarea {
+  #container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  #highlight, #editor {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 32px;
     border: none;
     outline: none;
     resize: none;
-    padding: 32px;
+    font-family: hackgen;
+    font-size: 16px;
+    line-height: 1.6;
     tab-size: 4;
+    white-space: pre;
+    overflow: auto;
+    overflow-wrap: normal;
+  }
+  #highlight {
+    pointer-events: none;
+    color: #e6edf3;
+    background: transparent;
+  }
+  #editor {
+    background: transparent;
+    color: transparent;
+    caret-color: #ffffff;
+    -webkit-text-fill-color: transparent;
+    z-index: 2;
+  }
+  #editor::selection {
+    background: #547a9c66;
+    -webkit-text-fill-color: transparent;
+  }
+  .highlighted {
+    white-space: pre;
   }
 </style>
 </head>
 <body>
-<textarea id="editor" spellcheck="false" placeholder="Write code here..."></textarea>
+<div id="container">
+  <pre id="highlight"></pre>
+  <textarea id="editor" spellcheck="false" placeholder="Write code here..."></textarea>
+</div>
 <script>
+document.addEventListener("DOMContentLoaded", () => {
   const editor = document.getElementById("editor");
+  const highlight = document.getElementById("highlight");
+  // 色設定
+  const colors = {
+    "function": "#ff80ff",
+    "let": "#8080ff",
+    "const": "#8080ff",
+    "var": "#8080ff",
+    "return": "#ffcc80",
+    "if": "#80ffff",
+    "else": "#80ffff",
+    "for": "#80ffff",
+    "while": "#80ffff",
+    "class": "#ff80ff",
+    "new": "#ffcc80"
+  };
+  // 保存データ読み込み
+  editor.value = localStorage.getItem("simpleCodePad") || "";
+  // HTMLエスケープ
+  const escapeHTML = (str) => {
+    return str.replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+  };
+  // ハイライト処理
+  const updateHighlight = () => {
+    const text = editor.value;
+    const keys = Object.keys(colors)
+      .sort((a, b) => b.length - a.length)
+      .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("|");
+    const regex = new RegExp(
+      `(^|[ \\t])(${keys})(?=$|[ \\t])`,
+      "g"
+    );
+    let result = "";
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      const prefix = match[1];
+      const word = match[2];
+      const start = match.index;
+      const wordStart = start + prefix.length;
+      result += escapeHTML(text.slice(lastIndex, wordStart));
+      result += `<span style="color:${colors[word]}">${escapeHTML(word)}</span>`;
+      lastIndex = wordStart + word.length;
+    }
+    result += escapeHTML(text.slice(lastIndex));
+    highlight.innerHTML = result + "\n";
+    syncScroll();
+  };
+  // スクロール同期
+  const syncScroll = () => {
+    highlight.scrollTop = editor.scrollTop;
+    highlight.scrollLeft = editor.scrollLeft;
+  };
+  // 入力処理
+  editor.addEventListener("input", () => {
+    localStorage.setItem("simpleCodePad", editor.value);
+    updateHighlight();
+  });
+  // スクロール処理
+  editor.addEventListener("scroll", syncScroll);
+  // キー入力処理
   editor.addEventListener("keydown", (e) => {
-    if (e.key === "Tab" && !e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey) {
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const text = editor.value;
+    // Tab
+    if (
+      e.key === "Tab" &&
+      !e.shiftKey &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey
+    ) {
       e.preventDefault();
-      const start = editor.selectionStart;
-      const end = editor.selectionEnd;
-      const spaces = "    ";
-      editor.setRangeText(spaces, start, end, "end");
+      editor.setRangeText("\t", start, end, "end");
+      editor.dispatchEvent(new Event("input"));
+      return;
+    }
+    // Enter
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // 現在の行を取得
+      const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+      const currentLine = text.slice(lineStart, start);
+      // 現在のインデント
+      const indent = currentLine.match(/^\t*/)[0];
+      // カーソル直前の文字
+      const before = text.slice(0, start).trimEnd();
+      // カーソル直後の文字
+      const after = text.slice(end).trimStart();
+      // 開き括弧
+      const opening = /[\{\[\(]$/;
+      // 閉じ括弧
+      const closing = /^[\}\]\)>]/;
+      let nextIndent = indent;
+      // 開き括弧があれば1階層深く
+      if (opening.test(before)) {
+        nextIndent += "\t";
+      }
+      // 閉じ括弧が次に来るなら1階層浅く
+      else if (closing.test(after)) {
+        nextIndent = indent.slice(0, -1);
+      }
+      // 改行挿入
+      const insertion = "\n" + nextIndent;
+      editor.setRangeText(insertion, start, end, "end");
+      editor.dispatchEvent(new Event("input"));
     }
   });
+  // 初期表示
+  updateHighlight();
+});
 </script>
 </body>
 </html>
