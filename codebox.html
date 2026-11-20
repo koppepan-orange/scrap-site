@@ -63,9 +63,13 @@
     .highlighted {
         white-space: pre;
     }
+    .bracket-match {
+        background: #b8dfff;
+        outline: 1px solid #579bd3;
+        border-radius: 2px;
+    }
 </style>
 </head>
-
 <body>
 <div id="container">
     <pre id="highlight"></pre>
@@ -89,6 +93,13 @@ document.addEventListener("DOMContentLoaded", () => {
         "class": "#ff80ff",
         "new": "#ffcc80"
     };
+    // 括弧設定
+    const brackets = {
+        "(": ")",
+        "{": "}",
+        "[": "]",
+        "<": ">"
+    };
     // 保存データ読み込み
     editor.value = localStorage.getItem("simpleCodePad") || "";
     // HTMLエスケープ
@@ -101,9 +112,68 @@ document.addEventListener("DOMContentLoaded", () => {
             "'": "&#39;"
         })[c]);
     };
+    // 対応する括弧を検索
+    const findMatchingBracket = (text, position) => {
+        const char = text[position];
+        if (!char) return null;
+        const opening = Object.keys(brackets);
+        const closing = Object.values(brackets);
+        // 開き括弧の場合
+        if (opening.includes(char)) {
+            const target = brackets[char];
+            let depth = 0;
+            for (let i = position; i < text.length; i++) {
+                if (text[i] === char) depth++;
+                if (text[i] === target) {
+                    depth--;
+                    if (depth === 0) {
+                        return i;
+                    }
+                }
+            }
+        }
+        // 閉じ括弧の場合
+        else if (closing.includes(char)) {
+            const target = opening[closing.indexOf(char)];
+            let depth = 0;
+            for (let i = position; i >= 0; i--) {
+                if (text[i] === char) depth++;
+                if (text[i] === target) {
+                    depth--;
+                    if (depth === 0) {
+                        return i;
+                    }
+                }
+            }
+        }
+        return null;
+    };
+    // カーソル周辺の括弧を取得
+    const getActiveBrackets = () => {
+        const text = editor.value;
+        const pos = editor.selectionStart;
+        const candidates = [
+            pos - 1,
+            pos
+        ];
+        for (const index of candidates) {
+            if (index < 0 || index >= text.length) continue;
+            const char = text[index];
+            if (
+                !Object.keys(brackets).includes(char) &&
+                !Object.values(brackets).includes(char)
+            ) continue;
+            const match = findMatchingBracket(text, index);
+            if (match !== null) {
+                return [index, match];
+            }
+        }
+        return [];
+    };
     // ハイライト処理
     const updateHighlight = () => {
         const text = editor.value;
+        const activeBrackets = getActiveBrackets();
         const keys = Object.keys(colors)
             .sort((a, b) => b.length - a.length)
             .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
@@ -112,19 +182,29 @@ document.addEventListener("DOMContentLoaded", () => {
             `(^|[ \\t])(${keys})(?=$|[ \\t])`,
             "g"
         );
-        let result = "";
-        let lastIndex = 0;
+        const colored = new Map();
         let match;
         while ((match = regex.exec(text)) !== null) {
             const prefix = match[1];
             const word = match[2];
-            const start = match.index;
-            const wordStart = start + prefix.length;
-            result += escapeHTML(text.slice(lastIndex, wordStart));
-            result += `<span style="color:${colors[word]}">${escapeHTML(word)}</span>`;
-            lastIndex = wordStart + word.length;
+            const start = match.index + prefix.length;
+            for (let i = 0; i < word.length; i++) {
+                colored.set(start + i, colors[word]);
+            }
         }
-        result += escapeHTML(text.slice(lastIndex));
+        let result = "";
+        for (let i = 0; i < text.length; i++) {
+            const char = escapeHTML(text[i]);
+            const color = colored.get(i);
+            const isBracket = activeBrackets.includes(i);
+            if (isBracket) {
+                result += `<span class="bracket-match">${char}</span>`;
+            } else if (color) {
+                result += `<span style="color:${color}">${char}</span>`;
+            } else {
+                result += char;
+            }
+        }
         highlight.innerHTML = result + "\n";
         syncScroll();
     };
@@ -138,7 +218,10 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("simpleCodePad", editor.value);
         updateHighlight();
     });
-    // スクロール処理
+    // カーソル移動時の更新
+    editor.addEventListener("click", updateHighlight);
+    editor.addEventListener("keyup", updateHighlight);
+    editor.addEventListener("select", updateHighlight);
     editor.addEventListener("scroll", syncScroll);
     // キー入力処理
     editor.addEventListener("keydown", (e) => {
@@ -161,31 +244,59 @@ document.addEventListener("DOMContentLoaded", () => {
         // Enter
         if (e.key === "Enter") {
             e.preventDefault();
-            // 現在の行を取得
+            // 現在の行頭を取得
             const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+            // 行頭からカーソルまで
             const currentLine = text.slice(lineStart, start);
-            // 現在のインデント
+            // 行頭のインデントを取得
             const indent = currentLine.match(/^\t*/)[0];
-            // カーソル直前の文字
-            const before = text.slice(0, start).trimEnd();
-            // カーソル直後の文字
-            const after = text.slice(end).trimStart();
-            // 開き括弧
+            // カーソル直前・直後
+            const before = text.slice(0, start);
+            const after = text.slice(end);
+            const beforeTrimmed = before.trimEnd();
+            const afterTrimmed = after.trimStart();
             const opening = /[\{\[\(]$/;
-            // 閉じ括弧
-            const closing = /^[\}\]\)>]/;
+            const closing = /^[\}\]\)]/;
             let nextIndent = indent;
-            // 開き括弧があれば1階層深く
-            if (opening.test(before)) {
-                nextIndent += "\t";
+            // 開き括弧と閉じ括弧の間
+            const lastChar = beforeTrimmed.slice(-1);
+            const firstChar = afterTrimmed[0];
+            const isPair =
+                brackets[lastChar] === firstChar;
+            if (isPair) {
+                // 内側と外側の2行を作る
+                const innerIndent = indent + "\t";
+                const insertion =
+                    "\n" + innerIndent +
+                    "\n" + indent;
+                editor.setRangeText(
+                    insertion,
+                    start,
+                    end,
+                    "preserve"
+                );
+                // カーソルを内側の行へ
+                const cursor = start + 1 + innerIndent.length;
+                editor.setSelectionRange(cursor, cursor);
+                editor.dispatchEvent(new Event("input"));
+                return;
             }
-            // 閉じ括弧が次に来るなら1階層浅く
-            else if (closing.test(after)) {
+            // 開き括弧の直後なら1階層深く
+            if (opening.test(beforeTrimmed)) {
+                nextIndent = indent + "\t";
+            }
+            // 閉じ括弧の直前なら1階層浅く
+            else if (closing.test(afterTrimmed)) {
                 nextIndent = indent.slice(0, -1);
             }
-            // 改行挿入
+            // 改行
             const insertion = "\n" + nextIndent;
-            editor.setRangeText(insertion, start, end, "end");
+            editor.setRangeText(
+                insertion,
+                start,
+                end,
+                "end"
+            );
             editor.dispatchEvent(new Event("input"));
         }
     });
