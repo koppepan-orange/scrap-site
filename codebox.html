@@ -2,306 +2,1226 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Simple Code Pad</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick Code Pad</title>
 <style>
-    @font-face {
-        font-family: "hackgen";
-        src: url("fonts/assets/hackgen.ttf");
+@font-face {
+    font-family: "hackgen";
+    src: url("fonts/assets/hackgen.ttf") format("truetype");
+    font-display: swap;
+}
+:root {
+    color-scheme: dark;
+    --bg: #cecece;
+    --panel: #1b1f27;
+    --panel-2: #242a35;
+    --line: #343c49;
+    --text: #2b2b2b;
+    --muted: #8993a3;
+    --accent: #8dbdff;
+    --editor-size: 14px;
+    --editor-line: 1.7;
+}
+* { box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body { display: flex; flex-direction: column; }
+#topbar {
+    height: 42px; min-height: 42px; width: 100%;
+    display: flex; align-items: center; padding: 0 14px;
+    background: #171a21; border-bottom: 1px solid #292f39;
+}
+#pageName {
+    max-width: min(70vw, 520px); overflow: hidden; white-space: nowrap;
+    text-overflow: ellipsis; cursor: pointer; user-select: none;
+    color: #dbe8f8; font-size: 13px; letter-spacing: .02em;
+    transition: color .12s ease;
+}
+#pageName:hover { color: #ffffff; }
+#editorWrap {
+    position: relative; flex: 1; min-height: 0; width: 100%;
+    overflow: hidden; background: #111318;
+}
+#highlight, #editor {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; padding: 18px 20px 70px;
+    border: 0; outline: 0; resize: none;
+    font-family: "hackgen", "Cascadia Code", "Consolas", monospace;
+    font-size: var(--editor-size); font-weight: 400;
+    line-height: var(--editor-line); letter-spacing: 0;
+    tab-size: 4; -moz-tab-size: 4;
+    white-space: pre-wrap; overflow-wrap: break-word;
+    word-break: normal; font-variant-ligatures: none;
+}
+#highlight {
+    overflow: auto; pointer-events: none; color: #d8dee9;
+    scrollbar-width: none;
+    background: transparent;
+}
+#highlight::-webkit-scrollbar { display: none}
+#editor {
+    overflow: auto;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: #f3f7ff;
+    selection-background-color: rgba(105, 155, 225, .35);
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+}
+#editor::selection { background: rgba(105, 155, 225, .35)}
+#editor::placeholder { color: transparent}
+#highlight code { font: inherit}
+.tok-comment {
+    color: #697586;
+    font-style: italic
+}
+.tok-string { color: #b6d99b}
+.tok-number { color: #e7b879}
+.tok-keyword { color: #c5a5ff}
+.tok-function { color: #ff80ff}
+.tok-let { color: #9196ff}
+.tok-type { color: #69c9d2}
+.tok-letant { color: #e8ad76}
+.tok-operator { color: #aab5c6}
+.tok-var {
+    color: #ff1744;
+    font-weight: 900;
+    text-shadow: 0 0 7px rgba(255, 23, 68, .68);
+    background: rgba(255, 23, 68, .13);
+    border-radius: 3px;
+}
+.bracket-match {
+    color: #fff !important;
+    background: rgba(255, 190, 80, .28);
+    outline: 1px solid rgba(255, 190, 80, .92);
+    border-radius: 3px;
+    font-weight: 800;
+}
+#gestureMenu {
+    position: fixed;
+    z-index: 50;
+    width: 150px;
+    height: 150px;
+    transform: translate(-50%, -50%);
+    display: none;
+    pointer-events: none;
+}
+#gestureMenu.open { display: block}
+.gestureButton {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid #515c6d;
+    border-radius: 15px;
+    background: rgba(37, 45, 58, .97);
+    color: #eef4ff;
+    display: grid;
+    place-items: center;
+    font-size: 23px;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .42);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.gestureButton:active { 
+    background: #3b4a60;
+    transform: scale(.94);
     }
-    html, body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-        background: #dedede;
-        font-family: hackgen;
-        font-size: 16px;
-        line-height: 1.6;
+#undoButton { right: 0; top: 51px; }
+#redoButton { left: 0; top: 51px; }
+#newButton { top: 0; left: 51px; }
+#listButton { bottom: 0; left: 51px; }
+#modalLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .48);
+    padding: 18px;
+}
+#modalLayer.open { display: flex; }
+.modal {
+    background: #1c222c; border: 1px solid #3a4555;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .5);
+    border-radius: 13px;
+}
+#newModal {
+    width: min(440px, 100%); padding: 22px;
+}
+#newModalTitle { font-size: 14px; color: #dce6f4; margin-bottom: 13px; }
+#newPageName {
+    width: calc(100% - 82px); height: 40px; padding: 0 11px;
+    border: 1px solid #465366; border-radius: 7px 0 0 7px;
+    outline: none; background: #10151d; color: #edf3fc;
+    font: 13px "hackgen", monospace;
+}
+#newPageName:focus { border-color: #8dbdff; }
+#makePage {
+    width: 82px; height: 40px; margin-left: -5px;
+    border: 1px solid #6087b5; border-radius: 0 7px 7px 0;
+    background: #294361; color: #f4f8ff; cursor: pointer;
+}
+#listModal {
+    width: min(80vw, 760px); height: min(70vh, 700px);
+    min-width: min(300px, 100%); padding: 15px 0 10px;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+#listHeading {
+    padding: 0 18px 11px; color: #dce6f4; font-size: 13px;
+    border-bottom: 1px solid #343e4c;
+}
+#pageItems {
+    overflow: auto; padding: 3px 0; flex: 1;
+}
+.item {
+    width: 90%; min-height: 42px; margin: 0 auto;
+    display: flex; align-items: center; gap: 9px;
+    border-bottom: 1px solid #343c49; cursor: pointer;
+    padding: 3px 1px; color: #e3eaf4;
+}
+.item.active { color: #9fc9ff; }
+.itemMain { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.itemName {
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-size: 12px;
+}
+.itemPreview {
+    width: 100px; max-width: 100px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    color: #8290a3; font-size: 10px;
+}
+.downloadItem {
+    flex: 0 0 30px; width: 30px; height: 30px;
+    border: 1px solid #58677b; border-radius: 50%;
+    background: #283344; color: #e3edfa; font-size: 14px;
+    display: grid; place-items: center; cursor: pointer;
+}
+.downloadItem:active { background: #405472; }
+.itemActions { display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+.itemAction { width:29px; height:29px; padding:0; border:1px solid #58677b; border-radius:50%; background:#283344; color:#e3edfa; font-size:13px; display:grid; place-items:center; cursor:pointer; }
+.itemAction:active { background:#405472; }
+.itemAction.upload { color:#a9d5ff; }
+.itemAction.delete { color:#ff9b9b; }
+@media (max-width:600px) { .item { width:96%; gap:5px; } .itemAction { width:27px; height:27px; font-size:12px; } .itemActions { gap:3px; } }
+#emptyList { color: #8591a2; font-size: 12px; text-align: center; padding: 25px 0; }
+#warningModal {
+    width: min(760px, 100%);
+    max-height: min(86vh, 820px);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border-color: #8b4b52;
+    background: #26191d;
+    position: fixed;
+    top: 0;
+
+    &.hide{
+        display:none;
     }
-    #container {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
-    #highlight, #editor {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 32px;
-        border: none;
-        outline: none;
-        resize: none;
-        font-family: hackgen;
-        font-size: 16px;
-        line-height: 1.6;
-        tab-size: 4;
-        white-space: pre;
-        overflow: auto;
-        overflow-wrap: normal;
-    }
-    #highlight {
-        pointer-events: none;
-        color: #2b2b2b;
-        background: transparent;
-    }
-    #editor {
-        background: transparent;
-        color: transparent;
-        caret-color: #2b2b2b;
-        -webkit-text-fill-color: transparent;
-        z-index: 2;
-    }
-    #editor::selection {
-        background: #def0ff;
-        -webkit-text-fill-color: transparent;
-    }
-    .highlighted {
-        white-space: pre;
-    }
-    .bracket-match {
-        background: #b8dfff;
-        outline: 1px solid #579bd3;
-        border-radius: 2px;
-    }
+}
+#warningTitle{
+    color:#ffb7b7;
+    font-size:15px;
+    font-weight:700;
+}
+#warningMessage {
+    color:#f0dadd;
+    font-size:12px;
+    white-space:pre-wrap;
+}
+#warningPreview {
+    width:100%;
+    min-height:120px;
+    max-height:48vh;
+    overflow:auto;
+    resize:vertical;
+    padding:12px;
+    border:1px solid #70434a;
+    border-radius:8px;
+    background:#160f12;
+    color:#f4dfe2;
+    font:12px/1.6 "hackgen",monospace;
+    white-space:pre; tab-size:4;
+}
+#warningDiff { white-space:pre-wrap; overflow:auto; max-height:48vh; padding:10px; background:#160f12; border:1px solid #70434a; border-radius:8px; font:11px/1.6 "hackgen",monospace; }
+.diff-add { color:#9ee0ae; } .diff-remove { color:#ff9caa; }
+#warningActions { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.warningButton { min-width:82px; padding:9px 13px; border:1px solid #88535b; border-radius:7px; background:#492b32; color:#ffecef; cursor:pointer; }
+.warningButton.primary { background:#873e4b; border-color:#b76a76; }
+.warningButton:active { transform:scale(.97); }
+@media (max-width: 600px) {
+    #topbar { height: 38px; min-height: 38px; padding: 0 11px; }
+    #highlight, #editor { padding: 14px 13px 55px; font-size: 13px; }
+    #listModal { width: 88vw; height: 72vh; }
+    #gestureMenu { width: 144px; height: 144px; }
+    .gestureButton { width: 46px; height: 46px; }
+    #undoButton { top: 49px; }
+    #redoButton { top: 49px; }
+    #newButton { left: 49px; }
+    #listButton { left: 49px; }
+}
 </style>
 </head>
 <body>
-<div id="container">
-    <pre id="highlight"></pre>
-    <textarea id="editor" spellcheck="false" placeholder="Write code here..."></textarea>
+<header id="topbar">
+    <div id="pageName" title="クリックで .txt をダウンロード">untitled.js</div>
+</header>
+<main id="editorWrap">
+    <pre id="highlight" aria-hidden="true"><code></code></pre>
+    <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="コードエディタ"></textarea>
+</main>
+
+<div id="gestureMenu" aria-hidden="true">
+    <button class="gestureButton" id="undoButton" type="button" aria-label="元に戻す">↶</button>
+    <button class="gestureButton" id="redoButton" type="button" aria-label="やり直す">↷</button>
+    <button class="gestureButton" id="newButton" type="button" aria-label="新規ページ">＋</button>
+    <button class="gestureButton" id="listButton" type="button" aria-label="ページ一覧">☰</button>
 </div>
+
+<div id="modalLayer">
+    <section class="modal" id="newModal" hidden>
+        <div id="newModalTitle">名前を入れてね</div>
+        <div>
+            <input id="newPageName" type="text" autocomplete="off" spellcheck="false" aria-label="ページ名">
+            <button id="makePage" type="button">これで</button>
+        </div>
+    </section>
+    <section class="modal" id="listModal" hidden>
+        <div id="listHeading">ページ一覧</div>
+        <div id="pageItems"></div>
+    </section>
+    <section class="modal hide" id="warningModal" hidden role="dialog" aria-modal="true">
+        <div id="warningTitle">確認</div>
+        <div id="warningMessage"></div>
+        <pre id="warningPreview" hidden></pre>
+        <div id="warningDiff" hidden></div>
+        <div id="warningActions"></div>
+    </section>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+"use strict";
+
 document.addEventListener("DOMContentLoaded", () => {
-    const editor = document.getElementById("editor");
-    const highlight = document.getElementById("highlight");
-    // 色設定
-    const colors = {
-        "function": "#ff80ff",
-        "let": "#8080ff",
-        "const": "#8080ff",
-        "var": "#8080ff",
-        "return": "#ffcc80",
-        "if": "#80ffff",
-        "else": "#80ffff",
-        "for": "#80ffff",
-        "while": "#80ffff",
-        "class": "#ff80ff",
-        "new": "#ffcc80"
+    let STORAGE_KEY = "quick-code-pad.pages.v1";
+    let editor = document.getElementById("editor");
+    let highlight = document.getElementById("highlight");
+    let highlightCode = highlight.querySelector("code");
+    let pageName = document.getElementById("pageName");
+    let gestureMenu = document.getElementById("gestureMenu");
+    let modalLayer = document.getElementById("modalLayer");
+    let newModal = document.getElementById("newModal");
+    let newPageName = document.getElementById("newPageName");
+    let pageItems = document.getElementById("pageItems");
+    let listModal = document.getElementById("listModal");
+    let warningModal = document.getElementById("warningModal");
+    let warningTitle = document.getElementById("warningTitle");
+    let warningMessage = document.getElementById("warningMessage");
+    let warningPreview = document.getElementById("warningPreview");
+    let warningDiff = document.getElementById("warningDiff");
+    let warningActions = document.getElementById("warningActions");
+
+    let firebaseConfig = {
+        apiKey: "AIzaSyBN5V_E6PzwlJn7IwVsluKIWNIyathhx0",
+        authDomain: "koppepan-orange.firebaseapp.com",
+        databaseURL: "https://koppepan-orange-default-rtdb.firebaseio.com",
+        projectId: "koppepan-orange",
+        storageBucket: "koppepan-orange.appspot.com",
+        messagingSenderId: "730150198097",
+        appId: "1:730150198097:web:076a074a3d406053155170",
+        measurementId: "G-MYKJWD203Z"
     };
-    // 括弧設定
-    const brackets = {
-        "(": ")",
-        "{": "}",
-        "[": "]",
-        "<": ">"
+    let refMemo = null;
+    try {
+        if (window.firebase && firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+        if (window.firebase) refMemo = firebase.database().ref("quickmemos");
+    } catch (error) {
+        console.error("Firebaseの初期化に失敗しました。", error);
+    }
+
+    // Firebaseのキーに使えない文字を避けるため、ページ名をBase64URL化する。
+    let memoKey = name => btoa(unescape(encodeURIComponent(name)))
+        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    let saveMemo = async (name, content) => {
+        if (!refMemo) throw new Error("Firebaseに接続できません。通信状態とSDKの読み込みを確認してね。");
+        await refMemo.child(memoKey(name)).set({ name, content, updatedAt: Date.now() });
     };
-    // 保存データ読み込み
-    editor.value = localStorage.getItem("simpleCodePad") || "";
-    // HTMLエスケープ
-    const escapeHTML = (str) => {
-        return str.replace(/[&<>"']/g, (c) => ({
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#39;"
-        })[c]);
+
+    // 独立した識別子だけに適用する色データ。
+    // var は専用スタイルで強く目立たせる。
+    let keywordColors = {
+        "function": "#ff80ff", "let": "#8080ff", "let": "#9d91ff",
+        "return": "#ff9bce", "if": "#8fc6ff", "else": "#8fc6ff",
+        "switch": "#8fc6ff", "case": "#8fc6ff", "break": "#8fc6ff",
+        "continue": "#8fc6ff", "for": "#8fc6ff", "while": "#8fc6ff",
+        "do": "#8fc6ff", "try": "#8fc6ff", "catch": "#8fc6ff",
+        "finally": "#8fc6ff", "throw": "#ff9bce", "new": "#ffbd82",
+        "this": "#f2c879", "super": "#f2c879", "class": "#74d4d2",
+        "extends": "#74d4d2", "implements": "#74d4d2", "interface": "#74d4d2",
+        "package": "#74d4d2", "import": "#74d4d2", "export": "#74d4d2",
+        "default": "#74d4d2", "public": "#74d4d2", "private": "#74d4d2",
+        "protected": "#74d4d2", "static": "#74d4d2", "final": "#74d4d2",
+        "void": "#74d4d2", "int": "#74d4d2", "long": "#74d4d2",
+        "short": "#74d4d2", "byte": "#74d4d2", "float": "#74d4d2",
+        "double": "#74d4d2", "char": "#74d4d2", "boolean": "#74d4d2",
+        "String": "#74d4d2", "var": "#ff1744", "instanceof": "#74d4d2",
+        "throws": "#74d4d2", "throw": "#ff9bce", "null": "#e6a6a6",
+        "undefined": "#e6a6a6", "true": "#e6a6a6", "false": "#e6a6a6",
+        "this": "#f2c879", "super": "#f2c879", "static": "#74d4d2",
+        "abstract": "#74d4d2", "synchronized": "#74d4d2", "volatile": "#74d4d2",
+        "transient": "#74d4d2", "native": "#74d4d2", "assert": "#8fc6ff",
+        "enum": "#74d4d2", "record": "#74d4d2", "yield": "#8fc6ff",
+        "await": "#8fc6ff", "async": "#8fc6ff", "of": "#8fc6ff",
+        "in": "#8fc6ff", "typeof": "#8fc6ff", "delete": "#8fc6ff",
+        "void": "#74d4d2", "instanceof": "#74d4d2", "let": "#8080ff"
     };
-    // 対応する括弧を検索
-    const findMatchingBracket = (text, position) => {
-        const char = text[position];
-        if (!char) return null;
-        const opening = Object.keys(brackets);
-        const closing = Object.values(brackets);
-        // 開き括弧の場合
-        if (opening.includes(char)) {
-            const target = brackets[char];
-            let depth = 0;
-            for (let i = position; i < text.length; i++) {
-                if (text[i] === char) depth++;
-                if (text[i] === target) {
-                    depth--;
-                    if (depth === 0) {
-                        return i;
+
+    let jsKeywords = new Set([
+        "function", "let", "let", "var", "return", "if", "else", "switch", "case",
+        "break", "continue", "for", "while", "do", "try", "catch", "finally", "throw",
+        "new", "this", "super", "class", "extends", "import", "export", "default",
+        "null", "undefined", "true", "false", "async", "await", "of", "in", "typeof",
+        "delete", "void", "instanceof", "yield", "get", "set", "static"
+    ]);
+    let javaKeywords = new Set([
+        "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "class",
+        "let", "continue", "default", "do", "double", "else", "enum", "extends", "final",
+        "finally", "float", "for", "if", "implements", "import", "instanceof", "int", "interface",
+        "long", "native", "new", "package", "private", "protected", "public", "return", "short",
+        "static", "strictfp", "super", "switch", "synchronized", "this", "throw", "throws",
+        "transient", "try", "void", "volatile", "while", "var", "true", "false", "null",
+        "record", "sealed", "permits", "non-sealed", "yield", "String"
+    ]);
+    let bracketPairs = { "(": ")", "[": "]", "{": "}", "<": ">" };
+    let closingToOpening = { ")": "(", "]": "[", "}": "{", ">": "<" };
+
+    let pages = [];
+    let activePageId = null;
+    let historyByPage = new Map();
+    let menuTimer = null;
+    let savedScrollTop = 0;
+    let lastRightClick = null;
+
+    let escapeHtml = (value) => value.replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+    })[ch]);
+
+    let makeId = () => (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `p-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    let getLanguage = (name) => /\.java$/i.test(name || "") ? "java" : "javascript";
+
+    let getActivePage = () => pages.find(page => page.id === activePageId) || null;
+
+    let saveAll = () => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                pages,
+                activePageId
+            }));
+        } catch (error) {
+            console.warn("LocalStorageへの保存に失敗しました。", error);
+        }
+    };
+
+    let downloadText = (name, content) => {
+        let safeBase = (name || "untitled").replace(/[\\/:*?"<>|]/g, "_").replace(/\.(js|java|txt)$/i, "");
+        let blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        let url = URL.createObjectURL(blob);
+        let anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${safeBase || "untitled"}.txt`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    let getLexicalInfo = (source, language) => {
+        let ignored = new Uint8Array(source.length);
+        let tokens = [];
+        let i = 0;
+        while (i < source.length) {
+            let start = i;
+            let ch = source[i];
+            let next = source[i + 1];
+
+            if (ch === "/" && next === "/") {
+                i += 2;
+                while (i < source.length && source[i] !== "\n") i++;
+                for (let j = start; j < i; j++) ignored[j] = 1;
+                tokens.push({ start, end: i, type: "comment" });
+                continue;
+            }
+            if (ch === "/" && next === "*") {
+                i += 2;
+                while (i < source.length && !(source[i] === "*" && source[i + 1] === "/")) i++;
+                if (i < source.length) i = Math.min(source.length, i + 2);
+                for (let j = start; j < i; j++) ignored[j] = 1;
+                tokens.push({ start, end: i, type: "comment" });
+                continue;
+            }
+            if (ch === "\"" || ch === "'" || (language === "javascript" && ch === "`")) {
+                let quote = ch;
+                i++;
+                while (i < source.length) {
+                    if (source[i] === "\\") { i = Math.min(source.length, i + 2); continue; }
+                    if (source[i] === quote) { i++; break; }
+                    i++;
+                }
+                for (let j = start; j < i; j++) ignored[j] = 1;
+                tokens.push({ start, end: i, type: "string" });
+                continue;
+            }
+            if (/\d/.test(ch) && (i === 0 || !/[\w$]/.test(source[i - 1]))) {
+                i++;
+                while (i < source.length && /[\w.]/.test(source[i])) i++;
+                tokens.push({ start, end: i, type: "number" });
+                continue;
+            }
+            if (/[A-Za-z_$]/.test(ch)) {
+                i++;
+                while (i < source.length && /[A-Za-z0-9_$]/.test(source[i])) i++;
+                let word = source.slice(start, i);
+                let keywordSet = language === "java" ? javaKeywords : jsKeywords;
+                if (keywordSet.has(word)) {
+                    let type = "keyword";
+                    if (word === "var") type = "var";
+                    else if (word === "function") type = "function";
+                    else if (word === "let" || word === "let") type = "let";
+                    else if (["class", "interface", "public", "private", "protected", "static", "void", "int", "long", "short", "byte", "float", "double", "char", "boolean", "String", "extends", "implements", "package", "import", "new", "final", "abstract", "enum", "record"].includes(word)) type = "type";
+                    else if (["true", "false", "null", "undefined"].includes(word)) type = "letant";
+                    tokens.push({ start, end: i, type, word });
+                }
+                continue;
+            }
+            i++;
+        }
+
+        let pairMap = new Map();
+        let stack = [];
+        for (let p = 0; p < source.length; p++) {
+            if (ignored[p]) continue;
+            let char = source[p];
+            if (bracketPairs[char]) {
+                stack.push({ char, index: p });
+            } else if (closingToOpening[char]) {
+                let expected = closingToOpening[char];
+                for (let s = stack.length - 1; s >= 0; s--) {
+                    if (stack[s].char === expected) {
+                        let open = stack[s];
+                        stack.length = s;
+                        pairMap.set(open.index, p);
+                        pairMap.set(p, open.index);
+                        break;
                     }
                 }
             }
         }
-        // 閉じ括弧の場合
-        else if (closing.includes(char)) {
-            const target = opening[closing.indexOf(char)];
-            let depth = 0;
-            for (let i = position; i >= 0; i--) {
-                if (text[i] === char) depth++;
-                if (text[i] === target) {
-                    depth--;
-                    if (depth === 0) {
-                        return i;
-                    }
-                }
-            }
-        }
-        return null;
+        return { ignored, tokens, pairMap };
     };
-    // カーソル周辺の括弧を取得
-    const getActiveBrackets = () => {
-        const text = editor.value;
-        const pos = editor.selectionStart;
-        const candidates = [
-            pos - 1,
-            pos
-        ];
-        for (const index of candidates) {
-            if (index < 0 || index >= text.length) continue;
-            const char = text[index];
-            if (
-                !Object.keys(brackets).includes(char) &&
-                !Object.values(brackets).includes(char)
-            ) continue;
-            const match = findMatchingBracket(text, index);
-            if (match !== null) {
-                return [index, match];
+
+    let renderHighlighted = () => {
+        let source = editor.value;
+        let language = getLanguage(getActivePage()?.name || "untitled.js");
+        let lexical = getLexicalInfo(source, language);
+        let cursor = editor.selectionStart;
+        let candidates = [cursor - 1, cursor];
+        let matched = null;
+        for (let candidate of candidates) {
+            if (lexical.pairMap.has(candidate)) {
+                matched = [candidate, lexical.pairMap.get(candidate)];
+                break;
             }
         }
-        return [];
-    };
-    // ハイライト処理
-    const updateHighlight = () => {
-        const text = editor.value;
-        const activeBrackets = getActiveBrackets();
-        const keys = Object.keys(colors)
-            .sort((a, b) => b.length - a.length)
-            .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-            .join("|");
-        const regex = new RegExp(
-            `(^|[ \\t])(${keys})(?=$|[ \\t])`,
-            "g"
-        );
-        const colored = new Map();
-        let match;
-        while ((match = regex.exec(text)) !== null) {
-            const prefix = match[1];
-            const word = match[2];
-            const start = match.index + prefix.length;
-            for (let i = 0; i < word.length; i++) {
-                colored.set(start + i, colors[word]);
+        let matchSet = new Set(matched || []);
+        let tokenByStart = new Map(lexical.tokens.map(token => [token.start, token]));
+        let html = "";
+        let pos = 0;
+        let appendPlain = (from, to) => {
+            if (to <= from) return;
+            let chunk = "";
+            for (let p = from; p < to; p++) {
+                let escaped = escapeHtml(source[p]);
+                if (matchSet.has(p)) chunk += `<span class="bracket-match">${escaped}</span>`;
+                else chunk += escaped;
             }
-        }
-        let result = "";
-        for (let i = 0; i < text.length; i++) {
-            const char = escapeHTML(text[i]);
-            const color = colored.get(i);
-            const isBracket = activeBrackets.includes(i);
-            if (isBracket) {
-                result += `<span class="bracket-match">${char}</span>`;
-            } else if (color) {
-                result += `<span style="color:${color}">${char}</span>`;
+            html += chunk;
+        };
+        while (pos < source.length) {
+            let token = tokenByStart.get(pos);
+            if (!token) { appendPlain(pos, pos + 1); pos++; continue; }
+            let text = source.slice(token.start, token.end);
+            let escaped = escapeHtml(text);
+            let style = "";
+            if (token.type === "comment") style = "tok-comment";
+            else if (token.type === "string") style = "tok-string";
+            else if (token.type === "number") style = "tok-number";
+            else if (token.type === "var") style = "tok-var";
+            else if (token.type === "function") style = "tok-function";
+            else if (token.type === "let") style = "tok-let";
+            else if (token.type === "type") style = "tok-type";
+            else if (token.type === "letant") style = "tok-letant";
+            else style = "tok-keyword";
+
+            let mappedColor = keywordColors[token.word];
+            let colorStyle = mappedColor ? ` style="color:${mappedColor}"` : "";
+            if (!matchSet.size || (token.end - token.start > 1 && !Array.from(matchSet).some(index => index >= token.start && index < token.end))) {
+                html += `<span class="${style}"${colorStyle}>${escaped}</span>`;
             } else {
-                result += char;
+                for (let p = token.start; p < token.end; p++) {
+                    let charHtml = escapeHtml(source[p]);
+                    html += matchSet.has(p)
+                        ? `<span class="bracket-match">${charHtml}</span>`
+                        : `<span class="${style}"${colorStyle}>${charHtml}</span>`;
+                }
             }
+            pos = token.end;
         }
-        highlight.innerHTML = result + "\n";
+        if (source.endsWith("\n")) html += " ";
+        highlightCode.innerHTML = html;
         syncScroll();
     };
-    // スクロール同期
-    const syncScroll = () => {
+
+    let syncScroll = () => {
         highlight.scrollTop = editor.scrollTop;
         highlight.scrollLeft = editor.scrollLeft;
     };
-    // 入力処理
-    editor.addEventListener("input", () => {
-        localStorage.setItem("simpleCodePad", editor.value);
-        updateHighlight();
+
+    let initializeHistory = (page) => {
+        historyByPage.set(page.id, {
+            stack: [{ value: page.content || "", start: 0, end: 0 }],
+            index: 0
+        });
+    };
+
+    let getHistory = () => {
+        if (!historyByPage.has(activePageId)) initializeHistory(getActivePage());
+        return historyByPage.get(activePageId);
+    };
+
+    let recordHistory = () => {
+        let history = getHistory();
+        let current = history.stack[history.index];
+        let value = editor.value;
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        if (current && current.value === value && current.start === start && current.end === end) return;
+        history.stack = history.stack.slice(0, history.index + 1);
+        history.stack.push({ value, start, end });
+        if (history.stack.length > 1500) history.stack.shift();
+        history.index = history.stack.length - 1;
+    };
+
+    let applyHistory = (direction) => {
+        let history = getHistory();
+        let nextIndex = history.index + direction;
+        if (nextIndex < 0 || nextIndex >= history.stack.length) return;
+        history.index = nextIndex;
+        let state = history.stack[history.index];
+        editor.value = state.value;
+        editor.setSelectionRange(state.start, state.end);
+        updatePageFromEditor(false);
+        renderHighlighted();
+    };
+
+    let updatePageFromEditor = (addHistory = true) => {
+        let page = getActivePage();
+        if (!page) return;
+        page.content = editor.value;
+        page.updatedAt = Date.now();
+        if (addHistory) recordHistory();
+        saveAll();
+    };
+
+    let updatePageTitle = () => {
+        let page = getActivePage();
+        pageName.textContent = page ? page.name : "untitled.js";
+        document.title = `${pageName.textContent} — Quick Code Pad`;
+    };
+
+    let showWarning = ({ title, message = "", preview = null, diffHtml = null, buttons = [] }) => new Promise(resolve => {
+        closeGestureMenu();
+        // let div0 = warningModal;a
+        warningTitle.textContent = title;
+        warningMessage.textContent = message;
+        warningPreview.hidden = preview === null;
+        warningPreview.textContent = preview === null ? "" : String(preview);
+        warningDiff.hidden = diffHtml === null;
+        warningDiff.innerHTML = diffHtml === null ? "" : diffHtml;
+        warningActions.replaceChildren();
+        for (let spec of buttons) {
+            let button = document.createElement("button");
+            button.type = "button";
+            button.className = `warningButton${spec.primary ? " primary" : ""}`;
+            button.textContent = spec.label;
+            button.addEventListener("click", () => {
+                modalLayer.classList.remove("open");
+                listModal.hidden = true;
+                warningModal.classList.add("hide");
+                resolve(spec.value);
+            }, { once: true });
+            warningActions.appendChild(button);
+        }
+        newModal.hidden = true;
+        listModal.hidden = true;
+        warningModal.classList.remove("hide");
+        modalLayer.classList.add("open");
+        let first = warningActions.querySelector("button");
+        if (first) first.focus();
     });
-    // カーソル移動時の更新
-    editor.addEventListener("click", updateHighlight);
-    editor.addEventListener("keyup", updateHighlight);
-    editor.addEventListener("select", updateHighlight);
-    editor.addEventListener("scroll", syncScroll);
-    // キー入力処理
-    editor.addEventListener("keydown", (e) => {
-        const start = editor.selectionStart;
-        const end = editor.selectionEnd;
-        const text = editor.value;
-        // Tab
-        if (
-            e.key === "Tab" &&
-            !e.shiftKey &&
-            !e.altKey &&
-            !e.ctrlKey &&
-            !e.metaKey
-        ) {
-            e.preventDefault();
-            editor.setRangeText("\t", start, end, "end");
-            editor.dispatchEvent(new Event("input"));
+
+    let confirmTwice = async (title, message, preview) => {
+        let first = await showWarning({
+            title, message, preview,
+            buttons: [{ label:"やめる", value:false }, { label:"続ける", value:true, primary:true }]
+        });
+        if (!first) return false;
+        return await showWarning({
+            title:"最終確認", message:`${title}。この操作を実行するよ。
+本当に続ける？`, preview,
+            buttons: [{ label:"キャンセル", value:false }, { label:"実行する", value:true, primary:true }]
+        });
+    };
+
+    let fetchMemo = async name => {
+        if (!refMemo) throw new Error("Firebaseに接続できないよ。通信状態とSDKを確認してね。");
+        let snapshot = await refMemo.child(memoKey(name)).once("value");
+        if (!snapshot.exists()) return null;
+        let data = snapshot.val();
+        return typeof data === "string" ? data : String(data?.content ?? JSON.stringify(data, null, 2));
+    };
+
+    let makeDiffHtml = (before, after) => {
+        let a = String(before).split("\n"), b = String(after).split("\n");
+        // LCSで行単位の差分を作る。大きすぎる場合は先頭からの簡易比較に切り替える。
+        if (a.length * b.length > 180000) {
+            let out = [];
+            let max = Math.max(a.length, b.length);
+            for (let i=0;i<max;i++) {
+                if (a[i] === b[i]) out.push(`  ${escapeHtml(a[i] ?? "")}`);
+                else { if (a[i] !== undefined) out.push(`<span class="diff-remove">- ${escapeHtml(a[i])}</span>`); if (b[i] !== undefined) out.push(`<span class="diff-add">+ ${escapeHtml(b[i])}</span>`); }
+            }
+            return out.join("\n");
+        }
+        let dp = Array.from({length:a.length+1}, () => new Uint32Array(b.length+1));
+        for(let i=a.length-1;i>=0;i--) for(let j=b.length-1;j>=0;j--) dp[i][j] = a[i]===b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j],dp[i][j+1]);
+        let out=[]; let i=0,j=0;
+        while(i<a.length || j<b.length) {
+            if(i<a.length && j<b.length && a[i]===b[j]) { out.push(`  ${escapeHtml(a[i])}`); i++;j++; }
+            else if(j<b.length && (i===a.length || dp[i][j+1]>=dp[i+1][j])) out.push(`<span class="diff-add">+ ${escapeHtml(b[j++])}</span>`);
+            else out.push(`<span class="diff-remove">- ${escapeHtml(a[i++])}</span>`);
+        }
+        return out.join("\n");
+    };
+
+    let renderList = () => {
+        pageItems.replaceChildren();
+        if (pages.length === 0) {
+            let empty = document.createElement("div");
+            empty.id = "emptyList";
+            empty.textContent = "ページはまだないよ";
+            pageItems.appendChild(empty);
             return;
         }
-        // Enter
-        if (e.key === "Enter") {
-            e.preventDefault();
-            // 現在の行頭を取得
-            const lineStart = text.lastIndexOf("\n", start - 1) + 1;
-            // 行頭からカーソルまで
-            const currentLine = text.slice(lineStart, start);
-            // 行頭のインデントを取得
-            const indent = currentLine.match(/^\t*/)[0];
-            // カーソル直前・直後
-            const before = text.slice(0, start);
-            const after = text.slice(end);
-            const beforeTrimmed = before.trimEnd();
-            const afterTrimmed = after.trimStart();
-            const opening = /[\{\[\(]$/;
-            const closing = /^[\}\]\)]/;
-            let nextIndent = indent;
-            // 開き括弧と閉じ括弧の間
-            const lastChar = beforeTrimmed.slice(-1);
-            const firstChar = afterTrimmed[0];
-            const isPair =
-                brackets[lastChar] === firstChar;
-            if (isPair) {
-                // 内側と外側の2行を作る
-                const innerIndent = indent + "\t";
-                const insertion =
-                    "\n" + innerIndent +
-                    "\n" + indent;
-                editor.setRangeText(
-                    insertion,
-                    start,
-                    end,
-                    "preserve"
-                );
-                // カーソルを内側の行へ
-                const cursor = start + 1 + innerIndent.length;
-                editor.setSelectionRange(cursor, cursor);
-                editor.dispatchEvent(new Event("input"));
-                return;
+        let sorted = [...pages].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        for (let page of sorted) {
+            let item = document.createElement("div");
+            item.className = `item${page.id === activePageId ? " active" : ""}`;
+            let main = document.createElement("div");
+            main.className = "itemMain";
+            let name = document.createElement("div");
+            name.className = "itemName";
+            name.textContent = page.name;
+            let preview = document.createElement("div");
+            preview.className = "itemPreview";
+            preview.textContent = (page.content || "").replace(/\s+/g, " ").trim() || "(empty)";
+            main.append(name, preview);
+
+            let actions = document.createElement("div");
+            actions.className = "itemActions";
+            let makeAction = (label, title, className, handler) => {
+                let button = document.createElement("button");
+                button.type = "button";
+                button.className = `itemAction ${className || ""}`;
+                button.textContent = label;
+                button.title = title;
+                button.setAttribute("aria-label", `${page.name}: ${title}`);
+                button.addEventListener("click", event => {
+                    event.stopPropagation();
+                    handler();
+                });
+                actions.appendChild(button);
+            };
+            makeAction("✎", "名称変更", "", () => {
+                let proposed = prompt("新しいページ名", page.name);
+                if (proposed === null) return;
+                let nextName = proposed.trim();
+                if (!nextName) { alert("名前が空だよ。"); return; }
+                if (pages.some(other => other.id !== page.id && other.name === nextName)) {
+                    alert("同じ名前のページがすでにあるよ。"); return;
+                }
+                page.name = nextName;
+                page.updatedAt = Date.now();
+                if (page.id === activePageId) updatePageTitle();
+                saveAll();
+                renderList();
+            });
+            makeAction("x", "削除", "delete", () => {
+                if (!confirm(`「${page.name}」を削除する？\nこの操作は取り消せないよ。`)) return;
+                if (!confirm(`本当に「${page.name}」を削除するよ。続ける？`)) return;
+                pages = pages.filter(other => other.id !== page.id);
+                historyByPage.delete(page.id);
+                if (page.id === activePageId) {
+                    if (pages.length === 0) {
+                        let fresh = { id: makeId(), name: "untitled.js", content: "", updatedAt: Date.now() };
+                        pages.push(fresh);
+                        initializeHistory(fresh);
+                    }
+                    activePageId = pages[0].id;
+                    editor.value = pages[0].content || "";
+                    updatePageTitle();
+                    renderHighlighted();
+                }
+                saveAll();
+                renderList();
+            });
+            makeAction("⇈", "上載（Firebaseへ保存）", "upload", async () => {
+                try {
+                    let remoteText = await fetchMemo(page.name);
+                    if (remoteText !== null) {
+                        let accepted = await confirmTwice(`Firebaseの「${page.name}」をローカルの文章で上書き`, "現在Firebaseに保存されている文章（置き換え前）：", remoteText);
+                        if (!accepted) return;
+                    } else {
+                        let accepted = await showWarning({
+                            title:`「${page.name}」をFirebaseへ保存`, message:"同名のデータは見つからなかったよ。現在の文章を新規保存する？", preview:page.content || "(empty)",
+                            buttons:[{label:"キャンセル",value:false},{label:"保存する",value:true,primary:true}]
+                        });
+                        if (!accepted) return;
+                    }
+                    await saveMemo(page.name, page.content || "");
+                    await showWarning({ title:"保存完了", message:`「${page.name}」をFirebaseに保存したよ。`, buttons:[{label:"閉じる",value:true,primary:true}] });
+                } catch (error) {
+                    console.error(error);
+                    await showWarning({ title:"Firebase保存エラー", message:String(error.message || error), buttons:[{label:"閉じる",value:true,primary:true}] });
+                }
+            });
+            makeAction("⇊", "Firebaseから読み込む", "", async () => {
+                try {
+                    let remoteText = await fetchMemo(page.name);
+                    if (remoteText === null) {
+                        await showWarning({ title:"データが見つからない", message:`Firebaseに「${page.name}」というデータは存在しなかったよ。`, buttons:[{label:"閉じる",value:true,primary:true}] });
+                        return;
+                    }
+                    let accepted = await confirmTwice(`「${page.name}」をFirebaseから読み込む`, "読み込み予定の文章（現在のローカル文章は置き換わるよ）：", remoteText);
+                    if (!accepted) return;
+                    page.content = remoteText;
+                    page.updatedAt = Date.now();
+                    if (page.id === activePageId) {
+                        editor.value = remoteText;
+                        initializeHistory(page);
+                        renderHighlighted();
+                    }
+                    saveAll();
+                    renderList();
+                    await showWarning({ title:"読み込み完了", message:`「${page.name}」をFirebaseから読み込んだよ。`, buttons:[{label:"閉じる",value:true,primary:true}] });
+                } catch (error) {
+                    console.error(error);
+                    await showWarning({ title:"Firebase読み込みエラー", message:String(error.message || error), buttons:[{label:"閉じる",value:true,primary:true}] });
+                }
+            });
+            makeAction("差", "Firebaseとの差分", "", async () => {
+                try {
+                    let remoteText = await fetchMemo(page.name);
+                    if (remoteText === null) {
+                        await showWarning({ title:"比較できない", message:`Firebaseに「${page.name}」が見つからなかったよ。`, buttons:[{label:"閉じる",value:true,primary:true}] });
+                        return;
+                    }
+                    let diff = makeDiffHtml(remoteText, page.content || "");
+                    await showWarning({ title:`「${page.name}」の差分`, message:"緑：ローカルにだけある行（追加）／赤：Firebase側にだけある行（削除・変更前）", diffHtml:diff || "差分なし", buttons:[{label:"閉じる",value:true,primary:true}] });
+                } catch (error) {
+                    await showWarning({ title:"比較エラー", message:String(error.message || error), buttons:[{label:"閉じる",value:true,primary:true}] });
+                }
+            });
+
+            item.append(main, actions);
+            item.addEventListener("click", () => {
+                switchPage(page.id);
+                closeModal();
+            });
+            pageItems.appendChild(item);
+        }
+    };
+
+    let switchPage = (id) => {
+        if (id === activePageId) return;
+        updatePageFromEditor(false);
+        let page = pages.find(candidate => candidate.id === id);
+        if (!page) return;
+        activePageId = id;
+        editor.value = page.content || "";
+        updatePageTitle();
+        if (!historyByPage.has(page.id)) initializeHistory(page);
+        renderHighlighted();
+        saveAll();
+    };
+
+    let createPage = (name) => {
+        let cleanName = (name || "").trim() || `untitled-${pages.length + 1}.js`;
+        updatePageFromEditor(false);
+        let page = {
+            id: makeId(),
+            name: cleanName,
+            content: "",
+            updatedAt: Date.now()
+        };
+        pages.push(page);
+        activePageId = page.id;
+        editor.value = "";
+        initializeHistory(page);
+        updatePageTitle();
+        renderHighlighted();
+        saveAll();
+        editor.focus();
+    };
+
+    let openModal = (which) => {
+        closeGestureMenu();
+        modalLayer.classList.add("open");
+        newModal.hidden = which !== "new";
+        listModal.hidden = which !== "list";
+        if (which === "new") {
+            newPageName.value = `untitled-${pages.length + 1}.js`;
+            requestAnimationFrame(() => {
+                newPageName.focus();
+                newPageName.select();
+            });
+        } else {
+            renderList();
+        }
+    };
+
+    let closeModal = () => {
+        modalLayer.classList.remove("open");
+        newModal.hidden = true;
+        listModal.hidden = true;
+        warningModal.classList.add("hide");
+        editor.focus({ preventScroll: true });
+    };
+
+    let showGestureMenu = (x, y) => {
+        clearTimeout(menuTimer);
+        let padding = 88;
+        let px = Math.max(padding, Math.min(window.innerWidth - padding, x));
+        let py = Math.max(padding, Math.min(window.innerHeight - padding, y));
+        gestureMenu.style.left = `${px}px`;
+        gestureMenu.style.top = `${py}px`;
+        gestureMenu.classList.add("open");
+        gestureMenu.setAttribute("aria-hidden", "false");
+        menuTimer = setTimeout(closeGestureMenu, 5000);
+    };
+
+    let closeGestureMenu = () => {
+        gestureMenu.classList.remove("open");
+        gestureMenu.setAttribute("aria-hidden", "true");
+    };
+
+    let getLineIndent = (line) => {
+        let match = line.match(/^[\t ]*/);
+        let prefix = match ? match[0] : "";
+        let tabs = 0;
+        for (let ch of prefix) tabs += ch === "\t" ? 1 : 0.25;
+        return Math.floor(tabs + 0.001);
+    };
+
+    let handleEnter = () => {
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        let value = editor.value;
+        let lineStart = value.lastIndexOf("\n", start - 1) + 1;
+        let linePrefix = value.slice(lineStart, start);
+        let lineEndIndex = value.indexOf("\n", start);
+        let lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+        let restOfLine = value.slice(start, lineEnd);
+        let indent = getLineIndent(value.slice(lineStart, lineEnd));
+        let lastNonSpace = linePrefix.trimEnd().slice(-1);
+        let closing = bracketPairs[lastNonSpace];
+        let isOpen = Boolean(closing);
+        let nextNonSpace = restOfLine.match(/^[\t ]*(.)/);
+        let nextChar = nextNonSpace ? nextNonSpace[1] : "";
+        let alreadyClosed = isOpen && nextChar === closing;
+        let baseIndent = "\t".repeat(indent);
+        let innerIndent = "\t".repeat(indent + (isOpen ? 1 : 0));
+        let insertion;
+        let caretOffset;
+
+        if (isOpen && !alreadyClosed) {
+            insertion = `\n${innerIndent}\n${baseIndent}${closing}`;
+            caretOffset = 1 + innerIndent.length;
+        } else if (isOpen && alreadyClosed) {
+            let skippedWhitespace = nextNonSpace[0].slice(0, -1);
+            insertion = `\n${innerIndent}\n${baseIndent}`;
+            caretOffset = 1 + innerIndent.length;
+            // 既存の閉じ括弧の前に、閉じ括弧用の行を作る。
+            let replaceEnd = start + skippedWhitespace.length;
+            editor.setRangeText(insertion, start, replaceEnd, "start");
+            editor.setSelectionRange(start + caretOffset, start + caretOffset);
+            updatePageFromEditor();
+            renderHighlighted();
+            return;
+        } else {
+            insertion = `\n${baseIndent}`;
+            caretOffset = insertion.length;
+        }
+
+        editor.setRangeText(insertion, start, end, "start");
+        let caret = start + caretOffset;
+        editor.setSelectionRange(caret, caret);
+        updatePageFromEditor();
+        renderHighlighted();
+    };
+
+    let handleAutoPair = (event) => {
+        let open = event.key;
+        let close = bracketPairs[open];
+        if (!close || event.ctrlKey || event.metaKey || event.altKey) return false;
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        let value = editor.value;
+        let language = getLanguage(getActivePage()?.name || "");
+        let lexical = getLexicalInfo(value, language);
+        // 文字列・コメント内では括弧補完しない。
+        if (start > 0 && lexical.ignored[start - 1]) return false;
+        if (lexical.ignored[start]) return false;
+        event.preventDefault();
+        if (start === end && value[start] === close) {
+            editor.setSelectionRange(start + 1, start + 1);
+        } else {
+            editor.setRangeText(open + close, start, end, "end");
+            editor.setSelectionRange(start + 1, start + 1);
+        }
+        updatePageFromEditor();
+        renderHighlighted();
+        return true;
+    };
+
+    // 初期データを復元。保存データがなければ空のページを一つ作る。
+    try {
+        let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (stored && Array.isArray(stored.pages)) {
+            pages = stored.pages
+                .filter(page => page && typeof page.id === "string")
+                .map(page => ({
+                    id: page.id,
+                    name: typeof page.name === "string" ? page.name : "untitled.js",
+                    content: typeof page.content === "string" ? page.content : "",
+                    updatedAt: Number(page.updatedAt) || 0
+                }));
+            activePageId = stored.activePageId;
+        }
+    } catch (error) {
+        console.warn("保存データを読み込めませんでした。", error);
+    }
+    if (pages.length === 0) {
+        pages = [{ id: makeId(), name: "untitled.js", content: "", updatedAt: Date.now() }];
+        activePageId = pages[0].id;
+    }
+    if (!pages.some(page => page.id === activePageId)) activePageId = pages[0].id;
+    for (let page of pages) initializeHistory(page);
+    let initialPage = getActivePage();
+    editor.value = initialPage.content || "";
+    updatePageTitle();
+    renderHighlighted();
+    saveAll();
+
+    editor.addEventListener("input", () => {
+        updatePageFromEditor();
+        renderHighlighted();
+    });
+    editor.addEventListener("scroll", syncScroll, { passive: true });
+    editor.addEventListener("click", renderHighlighted);
+    editor.addEventListener("keyup", renderHighlighted);
+    editor.addEventListener("select", renderHighlighted);
+
+    editor.addEventListener("keydown", event => {
+        let key = event.key.toLowerCase();
+        if ((event.ctrlKey || event.metaKey) && key === "z") {
+            event.preventDefault();
+            applyHistory(event.shiftKey ? 1 : -1);
+            return;
+        }
+        if ((event.ctrlKey || event.metaKey) && key === "y") {
+            event.preventDefault();
+            applyHistory(1);
+            return;
+        }
+        if (event.key === "Enter") {
+            event.preventDefault();
+            handleEnter();
+            return;
+        }
+        if (event.key === "Tab") {
+            event.preventDefault();
+            let start = editor.selectionStart;
+            let end = editor.selectionEnd;
+            if (start === end) {
+                editor.setRangeText("\t", start, end, "end");
+            } else {
+                let value = editor.value;
+                let from = value.lastIndexOf("\n", start - 1) + 1;
+                let to = value.indexOf("\n", end);
+                let stop = to === -1 ? value.length : to;
+                let selected = value.slice(from, stop);
+                let lines = selected.split("\n");
+                let adjusted = lines.map(line => event.shiftKey ? line.replace(/^\t/, "") : "\t" + line).join("\n");
+                editor.setRangeText(adjusted, from, stop, "select");
             }
-            // 開き括弧の直後なら1階層深く
-            if (opening.test(beforeTrimmed)) {
-                nextIndent = indent + "\t";
-            }
-            // 閉じ括弧の直前なら1階層浅く
-            else if (closing.test(afterTrimmed)) {
-                nextIndent = indent.slice(0, -1);
-            }
-            // 改行
-            const insertion = "\n" + nextIndent;
-            editor.setRangeText(
-                insertion,
-                start,
-                end,
-                "end"
-            );
-            editor.dispatchEvent(new Event("input"));
+            updatePageFromEditor();
+            renderHighlighted();
+            return;
+        }
+        if (["(", "[", "{", "<"].includes(event.key)) {
+            handleAutoPair(event);
         }
     });
-    // 初期表示
-    updateHighlight();
+
+    pageName.addEventListener("click", () => {
+        let page = getActivePage();
+        if (page) downloadText(page.name, editor.value);
+    });
+
+    document.getElementById("undoButton").addEventListener("click", () => {
+        applyHistory(-1); closeGestureMenu(); editor.focus({ preventScroll: true });
+    });
+    document.getElementById("redoButton").addEventListener("click", () => {
+        applyHistory(1); closeGestureMenu(); editor.focus({ preventScroll: true });
+    });
+    document.getElementById("newButton").addEventListener("click", () => openModal("new"));
+    document.getElementById("listButton").addEventListener("click", () => openModal("list"));
+    document.getElementById("makePage").addEventListener("click", () => {
+        createPage(newPageName.value);
+        closeModal();
+    });
+    newPageName.addEventListener("keydown", event => {
+        if (event.key === "Enter") document.getElementById("makePage").click();
+        if (event.key === "Escape") closeModal();
+    });
+    modalLayer.addEventListener("click", event => {
+        if (event.target === modalLayer && warningModal.classList.has("hide") ) closeModal();
+    });
+
+    // 2本指で同時にタップする操作を2回行うと、2点の中間に十字メニューを出す。
+    let activeTouches = new Map();
+    let completedTouchGroup = [];
+    let previousTwoFingerTap = null;
+    let touchGroupStart = 0;
+
+    window.addEventListener("pointerdown", event => {
+        if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (activeTouches.size === 0) {
+                completedTouchGroup = [];
+                touchGroupStart = performance.now();
+            }
+            activeTouches.set(event.pointerId, {
+                x: event.clientX, y: event.clientY,
+                startX: event.clientX, startY: event.clientY,
+                time: performance.now(), moved: false
+            });
+            if (activeTouches.size >= 2) event.preventDefault();
+        }
+        if (event.pointerType === "mouse" && event.button === 2) {
+            event.preventDefault();
+            let now = performance.now();
+            if (lastRightClick && now - lastRightClick.time < 520 &&
+                Math.hypot(event.clientX - lastRightClick.x, event.clientY - lastRightClick.y) < 90) {
+                showGestureMenu((event.clientX + lastRightClick.x) / 2, (event.clientY + lastRightClick.y) / 2);
+                lastRightClick = null;
+            } else {
+                lastRightClick = { x: event.clientX, y: event.clientY, time: now };
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener("pointermove", event => {
+        let touch = activeTouches.get(event.pointerId);
+        if (!touch) return;
+        if (Math.hypot(event.clientX - touch.startX, event.clientY - touch.startY) > 18) touch.moved = true;
+    }, { passive: true });
+
+    window.addEventListener("pointerup", event => {
+        let touch = activeTouches.get(event.pointerId);
+        if (!touch) return;
+        activeTouches.delete(event.pointerId);
+        completedTouchGroup.push({
+            x: touch.x, y: touch.y,
+            time: performance.now(),
+            moved: touch.moved,
+            duration: performance.now() - touch.time
+        });
+        if (activeTouches.size === 0) {
+            let group = completedTouchGroup;
+            completedTouchGroup = [];
+            if (group.length === 2 && group.every(point => !point.moved && point.duration < 350) &&
+                Math.abs(group[0].time - group[1].time) < 420 && performance.now() - touchGroupStart < 800) {
+                let now = performance.now();
+                let center = {
+                    x: (group[0].x + group[1].x) / 2,
+                    y: (group[0].y + group[1].y) / 2
+                };
+                if (previousTwoFingerTap && now - previousTwoFingerTap.time < 700) {
+                    let menuCenter = {
+                        x: (center.x + previousTwoFingerTap.x) / 2,
+                        y: (center.y + previousTwoFingerTap.y) / 2
+                    };
+                    showGestureMenu(menuCenter.x, menuCenter.y);
+                    previousTwoFingerTap = null;
+                } else {
+                    previousTwoFingerTap = { ...center, time: now };
+                }
+            } else {
+                previousTwoFingerTap = null;
+            }
+        }
+    }, { passive: true });
+
+    window.addEventListener("pointercancel", event => {
+        activeTouches.delete(event.pointerId);
+        if (activeTouches.size === 0) {
+            completedTouchGroup = [];
+            previousTwoFingerTap = null;
+        }
+    }, { passive: true });
+
+    // 右ダブルクリックをジェスチャーとして使うため、ブラウザ標準メニューを抑止。
+    document.addEventListener("contextmenu", event => event.preventDefault());
+
+    document.addEventListener("pointerdown", event => {
+        if (!gestureMenu.classList.contains("open")) return;
+        if (!gestureMenu.contains(event.target)) closeGestureMenu();
+    }, true);
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeGestureMenu();
+            if (modalLayer.classList.contains("open") && warningModal.classList.has("hide") ) closeModal();
+        }
+    });
+
+    window.addEventListener("beforeunload", () => {
+        updatePageFromEditor(false);
+        saveAll();
+    });
 });
 </script>
 </body>
