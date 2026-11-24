@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quick Code Pad</title>
+<style>
+@font-face {
+    font-family: "hackgen";
+    src: url("fonts/assets/hackgen.ttf") format("truetype");
+    font-display: swap;
+}
+:root {
+    color-scheme: light;
+    --bg: #2b2b2b;
+    --panel: #1b1f27;
+    --panel-2: #242a35;
+    --line: #343c49;
+    --text: #def0ff;
+    --muted: #8993a3;
+    --accent: #8dbdff;
+    --editor-size: 14px;
+    --editor-line: 1.7;
+}
+* { box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%; margin: 0; overflow: hidden;
+    background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+body { display: flex; flex-direction: column; }
+#topbar {
+    height: 42px; min-height: 42px; width: 100%;
+    display: flex; align-items: center; padding: 0 14px;
+    background: #171a21; border-bottom: 1px solid #292f39;
+}
+#pageName {
+    max-width: min(70vw, 520px); overflow: hidden; white-space: nowrap;
+    text-overflow: ellipsis; cursor: pointer; user-select: none;
+    color: #dbe8f8; font-size: 13px; letter-spacing: .02em;
+    transition: color .12s ease;
+}
+#pageName:hover { color: #ffffff; }
+#editorWrap {
+    position: relative; flex: 1; min-height: 0; width: 100%;
+    overflow: hidden; background: var(--bg);
+}
+#editor {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    margin: 0; padding: 18px 20px 70px;
+    border: 0; outline: 0; resize: none;
+    font-family: "hackgen", "Cascadia Code", "Consolas", monospace;
+    font-size: var(--editor-size); font-weight: 400;
+    line-height: var(--editor-line); letter-spacing: 0;
+    tab-size: 4; -moz-tab-size: 4;
+    white-space: pre-wrap; overflow-wrap: break-word;
+    word-break: normal; font-variant-ligatures: none;
+}
+#editor {
+    overflow: auto;
+    background: var(--bg);
+    color: var(--text);
+    caret-color: var(--text);
+    selection-background-color: rgba(105, 155, 225, .35);
+    z-index: 2;
+    -webkit-tap-highlight-color: transparent;
+    pasding-bottom: 90px;
+}
+#editor::selection { background: rgba(105, 155, 225, .35)}
+
+
+
+
+
+
+
+
+.tok-operator { color: #aab5c6}
+
+
+#gestureMenu {
+    position: fixed;
+    z-index: 50;
+    width: 150px;
+    height: 150px;
+    transform: translate(-50%, -50%);
+    display: none;
+    pointer-events: none;
+}
+#gestureMenu.open { display: block}
+.gestureButton {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid #515c6d;
+    border-radius: 15px;
+    background: rgba(37, 45, 58, .97);
+    color: #eef4ff;
+    display: grid;
+    place-items: center;
+    font-size: 23px;
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .42);
+    pointer-events: auto;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.gestureButton:active { 
+    background: #3b4a60;
+    transform: scale(.94);
+    }
+#undoButton { right: 0; top: 51px; }
+#redoButton { left: 0; top: 51px; }
+#newButton { top: 0; left: 51px; }
+#listButton { bottom: 0; left: 51px; }
+#modalLayer {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .48);
+    padding: 18px;
+}
+#modalLayer.open { display: flex; }
+.modal {
+    background: #1c222c; border: 1px solid #3a4555;
+    box-shadow: 0 18px 60px rgba(0, 0, 0, .5);
+    border-radius: 13px;
+}
+#newModal {
+    width: min(440px, 100%); padding: 22px;
+}
+#newModalTitle { font-size: 14px; color: #dce6f4; margin-bottom: 13px; }
+#newPageName {
+    width: calc(100% - 82px); height: 40px; padding: 0 11px;
+    border: 1px solid #465366; border-radius: 7px 0 0 7px;
+    outline: none; background: #10151d; color: #edf3fc;
+    font: 13px "hackgen", monospace;
+}
+#newPageName:focus { border-color: #8dbdff; }
+#makePage {
+    width: 82px; height: 40px; margin-left: -5px;
+    border: 1px solid #6087b5; border-radius: 0 7px 7px 0;
+    background: #294361; color: #f4f8ff; cursor: pointer;
+}
+#listModal {
+    width: min(80vw, 760px); height: min(70vh, 700px);
+    min-width: min(300px, 100%); padding: 15px 0 10px;
+    display: flex; flex-direction: column; overflow: hidden;
+}
+#listHeading {
+    padding: 0 18px 11px; color: #dce6f4; font-size: 13px;
+    border-bottom: 1px solid #343e4c;
+}
+#pageItems {
+    overflow: auto; padding: 3px 0; flex: 1;
+}
+.item {
+    width: 90%; min-height: 42px; margin: 0 auto;
+    display: flex; align-items: center; gap: 9px;
+    border-bottom: 1px solid #343c49; cursor: pointer;
+    padding: 3px 1px; color: #e3eaf4;
+}
+.item.active { color: #9fc9ff; }
+.itemMain { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.itemName {
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    font-size: 12px;
+}
+.itemPreview {
+    width: 100px; max-width: 100px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap;
+    color: #8290a3; font-size: 10px;
+}
+.downloadItem {
+    flex: 0 0 30px; width: 30px; height: 30px;
+    border: 1px solid #58677b; border-radius: 50%;
+    background: #283344; color: #e3edfa; font-size: 14px;
+    display: grid; place-items: center; cursor: pointer;
+}
+.downloadItem:active { background: #405472; }
+.itemActions { display:flex; align-items:center; gap:4px; flex:0 0 auto; }
+.itemAction { width:29px; height:29px; padding:0; border:1px solid #58677b; border-radius:50%; background:#283344; color:#e3edfa; font-size:13px; display:grid; place-items:center; cursor:pointer; }
+.itemAction:active { background:#405472; }
+.itemAction.delete { color:#ff9b9b; }
+@media (max-width:600px) { .item { width:96%; gap:5px; } .itemAction { width:27px; height:27px; font-size:12px; } .itemActions { gap:3px; } }
+#emptyList { color: #8591a2; font-size: 12px; text-align: center; padding: 25px 0; }
+@media (max-width: 600px) {
+    #topbar { height: 38px; min-height: 38px; padding: 0 11px; }
+    #editor { padding: 14px 13px 55px; font-size: 13px; }
+    #listModal { width: 88vw; height: 72vh; }
+    #gestureMenu { width: 144px; height: 144px; }
+    .gestureButton { width: 46px; height: 46px; }
+    #undoButton { top: 49px; }
+    #redoButton { top: 49px; }
+    #newButton { left: 49px; }
+    #listButton { left: 49px; }
+}
+</style>
+</head>
+<body>
+<header id="topbar">
+    <div id="pageName" title="クリックで .txt をダウンロード">untitled.js</div>
+</header>
+<main id="editorWrap">
+    <textarea id="editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="コードエディタ"></textarea>
+</main>
+
+<div id="gestureMenu" aria-hidden="true">
+    <button class="gestureButton" id="undoButton" type="button" aria-label="元に戻す">↶</button>
+    <button class="gestureButton" id="redoButton" type="button" aria-label="やり直す">↷</button>
+    <button class="gestureButton" id="newButton" type="button" aria-label="新規ページ">＋</button>
+    <button class="gestureButton" id="listButton" type="button" aria-label="ページ一覧">☰</button>
+</div>
+
+<div id="modalLayer">
+    <section class="modal" id="newModal" hidden>
+        <div id="newModalTitle">名前を入れてね</div>
+        <div>
+            <input id="newPageName" type="text" autocomplete="off" spellcheck="false" aria-label="ページ名">
+            <button id="makePage" type="button">これで</button>
+        </div>
+    </section>
+    <section class="modal" id="listModal" hidden>
+        <div id="listHeading">ページ一覧</div>
+        <div id="pageItems"></div>
+    </section>
+</div>
+
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", () => {
+    let STORAGE_KEY = "quick-code-pad.pages.v1";
+    let editor = document.getElementById("editor");
+    let pageName = document.getElementById("pageName");
+    let gestureMenu = document.getElementById("gestureMenu");
+    let modalLayer = document.getElementById("modalLayer");
+    let newModal = document.getElementById("newModal");
+    let newPageName = document.getElementById("newPageName");
+    let pageItems = document.getElementById("pageItems");
+    let listModal = document.getElementById("listModal");
+
+    let bracketPairs = { "(": ")", "[": "]", "{": "}", "<": ">" };
+    let closingToOpening = { ")": "(", "]": "[", "}": "{", ">": "<" };
+
+    let pages = [];
+    let activePageId = null;
+    let historyByPage = new Map();
+    let menuTimer = null;
+    let savedScrollTop = 0;
+    let lastRightClick = null;
+
+    let escapeHtml = (value) => value.replace(/[&<>"']/g, ch => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;"
+    })[ch]);
+
+    let makeId = () => (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `p-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+
+    let getLanguage = (name) => /\.java$/i.test(name || "") ? "java" : "javascript";
+
+    let getActivePage = () => pages.find(page => page.id === activePageId) || null;
+
+    let saveAll = () => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                pages,
+                activePageId
+            }));
+        } catch (error) {
+            console.warn("LocalStorageへの保存に失敗しました。", error);
+        }
+    };
+
+    let downloadText = (name, content) => {
+        let safeBase = (name || "untitled").replace(/[\\/:*?"<>|]/g, "_").replace(/\.(js|java|txt)$/i, "");
+        let blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        let url = URL.createObjectURL(blob);
+        let anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${safeBase || "untitled"}.txt`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    let getLexicalInfo = (source, language) => {
+        let ignored = new Uint8Array(source.length);
+        let i = 0;
+
+        while (i < source.length) {
+            let start = i;
+            let ch = source[i];
+            let next = source[i + 1];
+
+            if (ch === "/" && next === "/") {
+                i += 2;
+                while (i < source.length && source[i] !== "\n") i++;
+            } else if (ch === "/" && next === "*") {
+                i += 2;
+                while (i < source.length && !(source[i] === "*" && source[i + 1] === "/")) i++;
+                if (i < source.length) i += 2;
+            } else if (ch === '"' || ch === "'" || (language === "javascript" && ch === "`")) {
+                let quote = ch;
+                i++;
+                while (i < source.length) {
+                    if (source[i] === "\\") { i += 2; continue; }
+                    if (source[i] === quote) { i++; break; }
+                    i++;
+                }
+            } else {
+                i++;
+                continue;
+            }
+
+            for (let j = start; j < Math.min(i, source.length); j++) ignored[j] = 1;
+        }
+
+        return { ignored };
+    };
+
+    let initializeHistory = (page) => {
+        historyByPage.set(page.id, {
+            stack: [{ value: page.content || "", start: 0, end: 0 }],
+            index: 0
+        });
+    };
+
+    let getHistory = () => {
+        if (!historyByPage.has(activePageId)) initializeHistory(getActivePage());
+        return historyByPage.get(activePageId);
+    };
+
+    let recordHistory = () => {
+        let history = getHistory();
+        let current = history.stack[history.index];
+        let value = editor.value;
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        if (current && current.value === value && current.start === start && current.end === end) return;
+        history.stack = history.stack.slice(0, history.index + 1);
+        history.stack.push({ value, start, end });
+        if (history.stack.length > 1500) history.stack.shift();
+        history.index = history.stack.length - 1;
+    };
+
+    let applyHistory = (direction) => {
+        let history = getHistory();
+        let nextIndex = history.index + direction;
+        if (nextIndex < 0 || nextIndex >= history.stack.length) return;
+        history.index = nextIndex;
+        let state = history.stack[history.index];
+        editor.value = state.value;
+        editor.setSelectionRange(state.start, state.end);
+        updatePageFromEditor(false);
+    };
+
+    let updatePageFromEditor = (addHistory = true) => {
+        let page = getActivePage();
+        if (!page) return;
+        page.content = editor.value;
+        page.updatedAt = Date.now();
+        if (addHistory) recordHistory();
+        saveAll();
+    };
+
+    let updatePageTitle = () => {
+        let page = getActivePage();
+        pageName.textContent = page ? page.name : "untitled.js";
+        document.title = `${pageName.textContent} — Quick Code Pad`;
+    };
+
+    let renderList = () => {
+        pageItems.replaceChildren();
+        if (pages.length === 0) {
+            let empty = document.createElement("div");
+            empty.id = "emptyList";
+            empty.textContent = "ページはまだないよ";
+            pageItems.appendChild(empty);
+            return;
+        }
+        let sorted = [...pages].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        for (let page of sorted) {
+            let item = document.createElement("div");
+            item.className = `item${page.id === activePageId ? " active" : ""}`;
+            let main = document.createElement("div");
+            main.className = "itemMain";
+            let name = document.createElement("div");
+            name.className = "itemName";
+            name.textContent = page.name;
+            let preview = document.createElement("div");
+            preview.className = "itemPreview";
+            preview.textContent = (page.content || "").replace(/\s+/g, " ").trim() || "(empty)";
+            main.append(name, preview);
+
+            let actions = document.createElement("div");
+            actions.className = "itemActions";
+            let makeAction = (label, title, className, handler) => {
+                let button = document.createElement("button");
+                button.type = "button";
+                button.className = `itemAction ${className || ""}`;
+                button.textContent = label;
+                button.title = title;
+                button.setAttribute("aria-label", `${page.name}: ${title}`);
+                button.addEventListener("click", event => {
+                    event.stopPropagation();
+                    handler();
+                });
+                actions.appendChild(button);
+            };
+            makeAction("✎", "名称変更", "", () => {
+                let proposed = prompt("新しいページ名", page.name);
+                if (proposed === null) return;
+                let nextName = proposed.trim();
+                if (!nextName) { alert("名前が空だよ。"); return; }
+                if (pages.some(other => other.id !== page.id && other.name === nextName)) {
+                    alert("同じ名前のページがすでにあるよ。"); return;
+                }
+                page.name = nextName;
+                page.updatedAt = Date.now();
+                if (page.id === activePageId) updatePageTitle();
+                saveAll();
+                renderList();
+            });
+            makeAction("x", "削除", "delete", () => {
+                if (!confirm(`「${page.name}」を削除する？\nこの操作は取り消せないよ。`)) return;
+                if (!confirm(`本当に「${page.name}」を削除するよ。続ける？`)) return;
+                pages = pages.filter(other => other.id !== page.id);
+                historyByPage.delete(page.id);
+                if (page.id === activePageId) {
+                    if (pages.length === 0) {
+                        let fresh = { id: makeId(), name: "untitled.js", content: "", updatedAt: Date.now() };
+                        pages.push(fresh);
+                        initializeHistory(fresh);
+                    }
+                    activePageId = pages[0].id;
+                    editor.value = pages[0].content || "";
+                    updatePageTitle();
+                }
+                saveAll();
+                renderList();
+            });
+
+
+            item.append(main, actions);
+            item.addEventListener("click", () => {
+                switchPage(page.id);
+                closeModal();
+            });
+            pageItems.appendChild(item);
+        }
+    };
+
+    let switchPage = (id) => {
+        if (id === activePageId) return;
+        updatePageFromEditor(false);
+        let page = pages.find(candidate => candidate.id === id);
+        if (!page) return;
+        activePageId = id;
+        editor.value = page.content || "";
+        updatePageTitle();
+        if (!historyByPage.has(page.id)) initializeHistory(page);
+        saveAll();
+    };
+
+    let createPage = (name) => {
+        let cleanName = (name || "").trim() || `untitled-${pages.length + 1}.js`;
+        updatePageFromEditor(false);
+        let page = {
+            id: makeId(),
+            name: cleanName,
+            content: "",
+            updatedAt: Date.now()
+        };
+        pages.push(page);
+        activePageId = page.id;
+        editor.value = "";
+        initializeHistory(page);
+        updatePageTitle();
+        saveAll();
+        editor.focus();
+    };
+
+    let openModal = (which) => {
+        closeGestureMenu();
+        modalLayer.classList.add("open");
+        newModal.hidden = which !== "new";
+        listModal.hidden = which !== "list";
+        if (which === "new") {
+            newPageName.value = `untitled-${pages.length + 1}.js`;
+            requestAnimationFrame(() => {
+                newPageName.focus();
+                newPageName.select();
+            });
+        } else {
+            renderList();
+        }
+    };
+
+    let closeModal = () => {
+        modalLayer.classList.remove("open");
+        newModal.hidden = true;
+        listModal.hidden = true;
+        editor.focus({ preventScroll: true });
+    };
+
+    let showGestureMenu = (x, y) => {
+        clearTimeout(menuTimer);
+        let padding = 88;
+        let px = Math.max(padding, Math.min(window.innerWidth - padding, x));
+        let py = Math.max(padding, Math.min(window.innerHeight - padding, y));
+        gestureMenu.style.left = `${px}px`;
+        gestureMenu.style.top = `${py}px`;
+        gestureMenu.classList.add("open");
+        gestureMenu.setAttribute("aria-hidden", "false");
+        menuTimer = setTimeout(closeGestureMenu, 5000);
+    };
+
+    let closeGestureMenu = () => {
+        gestureMenu.classList.remove("open");
+        gestureMenu.setAttribute("aria-hidden", "true");
+    };
+
+    let getLineIndent = (line) => {
+        let match = line.match(/^[\t ]*/);
+        let prefix = match ? match[0] : "";
+        let tabs = 0;
+        for (let ch of prefix) tabs += ch === "\t" ? 1 : 0.25;
+        return Math.floor(tabs + 0.001);
+    };
+
+    let handleEnter = () => {
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        let value = editor.value;
+        let lineStart = value.lastIndexOf("\n", start - 1) + 1;
+        let linePrefix = value.slice(lineStart, start);
+        let lineEndIndex = value.indexOf("\n", start);
+        let lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+        let restOfLine = value.slice(start, lineEnd);
+        let indent = getLineIndent(value.slice(lineStart, lineEnd));
+        let lastNonSpace = linePrefix.trimEnd().slice(-1);
+        let closing = bracketPairs[lastNonSpace];
+        let isOpen = Boolean(closing);
+        let nextNonSpace = restOfLine.match(/^[\t ]*(.)/);
+        let nextChar = nextNonSpace ? nextNonSpace[1] : "";
+        let alreadyClosed = isOpen && nextChar === closing;
+        let baseIndent = "\t".repeat(indent);
+        let innerIndent = "\t".repeat(indent + (isOpen ? 1 : 0));
+        let insertion;
+        let caretOffset;
+
+        if (isOpen && !alreadyClosed) {
+            insertion = `\n${innerIndent}\n${baseIndent}${closing}`;
+            caretOffset = 1 + innerIndent.length;
+        } else if (isOpen && alreadyClosed) {
+            let skippedWhitespace = nextNonSpace[0].slice(0, -1);
+            insertion = `\n${innerIndent}\n${baseIndent}`;
+            caretOffset = 1 + innerIndent.length;
+            // 既存の閉じ括弧の前に、閉じ括弧用の行を作る。
+            let replaceEnd = start + skippedWhitespace.length;
+            editor.setRangeText(insertion, start, replaceEnd, "start");
+            editor.setSelectionRange(start + caretOffset, start + caretOffset);
+            updatePageFromEditor();
+            return;
+        } else {
+            insertion = `\n${baseIndent}`;
+            caretOffset = insertion.length;
+        }
+
+        editor.setRangeText(insertion, start, end, "start");
+        let caret = start + caretOffset;
+        editor.setSelectionRange(caret, caret);
+        updatePageFromEditor();
+    };
+
+    let handleAutoPair = (event) => {
+        let open = event.key;
+        let close = bracketPairs[open];
+        if (!close || event.ctrlKey || event.metaKey || event.altKey) return false;
+        let start = editor.selectionStart;
+        let end = editor.selectionEnd;
+        let value = editor.value;
+        let language = getLanguage(getActivePage()?.name || "");
+        let lexical = getLexicalInfo(value, language);
+        // 文字列・コメント内では括弧補完しない。
+        if (start > 0 && lexical.ignored[start - 1]) return false;
+        if (lexical.ignored[start]) return false;
+        event.preventDefault();
+        if (start === end && value[start] === close) {
+            editor.setSelectionRange(start + 1, start + 1);
+        } else {
+            editor.setRangeText(open + close, start, end, "end");
+            editor.setSelectionRange(start + 1, start + 1);
+        }
+        updatePageFromEditor();
+        return true;
+    };
+
+    // 初期データを復元。保存データがなければ空のページを一つ作る。
+    try {
+        let stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        if (stored && Array.isArray(stored.pages)) {
+            pages = stored.pages
+                .filter(page => page && typeof page.id === "string")
+                .map(page => ({
+                    id: page.id,
+                    name: typeof page.name === "string" ? page.name : "untitled.js",
+                    content: typeof page.content === "string" ? page.content : "",
+                    updatedAt: Number(page.updatedAt) || 0
+                }));
+            activePageId = stored.activePageId;
+        }
+    } catch (error) {
+        console.warn("保存データを読み込めませんでした。", error);
+    }
+    if (pages.length === 0) {
+        pages = [{ id: makeId(), name: "untitled.js", content: "", updatedAt: Date.now() }];
+        activePageId = pages[0].id;
+    }
+    if (!pages.some(page => page.id === activePageId)) activePageId = pages[0].id;
+    for (let page of pages) initializeHistory(page);
+    let initialPage = getActivePage();
+    editor.value = initialPage.content || "";
+    updatePageTitle();
+    saveAll();
+
+    editor.addEventListener("input", () => {
+        updatePageFromEditor();
+    });
+
+    editor.addEventListener("keydown", event => {
+        let key = event.key.toLowerCase();
+        if ((event.ctrlKey || event.metaKey) && key === "z") {
+            event.preventDefault();
+            applyHistory(event.shiftKey ? 1 : -1);
+            return;
+        }
+        if ((event.ctrlKey || event.metaKey) && key === "y") {
+            event.preventDefault();
+            applyHistory(1);
+            return;
+        }
+        if (event.key === "Enter") {
+            event.preventDefault();
+            handleEnter();
+            return;
+        }
+        if (event.key === "Tab") {
+            event.preventDefault();
+            let start = editor.selectionStart;
+            let end = editor.selectionEnd;
+            if (start === end) {
+                editor.setRangeText("\t", start, end, "end");
+            } else {
+                let value = editor.value;
+                let from = value.lastIndexOf("\n", start - 1) + 1;
+                let to = value.indexOf("\n", end);
+                let stop = to === -1 ? value.length : to;
+                let selected = value.slice(from, stop);
+                let lines = selected.split("\n");
+                let adjusted = lines.map(line => event.shiftKey ? line.replace(/^\t/, "") : "\t" + line).join("\n");
+                editor.setRangeText(adjusted, from, stop, "select");
+            }
+            updatePageFromEditor();
+            return;
+        }
+        if (["(", "[", "{", "<"].includes(event.key)) {
+            handleAutoPair(event);
+        }
+    });
+
+    pageName.addEventListener("click", () => {
+        let page = getActivePage();
+        if (page) downloadText(page.name, editor.value);
+    });
+
+    document.getElementById("undoButton").addEventListener("click", () => {
+        applyHistory(-1); closeGestureMenu(); editor.focus({ preventScroll: true });
+    });
+    document.getElementById("redoButton").addEventListener("click", () => {
+        applyHistory(1); closeGestureMenu(); editor.focus({ preventScroll: true });
+    });
+    document.getElementById("newButton").addEventListener("click", () => openModal("new"));
+    document.getElementById("listButton").addEventListener("click", () => openModal("list"));
+    document.getElementById("makePage").addEventListener("click", () => {
+        createPage(newPageName.value);
+        closeModal();
+    });
+    newPageName.addEventListener("keydown", event => {
+        if (event.key === "Enter") document.getElementById("makePage").click();
+        if (event.key === "Escape") closeModal();
+    });
+    modalLayer.addEventListener("click", event => {
+        if (event.target === modalLayer) closeModal();
+    });
+
+    // 2本指で同時にタップする操作を2回行うと、2点の中間に十字メニューを出す。
+    let activeTouches = new Map();
+    let completedTouchGroup = [];
+    let previousTwoFingerTap = null;
+    let touchGroupStart = 0;
+
+    window.addEventListener("pointerdown", event => {
+        if (event.pointerType === "touch" || event.pointerType === "pen") {
+            if (activeTouches.size === 0) {
+                completedTouchGroup = [];
+                touchGroupStart = performance.now();
+            }
+            activeTouches.set(event.pointerId, {
+                x: event.clientX, y: event.clientY,
+                startX: event.clientX, startY: event.clientY,
+                time: performance.now(), moved: false
+            });
+            if (activeTouches.size >= 2) event.preventDefault();
+        }
+        if (event.pointerType === "mouse" && event.button === 2) {
+            event.preventDefault();
+            let now = performance.now();
+            if (lastRightClick && now - lastRightClick.time < 520 &&
+                Math.hypot(event.clientX - lastRightClick.x, event.clientY - lastRightClick.y) < 90) {
+                showGestureMenu((event.clientX + lastRightClick.x) / 2, (event.clientY + lastRightClick.y) / 2);
+                lastRightClick = null;
+            } else {
+                lastRightClick = { x: event.clientX, y: event.clientY, time: now };
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener("pointermove", event => {
+        let touch = activeTouches.get(event.pointerId);
+        if (!touch) return;
+        if (Math.hypot(event.clientX - touch.startX, event.clientY - touch.startY) > 18) touch.moved = true;
+    }, { passive: true });
+
+    window.addEventListener("pointerup", event => {
+        let touch = activeTouches.get(event.pointerId);
+        if (!touch) return;
+        activeTouches.delete(event.pointerId);
+        completedTouchGroup.push({
+            x: touch.x, y: touch.y,
+            time: performance.now(),
+            moved: touch.moved,
+            duration: performance.now() - touch.time
+        });
+        if (activeTouches.size === 0) {
+            let group = completedTouchGroup;
+            completedTouchGroup = [];
+            if (group.length === 2 && group.every(point => !point.moved && point.duration < 350) &&
+                Math.abs(group[0].time - group[1].time) < 420 && performance.now() - touchGroupStart < 800) {
+                let now = performance.now();
+                let center = {
+                    x: (group[0].x + group[1].x) / 2,
+                    y: (group[0].y + group[1].y) / 2
+                };
+                if (previousTwoFingerTap && now - previousTwoFingerTap.time < 700) {
+                    let menuCenter = {
+                        x: (center.x + previousTwoFingerTap.x) / 2,
+                        y: (center.y + previousTwoFingerTap.y) / 2
+                    };
+                    showGestureMenu(menuCenter.x, menuCenter.y);
+                    previousTwoFingerTap = null;
+                } else {
+                    previousTwoFingerTap = { ...center, time: now };
+                }
+            } else {
+                previousTwoFingerTap = null;
+            }
+        }
+    }, { passive: true });
+
+    window.addEventListener("pointercancel", event => {
+        activeTouches.delete(event.pointerId);
+        if (activeTouches.size === 0) {
+            completedTouchGroup = [];
+            previousTwoFingerTap = null;
+        }
+    }, { passive: true });
+
+    // 右ダブルクリックをジェスチャーとして使うため、ブラウザ標準メニューを抑止。
+    document.addEventListener("contextmenu", event => event.preventDefault());
+
+    document.addEventListener("pointerdown", event => {
+        if (!gestureMenu.classList.contains("open")) return;
+        if (!gestureMenu.contains(event.target)) closeGestureMenu();
+    }, true);
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeGestureMenu();
+            if (modalLayer.classList.contains("open")) closeModal();
+        }
+    });
+
+    window.addEventListener("beforeunload", () => {
+        updatePageFromEditor(false);
+        saveAll();
+    });
+});
+</script>
+</body>
+</html>
