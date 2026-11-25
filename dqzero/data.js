@@ -1707,7 +1707,13 @@ let Charas = [
 
         ps:{
             name:"ハイリスクにはハイなリターンを",
-            efs:[],
+            efs:[
+                "attack_pre":{
+                    func:(who, are, data = {} , buff)=>{
+
+                    }
+                }
+            ],
         },
 
         stat:{
